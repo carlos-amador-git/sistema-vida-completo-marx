@@ -109,25 +109,25 @@ export class WABAProvider implements IWhatsAppProvider {
 
     const components = type === 'PANIC'
       ? [
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: patientName },
-              { type: 'text', text: mapsUrl },
-              { type: 'text', text: nearestHospital || t('notifications:defaults.unknownHospital') },
-            ],
-          },
-        ]
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: patientName },
+            { type: 'text', text: mapsUrl },
+            { type: 'text', text: nearestHospital || t('notifications:defaults.unknownHospital') },
+          ],
+        },
+      ]
       : [
-          {
-            type: 'body',
-            parameters: [
-              { type: 'text', text: patientName },
-              { type: 'text', text: accessorName || t('notifications:defaults.medicalStaff') },
-              { type: 'text', text: mapsUrl },
-            ],
-          },
-        ];
+        {
+          type: 'body',
+          parameters: [
+            { type: 'text', text: patientName },
+            { type: 'text', text: accessorName || t('notifications:defaults.medicalStaff') },
+            { type: 'text', text: mapsUrl },
+          ],
+        },
+      ];
 
     const languageCode = locale === 'en' ? 'en_US' : 'es_MX';
 
