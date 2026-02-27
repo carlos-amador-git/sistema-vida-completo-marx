@@ -11,8 +11,11 @@ WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma/
 
+# Limitar memoria para evitar OOM kills
+ENV NODE_OPTIONS="--max_old_space_size=1536"
+
 # Instalar dependencias (incluyendo devDependencies para Prisma CLI)
-RUN npm ci
+RUN npm install --no-audit --no-fund --legacy-peer-deps
 
 # Copiar código fuente
 COPY . .
