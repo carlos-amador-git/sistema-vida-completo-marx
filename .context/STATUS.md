@@ -1,10 +1,9 @@
 # STATUS - Sistema VIDA
 
-**Actualizado:** 2026-02-26 (Sesion 3)
-**Fase:** MVP Fase 1 - Funcional
+**Actualizado:** 2026-02-26 (Sesión 6)
+**Fase:** MVP Fase 1 - Listo para Pruebas
 **Branch:** main
-**Plan Activo:** i18n (Español + Inglés) — Ver PLAN-i18n.md
-**Plan Anterior:** Migración Twilio → WABA (COMPLETADA - Fases 1-4)
+**Plan Activo:** Ninguno — sistema operativo
 
 ## Estado General
 
@@ -13,59 +12,39 @@
 | Backend API | FUNCIONAL | Express + TypeScript + Prisma |
 | Frontend | FUNCIONAL | React 18 + Vite + Tailwind |
 | Base de Datos | FUNCIONAL | PostgreSQL + Redis |
-| Autenticacion | FUNCIONAL | JWT con refresh tokens |
-| Encriptacion | FUNCIONAL | AES-256-GCM |
+| Autenticación | FUNCIONAL | JWT con refresh tokens |
+| Encriptación | FUNCIONAL | AES-256-GCM |
 | Notificaciones | MIGRADO | Provider Pattern: WABA + Twilio fallback |
+| i18n | COMPLETO | ES/EN, residuales corregidos |
 
-## Migración WABA - COMPLETADA
+## Sesión 6 — i18n Residuales + WABA Templates
 
-| Fase | Estado | Descripcion |
-|------|--------|-------------|
-| Fase 1 | COMPLETADA | Interfaces, providers, factory, phone-utils |
-| Fase 2 | COMPLETADA | WABAProvider con Meta Cloud API |
-| Fase 3 | COMPLETADA | Feature flags + fallback + env-validation |
-| Fase 4 | COMPLETADA | Auditoría interna + fixes de seguridad |
+### i18n Residuales (commit 1ccd924, 23 archivos, +264/-192)
+1. ~85 tildes corregidas en locales ES (admin, notifications, common, extras, subscription)
+2. 9x "Sistema VIDA" → "VIDA System" en locales EN
+3. useSubscription.ts (6 errors) y useNFC.ts (13 strings) migrados a i18next.t()
+4. documents.controller.ts (18 strings) y hospital.controller.ts (10 strings) migrados a req.t()
+5. Global error handlers en main.ts migrados a req.t()
+6. AdminAuthContext.tsx (6 JSX strings) migrado a useTranslation('admin')
+7. ADMIN_ROLE_LABELS eliminado, reemplazado con t('roles.*')
+8. Nuevas secciones locale: roles, access, nfc.errors, hospital, subscription.errors
+9. Build verificado: tsc 0 errores (frontend + backend), vite build OK
 
-## Arquitectura de Notificaciones (NUEVA)
+### WABA Templates
+1. `acceso_qr_vida_v1` — **APPROVED** (UTILITY, es_MX) — probado OK con CEO
+2. `emergencia_vida_v1` es_MX — **PENDING** (UTILITY, id: 954722793796826)
+3. `emergencia_vida_v1` en_US — **PENDING** (UTILITY, id: 1432208321692178)
+4. Template MARKETING actual probado: funciona con sesión activa, fallback texto plano sin sesión
 
-```
-NotificationService (Orquestador)
-├── TwilioSMSProvider (SMS)
-├── WhatsAppProviderFactory → WABA | Twilio | WABA+Fallback
-└── ResendEmailProvider (Email)
-```
+### Diagnóstico WABA
+- Template MARKETING requiere sesión 24h → causa fallback texto plano para algunos usuarios
+- Nuevo template UTILITY eliminará esta restricción cuando Meta apruebe
+- No existe webhook para mensajes entrantes WhatsApp
+- Footer "no responda" incluido en nuevo template
 
-Feature flags: `WHATSAPP_PROVIDER=waba|twilio`, `WABA_FALLBACK_TO_TWILIO=true|false`
+## Pendiente para Deploy
 
-## Ultimo Trabajo (Sesion 2)
-
-1. Implementación completa de Provider Pattern (8 archivos nuevos)
-2. WABAProvider con Meta Cloud API (templates + texto libre)
-3. Factory con fallback automático WABA→Twilio
-4. WHATSAPP agregado al enum NotificationChannel (Prisma)
-5. Validación de WABA en env-validation
-6. Fix XSS en email (HTML escaping)
-7. Fix phone validation (E.164 + longitud)
-8. 18/18 tests unitarios pasando
-9. Auditoría interna con 12 archivos revisados
-
-## Sesion 3 — WABA Tests + Plan i18n
-
-1. Template emergencia WABA: **APPROVED** y probado (5 números, todos recibieron)
-2. Template acceso QR: **PENDING** aprobación Meta
-3. Plan i18n generado: `.context/PLAN-i18n.md` (5 sprints, 12-16 días, 13 agentes)
-4. Diagnóstico completo: 42 archivos frontend, 20+ backend, ~850 strings total
-
-## Pendiente para Deploy (WABA)
-
-1. Ejecutar migración SQL: `prisma/migrations/add_whatsapp_channel.sql`
-2. Configurar variables WABA en Coolify (ver .env.example)
-3. Activar `WHATSAPP_PROVIDER=waba` en producción
+1. Esperar aprobación `emergencia_vida_v1` → cambiar `WABA_TEMPLATE_EMERGENCY` en .env
+2. Ejecutar migración SQL: `prisma/migrations/add_whatsapp_channel.sql`
+3. Configurar variables WABA en Coolify
 4. Fix BLOCKER-002: representantes con notifyOnEmergency=false
-
-## Próximo: i18n Sprint 1
-
-1. Instalar react-i18next + i18next + plugins
-2. Crear estructura de locales (13 namespaces × 2 idiomas)
-3. Backend middleware Accept-Language
-4. Migración Prisma: preferredLanguage

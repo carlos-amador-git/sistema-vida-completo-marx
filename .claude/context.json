@@ -1,9 +1,9 @@
 {
   "project": "Sistema VIDA",
-  "phase": "MVP Fase 1 - Funcional",
+  "phase": "MVP Fase 1 - Funcional → Pruebas",
   "branch": "main",
-  "lastSession": "2026-02-26T23:59:00-06:00",
-  "sessionCount": 5,
+  "lastSession": "2026-02-26T18:30:00-06:00",
+  "sessionCount": 6,
   "status": {
     "backend": "FUNCIONAL",
     "frontend": "FUNCIONAL",
@@ -11,24 +11,26 @@
     "auth": "FUNCIONAL",
     "encryption": "FUNCIONAL",
     "notifications": "MIGRADO - Provider Pattern (WABA + Twilio fallback)",
-    "i18n": "COMPLETO - Frontend 100% + Backend controllers 100% conectados a req.t()"
+    "i18n": "COMPLETO - Residuales post-auditoría corregidos"
   },
-  "activePlan": "i18n COMPLETO. Pendiente: deploy WABA + push access",
+  "activePlan": "Ninguno — sistema listo para pruebas operativas",
   "lastCommit": {
-    "hash": "32b89ab",
-    "message": "fix(i18n): Mejorar UX del LanguageSwitcher y corregir strings hardcoded",
-    "pushed": false,
-    "pushError": "Permission denied - MarxCha no tiene write access a carlos-amador-git/sistema-vida-completo-marx"
+    "hash": "1ccd924",
+    "message": "fix(i18n): Corregir residuales post-auditoría — tildes, brand names, hooks y controllers",
+    "pushed": true,
+    "remote": "origin (MarxCha/sistema-vida-completo-marx)"
   },
   "builds": {
-    "frontend": "OK - tsc + vite build (1670 modules, 6.74s, 0 errors)",
-    "backend": "OK - prisma generate + tsc (0 errors)",
+    "frontend": "OK - tsc + vite build (1670 modules, 6.81s, 0 errors)",
+    "backend": "OK - tsc --noEmit (0 errors)",
     "verifiedAt": "2026-02-26"
   },
   "completedMilestones": [
     "Migración Twilio → WABA con Provider Pattern (ac03680)",
     "i18n completa ES/EN - 99 archivos, +6394/-1883 (9c47745, 32b89ab)",
-    "i18n QA: frontend residuales corregidos (5 archivos) + backend 180 strings conectados a req.t()"
+    "i18n QA: frontend residuales corregidos + backend 180 strings conectados a req.t()",
+    "i18n residuales post-auditoría: 23 archivos, +264/-192 (1ccd924)",
+    "Templates WABA: QR aprobado y probado, emergencia UTILITY registrado"
   ],
   "knownIssues": [
     {
@@ -46,21 +48,31 @@
     {
       "id": "ISSUE-001",
       "title": "Push denegado al repo remoto",
-      "status": "ACTIVO",
-      "fix": "Solicitar write access o configurar fork"
+      "status": "RESUELTO"
+    },
+    {
+      "id": "ISSUE-002",
+      "title": "Template emergencia MARKETING causa fallback texto plano sin sesión 24h",
+      "status": "EN_PROGRESO",
+      "fix": "Template UTILITY emergencia_vida_v1 registrado, pendiente aprobación Meta"
     }
   ],
+  "wabaTemplates": {
+    "copy_copy_urgente": "APPROVED (MARKETING, es_MX) — deprecar cuando v1 apruebe",
+    "acceso_qr_vida_v1": "APPROVED (UTILITY, es_MX) — probado OK",
+    "emergencia_vida_v1_es": "PENDING (UTILITY, es_MX, id: 954722793796826)",
+    "emergencia_vida_v1_en": "PENDING (UTILITY, en_US, id: 1432208321692178)"
+  },
   "nextSteps": [
-    "Resolver acceso git push (fork o permisos)",
-    "Deploy WABA: SQL migration + vars Coolify + activar",
-    "Fix BLOCKER-002: representantes sin notificaciones",
-    "Auditorías: /func-audit + /design-audit post-i18n"
+    "Pruebas operativas del sistema completo",
+    "Esperar aprobación Meta de emergencia_vida_v1 → cambiar WABA_TEMPLATE_EMERGENCY en .env",
+    "Deploy WABA: SQL migration + vars Coolify",
+    "Fix BLOCKER-002: representantes sin notificaciones"
   ],
   "i18nCoverage": {
-    "frontend": "100% - 0 strings hardcoded user-facing",
-    "backendControllers": "100% - 180 req.t() + 17 i18next.t() calls",
+    "frontend": "100% - tildes corregidas, brand names EN consistentes, hooks migrados",
+    "backendControllers": "100% - documents + hospital migrados a req.t(), global error handlers migrados",
     "backendServices": "Internal throws kept as constants (58) - acceptable",
-    "rateLimiters": "5 static strings - fires before i18n middleware, acceptable",
-    "localeKeys": "api.json: auth, emergency, panic, representatives, directives, documents, payments, pup, insurance, odoo, wallet, admin, generic"
+    "localeKeys": "api.json: auth, emergency, panic, representatives, directives, documents, payments, pup, insurance, odoo, wallet, admin, generic, hospital"
   }
 }

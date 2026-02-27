@@ -80,7 +80,19 @@
       "Bash(docker stop:*)",
       "Bash(docker start:*)",
       "Bash(xargs:*)",
-      "Bash(docker restart:*)"
+      "Bash(docker restart:*)",
+      "Bash(fnm list)",
+      "Bash(fnm which 22)",
+      "Bash(fnm exec --using=22 node --version)",
+      "Bash(node --version)",
+      "Bash(/Users/marxchavez/.local/share/fnm/node-versions/v22.22.0/installation/bin/npx --version)",
+      "Bash(/Users/marxchavez/.local/share/fnm/node-versions/v22.22.0/installation/bin/node --version)",
+      "Bash(npx --version)",
+      "Bash(/Users/marxchavez/.local/share/fnm/node-versions/v22.22.0/installation/bin/npx -y task-master-ai@0.43.0 --help)",
+      "Bash(# Check if there''s a settings.json with MCP config too cat /Users/marxchavez/.claude/settings.json)",
+      "Bash(/usr/bin/printenv PATH)",
+      "Bash(FNM_PATH=\"/Users/marxchavez/.local/share/fnm/node-versions/v22.22.0/installation/bin:/usr/local/opt/postgresql@17/bin:/Users/marxchavez/.npm-global/bin:/Users/marxchavez/.local/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin\")",
+      "Bash(PATH=\"$FNM_PATH\" /Users/marxchavez/.local/share/fnm/node-versions/v22.22.0/installation/bin/npx -y which node)"
     ]
   }
 }
