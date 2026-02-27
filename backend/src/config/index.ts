@@ -49,24 +49,24 @@ export const config = {
     from: process.env.EMAIL_FROM_RESEND || process.env.EMAIL_FROM || 'notificaciones@sistemavida.mx',
   },
 
-  // SMS y WhatsApp (Twilio)
+  // SMS y WhatsApp (Twilio) - Desactivado por solicitud del usuario
   twilio: {
-    sid: process.env.TWILIO_ACCOUNT_SID || '',
-    token: process.env.TWILIO_AUTH_TOKEN || '',
-    phone: process.env.TWILIO_PHONE_NUMBER || '',
-    whatsappPhone: process.env.TWILIO_WHATSAPP_NUMBER || '',
-    whatsappTemplateId: process.env.TWILIO_WHATSAPP_TEMPLATE_ID || 'HXdce98f9ca93895538759cd4b43c550b7',
+    sid: '',
+    token: '',
+    phone: '',
+    whatsappPhone: '',
+    whatsappTemplateId: '',
   },
 
   // WhatsApp Business API (WABA - Meta Cloud API)
   waba: {
-    provider: (process.env.WHATSAPP_PROVIDER || 'twilio') as 'waba' | 'twilio',
+    provider: (process.env.WHATSAPP_PROVIDER || 'waba') as 'waba' | 'twilio',
     phoneNumberId: process.env.WABA_PHONE_NUMBER_ID || '',
     accessToken: process.env.WABA_ACCESS_TOKEN || '',
     businessAccountId: process.env.WABA_BUSINESS_ACCOUNT_ID || '',
     webhookVerifyToken: process.env.WABA_WEBHOOK_VERIFY_TOKEN || '',
     apiVersion: process.env.WABA_API_VERSION || 'v22.0',
-    fallbackToTwilio: process.env.WABA_FALLBACK_TO_TWILIO === 'true',
+    fallbackToTwilio: false,
     templateEmergency: process.env.WABA_TEMPLATE_EMERGENCY || '',
     templateAccess: process.env.WABA_TEMPLATE_ACCESS || '',
   },
