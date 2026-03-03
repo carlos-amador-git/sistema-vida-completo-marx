@@ -1,5 +1,5 @@
 // src/modules/payments/services/subscription.service.ts
-import { PrismaClient, BillingCycle, SubscriptionStatus } from '@prisma/client';
+import { BillingCycle, SubscriptionStatus } from '@prisma/client';
 import { stripeService } from './stripe.service';
 import config from '../../../config';
 import { emailService } from '../../../common/services/email.service';
@@ -15,7 +15,7 @@ import type {
   PlanLimits,
 } from '../types/payments.types';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../../common/prisma';
 
 export const subscriptionService = {
   /**

@@ -12,7 +12,6 @@ import { Router, Request, Response } from 'express';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as crypto from 'crypto';
-import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../../common/guards/auth.middleware';
 import config from '../../config';
 import { documentEncryptionService } from '../../common/services/document-encryption.service';
@@ -20,8 +19,9 @@ import { logger } from '../../common/services/logger.service';
 import { cacheService, CACHE_PREFIXES } from '../../common/services/cache.service';
 import { downloadTrackingService } from '../../common/services/download-tracking.service';
 
+import { prisma } from '../../common/prisma';
+
 const router = Router();
-const prisma = new PrismaClient();
 
 // Tipo para datos de token de descarga
 interface DownloadTokenData {
@@ -227,8 +227,7 @@ router.get('/:token', async (req: Request, res: Response) => {
       fileStream.pipe(res);
     }
 
-    // Opcional: eliminar token después de uso único (más seguro)
-    // temporaryTokens.delete(token);
+    await cacheService.delete(token, { prefix: CACHE_PREFIXES.DOWNLOAD_TOKEN });
 
   } catch (error) {
     // Registrar acceso fallido
@@ -275,7 +274,7 @@ router.get('/document/:documentId', authMiddleware, async (req: Request, res: Re
     }
 
     // Generar token temporal y redirigir
-    const token = generateTemporaryDownloadToken(document.s3Key, 300, { userId });
+    const token = await generateTemporaryDownloadToken(document.s3Key, 300, { userId });
 
     // Redirigir al endpoint de descarga por token
     res.redirect(`/api/v1/secure-download/${token}`);

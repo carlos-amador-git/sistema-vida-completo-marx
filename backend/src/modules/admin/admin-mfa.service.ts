@@ -14,7 +14,6 @@
  * - Datos temporales (setup pendiente): Cache (Redis/Memoria)
  */
 
-import { PrismaClient } from '@prisma/client';
 import * as speakeasy from 'speakeasy';
 import * as QRCode from 'qrcode';
 import * as crypto from 'crypto';
@@ -25,7 +24,15 @@ import { logger } from '../../common/services/logger.service';
 // To respect per-request locale, pass the locale or req.t into each method.
 import i18next from '../../common/i18n/config';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
+
+/**
+ * Genera hash SHA-256 de un código de respaldo para almacenamiento seguro
+ */
+function hashBackupCode(code: string): string {
+  const normalized = code.toUpperCase().replace(/-/g, '');
+  return crypto.createHash('sha256').update(normalized).digest('hex');
+}
 
 // Nombre de la aplicación para mostrar en authenticators
 const APP_NAME = 'Sistema VIDA Admin';
@@ -206,7 +213,7 @@ class AdminMFAService {
       data: {
         mfaEnabled: true,
         mfaSecret: encryptSecret(pendingMFA.secret),
-        mfaBackupCodes: pendingMFA.backupCodes,
+        mfaBackupCodes: pendingMFA.backupCodes.map(c => hashBackupCode(c)),
         mfaEnabledAt: new Date(),
         mfaPendingSecret: null,
         mfaPendingExpires: null,
@@ -262,9 +269,9 @@ class AdminMFAService {
     }
 
     // Si no es TOTP válido, verificar si es código de respaldo
-    const normalizedCode = code.toUpperCase().replace(/-/g, '');
+    const hashedCode = hashBackupCode(code);
     const backupCodeIndex = admin.mfaBackupCodes.findIndex(
-      (bc: string) => bc.replace(/-/g, '') === normalizedCode && !bc.startsWith('USED:')
+      (bc: string) => bc === hashedCode
     );
 
     if (backupCodeIndex !== -1) {
@@ -353,7 +360,7 @@ class AdminMFAService {
 
     await prisma.adminUser.update({
       where: { id: adminId },
-      data: { mfaBackupCodes: newBackupCodes },
+      data: { mfaBackupCodes: newBackupCodes.map(c => hashBackupCode(c)) },
     });
 
     await this.logMFAAction(adminId, 'MFA_BACKUP_CODES_REGENERATED');

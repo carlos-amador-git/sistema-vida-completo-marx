@@ -1,10 +1,9 @@
 // src/modules/admin/admin-audit.service.ts
-import { PrismaClient } from '@prisma/client';
 import { adminAuthService } from './admin-auth.service';
 // TODO: CSV headers use the server default locale. To localise per-request, pass locale into exportAuditLogs.
 import i18next from '../../common/i18n/config';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 interface ListAuditLogsOptions {
   page?: number;

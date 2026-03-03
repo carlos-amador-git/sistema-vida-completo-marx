@@ -9,6 +9,26 @@ import { DocumentCategory } from '@prisma/client';
 
 const router = Router();
 
+// Magic bytes signatures for server-side file type validation
+const MAGIC_BYTES: Record<string, { offset: number; bytes: number[] }[]> = {
+  'application/pdf': [{ offset: 0, bytes: [0x25, 0x50, 0x44, 0x46] }], // %PDF
+  'image/jpeg': [{ offset: 0, bytes: [0xff, 0xd8, 0xff] }],
+  'image/png': [{ offset: 0, bytes: [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a] }],
+  'image/webp': [{ offset: 0, bytes: [0x52, 0x49, 0x46, 0x46] }, { offset: 8, bytes: [0x57, 0x45, 0x42, 0x50] }],
+  'image/heic': [{ offset: 4, bytes: [0x66, 0x74, 0x79, 0x70] }], // ftyp box
+  'application/msword': [{ offset: 0, bytes: [0xd0, 0xcf, 0x11, 0xe0] }], // OLE2
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [{ offset: 0, bytes: [0x50, 0x4b, 0x03, 0x04] }], // ZIP (OOXML)
+};
+
+function validateMagicBytes(buffer: Buffer, claimedMimeType: string): boolean {
+  const signatures = MAGIC_BYTES[claimedMimeType];
+  if (!signatures) return false;
+  return signatures.every(sig => {
+    if (buffer.length < sig.offset + sig.bytes.length) return false;
+    return sig.bytes.every((byte, i) => buffer[sig.offset + i] === byte);
+  });
+}
+
 // Configurar multer para almacenar en memoria
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -215,6 +235,14 @@ router.post(
         return res.status(400).json({
           success: false,
           error: { code: 'NO_FILE', message: req.t('api:documents.fileRequired') },
+        });
+      }
+
+      // Validate magic bytes (server-side file type verification)
+      if (!validateMagicBytes(req.file.buffer, req.file.mimetype)) {
+        return res.status(400).json({
+          success: false,
+          error: { code: 'INVALID_FILE_TYPE', message: 'El contenido del archivo no coincide con el tipo declarado.' },
         });
       }
 

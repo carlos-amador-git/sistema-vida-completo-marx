@@ -1,9 +1,8 @@
 // src/modules/admin/admin-health.service.ts
-import { PrismaClient } from '@prisma/client';
 import { adminAuthService } from './admin-auth.service';
 import config from '../../config';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 interface ServiceStatus {
   name: string;

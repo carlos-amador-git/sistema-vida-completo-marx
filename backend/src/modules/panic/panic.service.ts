@@ -1,12 +1,13 @@
 // src/modules/panic/panic.service.ts
 import { logger } from '../../common/services/logger.service';
-import { PrismaClient, PanicStatus } from '@prisma/client';
+import { encryptionV2 } from '../../common/services/encryption-v2.service';
+import { PanicStatus } from '@prisma/client';
 import { hospitalService, HospitalWithDistance } from '../hospital/hospital.service';
 import { notificationService } from '../notification/notification.service';
 import { pupService } from '../pup/pup.service';
 import { io } from '../../main';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 interface CreatePanicParams {
   userId: string;
@@ -108,7 +109,7 @@ class PanicService {
 
     const nearestHospital = nearbyHospitals[0]?.name || null;
 
-    // 4. Crear alerta en BD
+    // 4. Crear alerta en BD (con coordenadas cifradas V2)
     const panicAlert = await prisma.panicAlert.create({
       data: {
         userId,
@@ -118,6 +119,7 @@ class PanicService {
         message,
         status: PanicStatus.ACTIVE,
         nearbyHospitals: nearbyHospitals as any,
+        locationEnc: encryptionV2.encryptJSON({ lat: latitude, lon: longitude, accuracy }),
       },
     });
 

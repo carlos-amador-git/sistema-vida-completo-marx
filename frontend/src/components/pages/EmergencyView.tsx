@@ -107,7 +107,9 @@ export default function EmergencyView() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!qrToken) {
+    // MED-10: Validate QR token is UUID format before calling API
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!qrToken || !uuidRegex.test(qrToken)) {
       setError(t('view.error.invalid_token'));
       setStep('error');
       return;
@@ -336,7 +338,7 @@ export default function EmergencyView() {
   if (!emergencyData) return null;
 
   const categoryLabels: Record<string, string> = {
-    CLINICAL_HISTORY: t('view.documents.categories.CLINICAL_HISTORY'),
+    EMERGENCY_PROFILE: t('view.documents.categories.EMERGENCY_PROFILE'),
     LAB_RESULTS: t('view.documents.categories.LAB_RESULTS'),
     IMAGING: t('view.documents.categories.IMAGING'),
     PRESCRIPTIONS: t('view.documents.categories.PRESCRIPTIONS'),
@@ -508,10 +510,26 @@ export default function EmergencyView() {
           <div className="p-6">
             {emergencyData.directive.hasActiveDirective ? (
               <>
-                <div className="mb-4 flex items-center gap-2">
+                <div className="mb-4 flex flex-wrap items-center gap-2">
                   <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
                     ✓ {t('view.directive.active_label')}
                   </span>
+                  {/* CRIT-11/R-03: Legal status visual indicator */}
+                  {emergencyData.directive.legalStatus === 'LEGALLY_BINDING' ? (
+                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                      {t('view.directive.legal_binding')}
+                    </span>
+                  ) : emergencyData.directive.legalStatus === 'INFORMATIONAL' ? (
+                    <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      {t('view.directive.informational')}
+                    </span>
+                  ) : null}
                   {emergencyData.directive.validatedAt && (
                     <span className="text-sm text-gray-500">
                       {t('view.directive.validated_on')} {formatDate(emergencyData.directive.validatedAt)}
@@ -630,7 +648,7 @@ export default function EmergencyView() {
             <div className="divide-y divide-gray-100">
               {emergencyData.documents.map((doc) => {
                 const categoryColors: Record<string, string> = {
-                  CLINICAL_HISTORY: 'bg-blue-100 text-blue-700',
+                  EMERGENCY_PROFILE: 'bg-blue-100 text-blue-700',
                   LAB_RESULTS: 'bg-purple-100 text-purple-700',
                   IMAGING: 'bg-cyan-100 text-cyan-700',
                   PRESCRIPTIONS: 'bg-green-100 text-green-700',

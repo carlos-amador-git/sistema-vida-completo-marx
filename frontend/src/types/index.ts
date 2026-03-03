@@ -151,6 +151,8 @@ export interface EmergencyData {
     additionalNotes: string | null;
     documentUrl: string | null;
     validatedAt: string | null;
+    directiveType: string | null;
+    legalStatus: 'LEGALLY_BINDING' | 'INFORMATIONAL' | null;
   };
   donation: {
     isDonor: boolean;

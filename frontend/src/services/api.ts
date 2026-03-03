@@ -25,6 +25,7 @@ const api: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true, // Send httpOnly cookies with requests
 });
 
 // Interceptor para añadir token a las peticiones
@@ -44,34 +45,30 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    
-    // Si es 401 y no es un retry, intentar refresh
+
+    // Si es 401 y no es un retry, intentar refresh via httpOnly cookie
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (refreshToken) {
-          const response = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
-          const { tokens } = response.data.data;
-          
-          localStorage.setItem('accessToken', tokens.accessToken);
-          localStorage.setItem('refreshToken', tokens.refreshToken);
-          
-          if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
-          }
-          
-          return api(originalRequest);
+        // Refresh token is sent automatically via httpOnly cookie (withCredentials)
+        const response = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+        const { tokens } = response.data.data;
+
+        localStorage.setItem('accessToken', tokens.accessToken);
+
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
         }
+
+        return api(originalRequest);
       } catch (refreshError) {
         // Refresh falló, limpiar y redirigir a login
         localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
         window.location.href = '/login';
       }
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -97,8 +94,8 @@ export const authApi = {
   },
   
   async logout(): Promise<void> {
-    const refreshToken = localStorage.getItem('refreshToken');
-    await api.post('/auth/logout', { refreshToken });
+    // Refresh token is sent via httpOnly cookie automatically
+    await api.post('/auth/logout', {});
   },
   
   async getMe(): Promise<ApiResponse<{ user: User }>> {

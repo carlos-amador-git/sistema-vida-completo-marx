@@ -23,19 +23,19 @@ const API_BASE = import.meta.env.VITE_API_URL;
 
 // Almacenar tokens en localStorage
 const TOKEN_KEY = 'admin_access_token';
-const REFRESH_TOKEN_KEY = 'admin_refresh_token';
 
 export const getAdminToken = (): string | null => localStorage.getItem(TOKEN_KEY);
-export const getAdminRefreshToken = (): string | null => localStorage.getItem(REFRESH_TOKEN_KEY);
+// Admin refresh token now managed via httpOnly cookie
+export const getAdminRefreshToken = (): string | null => null;
 
-export const setAdminTokens = (accessToken: string, refreshToken: string) => {
+export const setAdminTokens = (accessToken: string, _refreshToken?: string) => {
   localStorage.setItem(TOKEN_KEY, accessToken);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+  // refreshToken now managed via httpOnly cookie
 };
 
 export const clearAdminTokens = () => {
   localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
+  // refreshToken cookie cleared by server on logout
 };
 
 // Fetch con autenticacion admin
@@ -57,6 +57,7 @@ async function adminFetch<T>(
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include', // Send httpOnly cookies
   });
 
   const data = await response.json();
@@ -101,12 +102,11 @@ export const adminLogin = async (
 };
 
 export const adminLogout = async (): Promise<void> => {
-  const refreshToken = getAdminRefreshToken();
-
   try {
+    // Refresh token sent via httpOnly cookie automatically
     await adminFetch('/admin/auth/logout', {
       method: 'POST',
-      body: JSON.stringify({ refreshToken }),
+      body: JSON.stringify({}),
     });
   } catch (error) {
     // Ignorar errores de logout
@@ -116,14 +116,13 @@ export const adminLogout = async (): Promise<void> => {
 };
 
 export const refreshAdminTokens = async (): Promise<boolean> => {
-  const refreshToken = getAdminRefreshToken();
-  if (!refreshToken) return false;
-
   try {
+    // Refresh token sent via httpOnly cookie automatically
     const response = await fetch(`${API_BASE}/admin/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+      credentials: 'include',
+      body: JSON.stringify({}),
     });
 
     const data = await response.json();

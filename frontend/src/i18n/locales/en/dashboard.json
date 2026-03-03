@@ -55,7 +55,7 @@
     "noDocuments": "You have no uploaded documents",
     "visible": "Visible",
     "categories": {
-      "CLINICAL_HISTORY": "History",
+      "EMERGENCY_PROFILE": "Emergency",
       "LAB_RESULTS": "Lab",
       "IMAGING": "Imaging",
       "PRESCRIPTIONS": "Prescription",

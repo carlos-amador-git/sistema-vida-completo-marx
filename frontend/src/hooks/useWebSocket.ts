@@ -63,7 +63,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       return;
     }
 
-    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000', {
+    const wsUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const socket = io(wsUrl, {
+      auth: {
+        token: localStorage.getItem('accessToken'),
+      },
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
@@ -82,6 +86,18 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       console.log('WebSocket desconectado');
       if (mountedRef.current) {
         setIsConnected(false);
+      }
+    });
+
+    socket.on('connect_error', (err) => {
+      console.warn('WebSocket error de conexion:', err.message);
+      // If the error is auth-related, try to reconnect with a fresh token from localStorage.
+      // The token may have been refreshed by the HTTP auth interceptor between attempts.
+      const authErrors = ['Authentication required', 'Invalid or expired token', 'Invalid token type'];
+      if (authErrors.some((msg) => err.message.includes(msg))) {
+        console.warn('WebSocket auth fallida — reintentando con token actualizado');
+        // Update auth token for the next reconnection attempt
+        socket.auth = { token: localStorage.getItem('accessToken') };
       }
     });
 

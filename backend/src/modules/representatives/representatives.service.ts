@@ -1,7 +1,8 @@
 // src/modules/representatives/representatives.service.ts
-import { PrismaClient, Representative } from '@prisma/client';
+import { Representative } from '@prisma/client';
+import { encryptionV2 } from '../../common/services/encryption-v2.service';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 interface RepresentativeInput {
   name: string;
@@ -76,6 +77,10 @@ class RepresentativesService {
         isDonorSpokesperson: input.isDonorSpokesperson ?? false,
         notifyOnEmergency: input.notifyOnEmergency ?? true,
         notifyOnAccess: input.notifyOnAccess ?? true,
+        // Campos cifrados V2
+        nameEnc: encryptionV2.encryptField(input.name),
+        phoneEnc: encryptionV2.encryptField(input.phone),
+        emailEnc: input.email ? encryptionV2.encryptField(input.email) : null,
       },
     });
     
@@ -98,17 +103,25 @@ class RepresentativesService {
       return null;
     }
     
+    const finalName = input.name ?? existing.name;
+    const finalPhone = input.phone ?? existing.phone;
+    const finalEmail = input.email !== undefined ? input.email : existing.email;
+
     const representative = await prisma.representative.update({
       where: { id: repId },
       data: {
-        name: input.name ?? existing.name,
-        phone: input.phone ?? existing.phone,
-        email: input.email !== undefined ? input.email : existing.email,
+        name: finalName,
+        phone: finalPhone,
+        email: finalEmail,
         relation: input.relation ?? existing.relation,
         priority: input.priority ?? existing.priority,
         isDonorSpokesperson: input.isDonorSpokesperson ?? existing.isDonorSpokesperson,
         notifyOnEmergency: input.notifyOnEmergency ?? existing.notifyOnEmergency,
         notifyOnAccess: input.notifyOnAccess ?? existing.notifyOnAccess,
+        // Campos cifrados V2
+        nameEnc: encryptionV2.encryptField(finalName),
+        phoneEnc: encryptionV2.encryptField(finalPhone),
+        emailEnc: finalEmail ? encryptionV2.encryptField(finalEmail) : null,
       },
     });
     

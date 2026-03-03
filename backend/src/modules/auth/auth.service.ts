@@ -1,17 +1,24 @@
 // src/modules/auth/auth.service.ts
-import { PrismaClient, User } from '@prisma/client';
+import { User } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import config from '../../config';
 import { generateSecureToken } from '../../common/utils/encryption';
+import { encryptionV2 } from '../../common/services/encryption-v2.service';
 import { securityMetrics } from '../../common/services/security-metrics.service';
 import { emailService } from '../../common/services/email.service';
 import { emailTemplates } from '../../common/services/email-templates.service';
 import { logger } from '../../common/services/logger.service';
 import { curpVerificationService } from '../../common/services/curp-verification.service';
+import { keyManagement } from '../../common/services/key-management.service';
+import { createHash } from 'crypto';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURACIÓN DE SEGURIDAD
@@ -113,7 +120,7 @@ class AuthService {
     const verificationToken = generateSecureToken(32);
     const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 horas
     
-    // Crear usuario
+    // Crear usuario (con campos cifrados V2 + blind indexes)
     const user = await prisma.user.create({
       data: {
         email: input.email.toLowerCase(),
@@ -123,6 +130,14 @@ class AuthService {
         phone: input.phone,
         dateOfBirth: input.dateOfBirth,
         sex: input.sex?.toUpperCase(),
+        // Campos cifrados V2
+        nameEnc: encryptionV2.encryptField(input.name),
+        phoneEnc: input.phone ? encryptionV2.encryptField(input.phone) : null,
+        curpEnc: encryptionV2.encryptField(input.curp.toUpperCase()),
+        dateOfBirthEnc: input.dateOfBirth ? encryptionV2.encryptField(input.dateOfBirth.toISOString()) : null,
+        // Blind indexes para búsqueda
+        emailBlindIndex: encryptionV2.generateBlindIndex(input.email),
+        curpBlindIndex: encryptionV2.generateCurpBlindIndex(input.curp),
         verificationToken,
         verificationExpires,
         // Crear perfil vacío
@@ -137,6 +152,11 @@ class AuthService {
       },
     });
     
+    // Provision per-user DEK (envelope encryption)
+    keyManagement.provisionUserDEK(user.id).catch(err => {
+      logger.error('Error provisioning DEK for user', err, { userId: user.id });
+    });
+
     // Generar tokens
     const tokens = await this.generateTokens(user);
 
@@ -188,7 +208,7 @@ class AuthService {
     await prisma.session.create({
       data: {
         userId: user.id,
-        refreshToken: tokens.refreshToken,
+        refreshToken: hashToken(tokens.refreshToken),
         ipAddress,
         userAgent,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días
@@ -225,7 +245,7 @@ class AuthService {
     
     // Buscar la sesión
     const session = await prisma.session.findUnique({
-      where: { refreshToken },
+      where: { refreshToken: hashToken(refreshToken) },
       include: { user: true },
     });
     
@@ -240,7 +260,7 @@ class AuthService {
     await prisma.session.update({
       where: { id: session.id },
       data: {
-        refreshToken: tokens.refreshToken,
+        refreshToken: hashToken(tokens.refreshToken),
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
     });
@@ -253,7 +273,7 @@ class AuthService {
    */
   async logout(refreshToken: string): Promise<void> {
     await prisma.session.deleteMany({
-      where: { refreshToken },
+      where: { refreshToken: hashToken(refreshToken) },
     });
   }
   

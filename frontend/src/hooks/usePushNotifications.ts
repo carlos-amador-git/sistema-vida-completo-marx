@@ -30,21 +30,30 @@ interface UsePushNotificationsReturn extends NotificationState {
 }
 
 const STORAGE_KEY = 'vida_notifications';
-const MAX_NOTIFICATIONS = 100;
+const MAX_NOTIFICATIONS = 20;
+const NOTIFICATION_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 // Generar ID único
 const generateId = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-// Cargar notificaciones del localStorage
+// Cargar notificaciones del sessionStorage (con TTL filter)
 const loadNotifications = (): VidaNotification[] => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = sessionStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return parsed.map((n: any) => ({
-        ...n,
-        createdAt: new Date(n.createdAt)
-      }));
+      const now = Date.now();
+      return parsed
+        .map((n: { id: string; type: string; title: string; body: string; data?: Record<string, unknown>; read: boolean; createdAt: string }) => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+          body: n.body,
+          data: n.data,
+          read: n.read,
+          createdAt: new Date(n.createdAt),
+        }))
+        .filter((n: VidaNotification) => now - n.createdAt.getTime() < NOTIFICATION_TTL_MS);
     }
   } catch (e) {
     console.error('Error loading notifications:', e);
@@ -52,12 +61,14 @@ const loadNotifications = (): VidaNotification[] => {
   return [];
 };
 
-// Guardar notificaciones en localStorage
+// Guardar notificaciones en sessionStorage
 const saveNotifications = (notifications: VidaNotification[]) => {
   try {
-    // Limitar cantidad de notificaciones almacenadas
-    const toSave = notifications.slice(0, MAX_NOTIFICATIONS);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    const now = Date.now();
+    const toSave = notifications
+      .filter(n => now - n.createdAt.getTime() < NOTIFICATION_TTL_MS)
+      .slice(0, MAX_NOTIFICATIONS);
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
   } catch (e) {
     console.error('Error saving notifications:', e);
   }

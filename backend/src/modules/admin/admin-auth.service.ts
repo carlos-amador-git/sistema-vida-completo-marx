@@ -1,12 +1,17 @@
 // src/modules/admin/admin-auth.service.ts
 import { logger } from '../../common/services/logger.service';
-import { PrismaClient, AdminRole } from '@prisma/client';
+import { AdminRole } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import config from '../../config';
 import { DEFAULT_PERMISSIONS_BY_ROLE } from '../../common/guards/admin-roles.guard';
+import { createHash } from 'crypto';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 interface AdminTokenPayload {
   adminId: string;
@@ -150,7 +155,7 @@ export class AdminAuthService {
     await prisma.adminSession.create({
       data: {
         adminId: admin.id,
-        refreshToken,
+        refreshToken: hashToken(refreshToken),
         userAgent,
         ipAddress,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 dias
@@ -185,7 +190,7 @@ export class AdminAuthService {
    */
   async logout(refreshToken: string, adminId: string): Promise<void> {
     const session = await prisma.adminSession.findUnique({
-      where: { refreshToken },
+      where: { refreshToken: hashToken(refreshToken) },
     });
 
     if (session && session.adminId === adminId) {
@@ -225,7 +230,7 @@ export class AdminAuthService {
 
     // Verificar sesion existe
     const session = await prisma.adminSession.findUnique({
-      where: { refreshToken },
+      where: { refreshToken: hashToken(refreshToken) },
       include: { admin: true },
     });
 
@@ -274,7 +279,7 @@ export class AdminAuthService {
     await prisma.adminSession.update({
       where: { id: session.id },
       data: {
-        refreshToken: newRefreshToken,
+        refreshToken: hashToken(newRefreshToken),
         ipAddress,
         userAgent,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -342,9 +347,10 @@ export class AdminAuthService {
       throw { code: 'INVALID_PASSWORD', message: 'Contrasena actual incorrecta', status: 400 };
     }
 
-    // Validar nueva contrasena
-    if (newPassword.length < 8) {
-      throw { code: 'WEAK_PASSWORD', message: 'La contrasena debe tener al menos 8 caracteres', status: 400 };
+    // Validar nueva contrasena — requisitos estrictos para admin
+    const adminPasswordError = this.validateAdminPassword(newPassword);
+    if (adminPasswordError) {
+      throw { code: 'WEAK_PASSWORD', message: adminPasswordError, status: 400 };
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
@@ -389,6 +395,20 @@ export class AdminAuthService {
   }
 
   /**
+   * Valida contraseña de administrador (requisitos más estrictos)
+   * Mínimo 12 caracteres + mayúscula + minúscula + número + carácter especial
+   */
+  private validateAdminPassword(password: string): string | null {
+    const errors: string[] = [];
+    if (password.length < 12) errors.push('mínimo 12 caracteres');
+    if (!/[A-Z]/.test(password)) errors.push('al menos una mayúscula');
+    if (!/[a-z]/.test(password)) errors.push('al menos una minúscula');
+    if (!/[0-9]/.test(password)) errors.push('al menos un número');
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(password)) errors.push('al menos un carácter especial');
+    return errors.length > 0 ? `Contraseña de admin debe tener: ${errors.join(', ')}` : null;
+  }
+
+  /**
    * Crea un nuevo administrador (solo super admin)
    */
   async createAdmin(
@@ -410,6 +430,12 @@ export class AdminAuthService {
 
     if (existing) {
       throw { code: 'EMAIL_EXISTS', message: 'El email ya esta registrado', status: 400 };
+    }
+
+    // Validar contraseña de admin
+    const passwordError = this.validateAdminPassword(data.password);
+    if (passwordError) {
+      throw { code: 'WEAK_PASSWORD', message: passwordError, status: 400 };
     }
 
     const passwordHash = await bcrypt.hash(data.password, 12);

@@ -63,21 +63,12 @@ class DocumentEncryptionService {
 
   /**
    * Deriva una clave única para cada documento
-   * Usa HKDF (HMAC-based Key Derivation Function)
+   * Usa HKDF nativo (RFC 5869) via crypto.hkdfSync
    */
   private deriveDocumentKey(salt: Buffer, context: string): Buffer {
-    // HKDF-Extract
-    const prk = crypto.createHmac('sha256', salt)
-      .update(this.masterKey)
-      .digest();
-
-    // HKDF-Expand
-    const info = Buffer.from(context);
-    const okm = crypto.createHmac('sha256', prk)
-      .update(Buffer.concat([info, Buffer.from([1])]))
-      .digest();
-
-    return okm;
+    return Buffer.from(
+      crypto.hkdfSync('sha256', this.masterKey, salt, Buffer.from(context), 32)
+    );
   }
 
   /**

@@ -8,6 +8,16 @@ import { adminAuthMiddleware } from '../../common/guards/admin-auth.middleware';
 import { requireSuperAdmin } from '../../common/guards/admin-roles.guard';
 import { securityMetrics } from '../../common/services/security-metrics.service';
 import { logger } from '../../common/services/logger.service';
+import { setAdminRefreshTokenCookie, clearAdminRefreshTokenCookie, getAdminRefreshToken } from '../../common/utils/auth-cookies';
+import {
+  zodValidate,
+  adminLoginSchema,
+  adminMFAVerifySchema,
+  adminChangePasswordSchema,
+  createAdminSchema,
+  updateAdminSchema,
+  mfaCodeSchema,
+} from './admin.schemas';
 
 const router = Router();
 
@@ -99,23 +109,11 @@ setInterval(() => {
  * 3. Usuario envía mfaToken + code a /login/mfa
  * 4. Si es válido, retorna tokens de acceso
  */
-router.post('/login', adminLoginLimiter, async (req: Request, res: Response) => {
+router.post('/login', adminLoginLimiter, zodValidate(adminLoginSchema), async (req: Request, res: Response) => {
   const ip = req.ip || 'unknown';
-  const { email } = req.body;
+  const { email, password } = req.body;
 
   try {
-    const { password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_FIELDS',
-          message: req.t('api:admin.login.missingFields'),
-        },
-      });
-    }
-
     const userAgent = req.headers['user-agent'];
 
     // Paso 1: Verificar credenciales
@@ -150,6 +148,9 @@ router.post('/login', adminLoginLimiter, async (req: Request, res: Response) => 
     securityMetrics.recordSuccessfulLogin(ip, `admin:${result.admin.id}`);
     logger.info('Admin login exitoso', { adminId: result.admin.id, email, ip });
 
+    // Set admin refresh token as httpOnly cookie
+    setAdminRefreshTokenCookie(res, result.refreshToken);
+
     res.json({
       success: true,
       mfaRequired: false,
@@ -174,21 +175,11 @@ router.post('/login', adminLoginLimiter, async (req: Request, res: Response) => 
  * POST /api/v1/admin/auth/login/mfa
  * Completa el login con código MFA
  */
-router.post('/login/mfa', mfaLimiter, async (req: Request, res: Response) => {
+router.post('/login/mfa', mfaLimiter, zodValidate(adminMFAVerifySchema), async (req: Request, res: Response) => {
   const ip = req.ip || 'unknown';
 
   try {
     const { mfaToken, code } = req.body;
-
-    if (!mfaToken || !code) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_FIELDS',
-          message: req.t('api:admin.login.mfa.missingFields'),
-        },
-      });
-    }
 
     // Verificar token temporal
     const pendingMFA = pendingMFATokens.get(mfaToken);
@@ -254,6 +245,9 @@ router.post('/login/mfa', mfaLimiter, async (req: Request, res: Response) => {
     securityMetrics.recordSuccessfulLogin(ip, `admin:${pendingMFA.adminId}`);
     logger.info('Admin MFA login exitoso', { adminId: pendingMFA.adminId, email: pendingMFA.email, ip });
 
+    // Set admin refresh token as httpOnly cookie
+    setAdminRefreshTokenCookie(res, refreshToken);
+
     res.json({
       success: true,
       data: {
@@ -286,19 +280,14 @@ router.post('/login/mfa', mfaLimiter, async (req: Request, res: Response) => {
  */
 router.post('/logout', adminAuthMiddleware, async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = getAdminRefreshToken(req);
 
-    if (!refreshToken) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_TOKEN',
-          message: req.t('api:admin.logout.missingToken'),
-        },
-      });
+    if (refreshToken) {
+      await adminAuthService.logout(refreshToken, req.adminId!);
     }
 
-    await adminAuthService.logout(refreshToken, req.adminId!);
+    // Clear admin refresh token cookie
+    clearAdminRefreshTokenCookie(res);
 
     res.json({
       success: true,
@@ -322,7 +311,7 @@ router.post('/logout', adminAuthMiddleware, async (req: Request, res: Response) 
  */
 router.post('/refresh', async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken = getAdminRefreshToken(req);
 
     if (!refreshToken) {
       return res.status(400).json({
@@ -338,6 +327,9 @@ router.post('/refresh', async (req: Request, res: Response) => {
     const userAgent = req.headers['user-agent'];
 
     const result = await adminAuthService.refreshTokens(refreshToken, ipAddress, userAgent);
+
+    // Set new admin refresh token as httpOnly cookie
+    setAdminRefreshTokenCookie(res, result.refreshToken);
 
     res.json({
       success: true,
@@ -383,20 +375,9 @@ router.get('/me', adminAuthMiddleware, async (req: Request, res: Response) => {
  * POST /api/v1/admin/auth/change-password
  * Cambia la contrasena del admin
  */
-router.post('/change-password', adminAuthMiddleware, async (req: Request, res: Response) => {
+router.post('/change-password', adminAuthMiddleware, zodValidate(adminChangePasswordSchema), async (req: Request, res: Response) => {
   try {
     const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_FIELDS',
-          message: req.t('api:admin.changePassword.missingFields'),
-        },
-      });
-    }
-
     const ipAddress = req.ip || req.connection.remoteAddress;
 
     await adminAuthService.changePassword(req.adminId!, currentPassword, newPassword, ipAddress);
@@ -476,19 +457,9 @@ router.post('/mfa/setup', adminAuthMiddleware, async (req: Request, res: Respons
  * POST /api/v1/admin/auth/mfa/verify
  * Verifica el código TOTP y activa MFA
  */
-router.post('/mfa/verify', adminAuthMiddleware, async (req: Request, res: Response) => {
+router.post('/mfa/verify', adminAuthMiddleware, zodValidate(mfaCodeSchema), async (req: Request, res: Response) => {
   try {
     const { code } = req.body;
-
-    if (!code) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_CODE',
-          message: req.t('api:admin.mfa.missingCode'),
-        },
-      });
-    }
 
     await adminMFAService.verifyAndEnableMFA(req.adminId!, code);
 
@@ -512,19 +483,9 @@ router.post('/mfa/verify', adminAuthMiddleware, async (req: Request, res: Respon
  * POST /api/v1/admin/auth/mfa/disable
  * Deshabilita MFA (requiere código actual)
  */
-router.post('/mfa/disable', adminAuthMiddleware, async (req: Request, res: Response) => {
+router.post('/mfa/disable', adminAuthMiddleware, zodValidate(mfaCodeSchema), async (req: Request, res: Response) => {
   try {
     const { code } = req.body;
-
-    if (!code) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_CODE',
-          message: req.t('api:admin.mfa.disableMissingCode'),
-        },
-      });
-    }
 
     await adminMFAService.disableMFA(req.adminId!, code);
 
@@ -548,19 +509,9 @@ router.post('/mfa/disable', adminAuthMiddleware, async (req: Request, res: Respo
  * POST /api/v1/admin/auth/mfa/backup-codes
  * Regenera códigos de respaldo (requiere código actual)
  */
-router.post('/mfa/backup-codes', adminAuthMiddleware, async (req: Request, res: Response) => {
+router.post('/mfa/backup-codes', adminAuthMiddleware, zodValidate(mfaCodeSchema), async (req: Request, res: Response) => {
   try {
     const { code } = req.body;
-
-    if (!code) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_CODE',
-          message: req.t('api:admin.mfa.backupCodesMissingCode'),
-        },
-      });
-    }
 
     const backupCodes = await adminMFAService.regenerateBackupCodes(req.adminId!, code);
 
@@ -611,20 +562,9 @@ router.get('/admins', adminAuthMiddleware, requireSuperAdmin, async (req: Reques
  * POST /api/v1/admin/auth/admins
  * Crea un nuevo administrador
  */
-router.post('/admins', adminAuthMiddleware, requireSuperAdmin, async (req: Request, res: Response) => {
+router.post('/admins', adminAuthMiddleware, requireSuperAdmin, zodValidate(createAdminSchema), async (req: Request, res: Response) => {
   try {
     const { email, password, name, role, permissions, isSuperAdmin } = req.body;
-
-    if (!email || !password || !name || !role) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_FIELDS',
-          message: req.t('api:admin.admins.missingFields'),
-        },
-      });
-    }
-
     const ipAddress = req.ip || req.connection.remoteAddress;
 
     const admin = await adminAuthService.createAdmin(
@@ -653,7 +593,7 @@ router.post('/admins', adminAuthMiddleware, requireSuperAdmin, async (req: Reque
  * PUT /api/v1/admin/auth/admins/:id
  * Actualiza un administrador
  */
-router.put('/admins/:id', adminAuthMiddleware, requireSuperAdmin, async (req: Request, res: Response) => {
+router.put('/admins/:id', adminAuthMiddleware, requireSuperAdmin, zodValidate(updateAdminSchema), async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { name, role, permissions, isActive } = req.body;

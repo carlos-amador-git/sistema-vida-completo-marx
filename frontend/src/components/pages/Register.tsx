@@ -21,7 +21,8 @@ const getRegisterSchema = (t: TFunction) => z.object({
     .min(8, t('validation.passwordMinLength'))
     .regex(/[A-Z]/, t('validation.passwordUppercase'))
     .regex(/[a-z]/, t('validation.passwordLowercase'))
-    .regex(/[0-9]/, t('validation.passwordNumber')),
+    .regex(/[0-9]/, t('validation.passwordNumber'))
+    .regex(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, t('validation.passwordSpecial')),
   confirmPassword: z.string(),
   acceptTerms: z.boolean().refine(val => val === true, t('validation.termsRequired')),
 }).refine(data => data.password === data.confirmPassword, {
@@ -53,6 +54,7 @@ export default function Register() {
     { regex: /[A-Z]/, text: t('passwordStrength.uppercase') },
     { regex: /[a-z]/, text: t('passwordStrength.lowercase') },
     { regex: /[0-9]/, text: t('passwordStrength.number') },
+    { regex: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, text: t('passwordStrength.special') },
   ], [t]);
 
   const {
@@ -264,11 +266,11 @@ export default function Register() {
           />
           <label htmlFor="acceptTerms" className="text-sm text-gray-600">
             {t('register.termsAccept')}{' '}
-            <a href="#" className="text-vida-600 hover:underline">
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-vida-600 hover:underline">
               {t('register.termsLink')}
             </a>{' '}
             {t('register.termsAnd')}{' '}
-            <a href="#" className="text-vida-600 hover:underline">
+            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-vida-600 hover:underline">
               {t('register.privacyLink')}
             </a>
           </label>

@@ -9,6 +9,21 @@ import { adminHealthService } from './admin-health.service';
 import { adminInstitutionsService } from './admin-institutions.service';
 import { adminInsuranceService } from './admin-insurance.service';
 import { logger } from '../../common/services/logger.service';
+import {
+  zodValidate,
+  updateUserStatusSchema,
+  forceLogoutSchema,
+  createInstitutionSchema,
+  updateInstitutionSchema,
+  verifyInstitutionSchema,
+  createInsuranceSchema,
+  updateInsuranceSchema,
+  verifyInsuranceSchema,
+  toggleInsuranceStatusSchema,
+  insurancePlanSchema,
+  auditExportQuerySchema,
+  cleanupSchema,
+} from './admin.schemas';
 
 const router = Router();
 
@@ -166,16 +181,10 @@ router.get('/users/:id',
  */
 router.put('/users/:id/status',
   requirePermission(ADMIN_PERMISSIONS.USERS_WRITE),
+  zodValidate(updateUserStatusSchema),
   async (req: Request, res: Response) => {
     try {
       const { isActive, reason } = req.body;
-
-      if (isActive === undefined) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'MISSING_FIELD', message: 'isActive es requerido' },
-        });
-      }
 
       const user = await adminUsersService.updateUserStatus(
         req.params.id,
@@ -222,6 +231,7 @@ router.get('/users/:id/activity',
  */
 router.post('/users/:id/force-logout',
   requirePermission(ADMIN_PERMISSIONS.USERS_WRITE),
+  zodValidate(forceLogoutSchema),
   async (req: Request, res: Response) => {
     try {
       const { reason } = req.body;
@@ -407,21 +417,15 @@ router.get('/audit/panic-alerts',
  */
 router.get('/audit/export',
   requirePermission(ADMIN_PERMISSIONS.AUDIT_EXPORT),
+  zodValidate(auditExportQuerySchema, 'query'),
   async (req: Request, res: Response) => {
     try {
-      const { type, startDate, endDate, format } = req.query;
-
-      if (!type || !['user', 'admin', 'emergency'].includes(type as string)) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'INVALID_TYPE', message: 'Tipo invalido. Use: user, admin, emergency' },
-        });
-      }
+      const { type, startDate, endDate, format } = req.query as { type: string; startDate?: string; endDate?: string; format?: string };
 
       const result = await adminAuditService.exportAuditLogs({
         type: type as 'user' | 'admin' | 'emergency',
-        startDate: startDate ? new Date(startDate as string) : undefined,
-        endDate: endDate ? new Date(endDate as string) : undefined,
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
         format: (format as 'csv' | 'json') || 'csv',
       }, req.adminId!);
 
@@ -553,6 +557,7 @@ router.get('/institutions/:id',
  */
 router.post('/institutions',
   requirePermission(ADMIN_PERMISSIONS.INSTITUTIONS_WRITE),
+  zodValidate(createInstitutionSchema),
   async (req: Request, res: Response) => {
     try {
       const institution = await adminInstitutionsService.createInstitution(req.body, req.adminId!);
@@ -573,6 +578,7 @@ router.post('/institutions',
  */
 router.put('/institutions/:id',
   requirePermission(ADMIN_PERMISSIONS.INSTITUTIONS_WRITE),
+  zodValidate(updateInstitutionSchema),
   async (req: Request, res: Response) => {
     try {
       const institution = await adminInstitutionsService.updateInstitution(
@@ -597,16 +603,10 @@ router.put('/institutions/:id',
  */
 router.put('/institutions/:id/verify',
   requirePermission(ADMIN_PERMISSIONS.INSTITUTIONS_WRITE),
+  zodValidate(verifyInstitutionSchema),
   async (req: Request, res: Response) => {
     try {
       const { verified } = req.body;
-
-      if (verified === undefined) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'MISSING_FIELD', message: 'verified es requerido' },
-        });
-      }
 
       const institution = await adminInstitutionsService.verifyInstitution(
         req.params.id,
@@ -738,6 +738,7 @@ router.get('/insurance/:id',
  */
 router.post('/insurance',
   requirePermission(ADMIN_PERMISSIONS.INSTITUTIONS_WRITE),
+  zodValidate(createInsuranceSchema),
   async (req: Request, res: Response) => {
     try {
       const insurance = await adminInsuranceService.createInsurance(req.adminId!, req.body);
@@ -758,6 +759,7 @@ router.post('/insurance',
  */
 router.put('/insurance/:id',
   requirePermission(ADMIN_PERMISSIONS.INSTITUTIONS_WRITE),
+  zodValidate(updateInsuranceSchema),
   async (req: Request, res: Response) => {
     try {
       const insurance = await adminInsuranceService.updateInsurance(req.adminId!, req.params.id, req.body);
@@ -778,16 +780,10 @@ router.put('/insurance/:id',
  */
 router.put('/insurance/:id/verify',
   requirePermission(ADMIN_PERMISSIONS.INSTITUTIONS_WRITE),
+  zodValidate(verifyInsuranceSchema),
   async (req: Request, res: Response) => {
     try {
       const { verified } = req.body;
-
-      if (verified === undefined) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'MISSING_FIELD', message: 'verified es requerido' },
-        });
-      }
 
       const insurance = await adminInsuranceService.verifyInsurance(req.adminId!, req.params.id, verified);
       res.json({ success: true, data: insurance });
@@ -807,16 +803,10 @@ router.put('/insurance/:id/verify',
  */
 router.put('/insurance/:id/status',
   requirePermission(ADMIN_PERMISSIONS.INSTITUTIONS_WRITE),
+  zodValidate(toggleInsuranceStatusSchema),
   async (req: Request, res: Response) => {
     try {
       const { isActive } = req.body;
-
-      if (isActive === undefined) {
-        return res.status(400).json({
-          success: false,
-          error: { code: 'MISSING_FIELD', message: 'isActive es requerido' },
-        });
-      }
 
       const insurance = await adminInsuranceService.toggleInsuranceStatus(req.adminId!, req.params.id, isActive);
       res.json({ success: true, data: insurance });
@@ -836,6 +826,7 @@ router.put('/insurance/:id/status',
  */
 router.post('/insurance/:id/plans',
   requirePermission(ADMIN_PERMISSIONS.INSTITUTIONS_WRITE),
+  zodValidate(insurancePlanSchema),
   async (req: Request, res: Response) => {
     try {
       const plan = await adminInsuranceService.addPlan(req.adminId!, req.params.id, req.body);
@@ -856,6 +847,7 @@ router.post('/insurance/:id/plans',
  */
 router.put('/insurance/plans/:planId',
   requirePermission(ADMIN_PERMISSIONS.INSTITUTIONS_WRITE),
+  zodValidate(insurancePlanSchema.partial()),
   async (req: Request, res: Response) => {
     try {
       const plan = await adminInsuranceService.updatePlan(req.adminId!, req.params.planId, req.body);
@@ -1006,9 +998,10 @@ router.get('/health/performance',
  */
 router.post('/health/cleanup',
   requireSuperAdmin,
+  zodValidate(cleanupSchema),
   async (req: Request, res: Response) => {
     try {
-      const { dryRun = true } = req.body;
+      const { dryRun } = req.body;
       const result = await adminHealthService.runCleanup(req.adminId!, dryRun);
       res.json({ success: true, data: result });
     } catch (error: any) {

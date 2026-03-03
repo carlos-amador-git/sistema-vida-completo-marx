@@ -11,3 +11,5 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+declare const __DEMO_ENABLED__: boolean;

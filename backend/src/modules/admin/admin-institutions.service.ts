@@ -1,8 +1,8 @@
 // src/modules/admin/admin-institutions.service.ts
-import { PrismaClient, InstitutionType, AttentionLevel } from '@prisma/client';
+import { InstitutionType, AttentionLevel } from '@prisma/client';
 import { adminAuthService } from './admin-auth.service';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 interface ListInstitutionsOptions {
   page?: number;

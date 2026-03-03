@@ -1,5 +1,5 @@
 // src/modules/emergency/emergency.service.ts
-import { PrismaClient, EmergencyAccess } from '@prisma/client';
+import { EmergencyAccess } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { pupService } from '../pup/pup.service';
 import { directivesService } from '../directives/directives.service';
@@ -11,7 +11,7 @@ import { logger } from '../../common/services/logger.service';
 import { io } from '../../main';
 import { getAlertMessageForTrustLevel } from '../../common/utils/credential-validation';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 // Tipos
 interface EmergencyAccessInput {
@@ -73,6 +73,9 @@ interface EmergencyDataResponse {
     additionalNotes: string | null;
     documentUrl: string | null;
     validatedAt: Date | null;
+    directiveType: string | null;
+    legalStatus: 'LEGALLY_BINDING' | 'INFORMATIONAL' | null;
+    palliativeCareOnly: boolean | null;
   };
   donation: {
     isDonor: boolean;
@@ -238,6 +241,9 @@ class EmergencyService {
         additionalNotes: null,
         documentUrl: null,
         validatedAt: null,
+        directiveType: null,
+        legalStatus: null,
+        palliativeCareOnly: null,
       },
       donation: {
         isDonor: profileData.isDonor,

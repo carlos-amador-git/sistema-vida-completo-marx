@@ -1,11 +1,11 @@
 // src/modules/documents/documents.service.ts
-import { PrismaClient, DocumentCategory, MedicalDocument } from '@prisma/client';
+import { DocumentCategory, MedicalDocument } from '@prisma/client';
 import { s3Service } from '../../common/services/s3.service';
 import { documentEncryptionService } from '../../common/services/document-encryption.service';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '../../common/services/logger.service';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 interface CreateDocumentInput {
   title: string;
@@ -36,7 +36,7 @@ interface DocumentResponse {
 
 // Categorias con sus etiquetas en español
 export const CATEGORY_LABELS: Record<DocumentCategory, string> = {
-  CLINICAL_HISTORY: 'Historial Clínico',
+  EMERGENCY_PROFILE: 'Perfil de Emergencia',
   LAB_RESULTS: 'Resultados de Laboratorio',
   IMAGING: 'Estudios de Imagen',
   PRESCRIPTIONS: 'Recetas Médicas',

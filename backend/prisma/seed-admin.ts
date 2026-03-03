@@ -2,8 +2,33 @@
 // Seed de datos de prueba para el panel de administracion
 import { PrismaClient, AdminRole, DirectiveStatus, DirectiveType, PanicStatus, InstitutionType, AttentionLevel, StaffRole, InsuranceType } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 
 const prisma = new PrismaClient();
+
+// Usar ENCRYPTION_KEY del .env — requerido para cifrar datos médicos
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+if (!ENCRYPTION_KEY) {
+  console.error('ENCRYPTION_KEY is required for seed-admin');
+  process.exit(1);
+}
+
+function encryptForSeed(plaintext: string): string {
+  const key = Buffer.from(ENCRYPTION_KEY!, 'hex');
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  let encrypted = cipher.update(plaintext, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  const authTag = cipher.getAuthTag();
+  return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
+}
+
+function encryptJSON(data: any): string {
+  return encryptForSeed(JSON.stringify(data));
+}
 
 // Datos mexicanos realistas
 const NOMBRES_HOMBRES = [
@@ -659,9 +684,9 @@ async function main() {
         data: {
           userId: user.id,
           bloodType: randomElement(TIPOS_SANGRE),
-          allergiesEnc: JSON.stringify(randomElements(ALERGIAS, 0, 3)),
-          conditionsEnc: JSON.stringify(randomElements(CONDICIONES, 0, 2)),
-          medicationsEnc: JSON.stringify(randomElements(MEDICAMENTOS, 0, 3)),
+          allergiesEnc: encryptJSON(randomElements(ALERGIAS, 0, 3)),
+          conditionsEnc: encryptJSON(randomElements(CONDICIONES, 0, 2)),
+          medicationsEnc: encryptJSON(randomElements(MEDICAMENTOS, 0, 3)),
           insuranceProvider: aseguradoraAleatoria?.shortName || null,
           insurancePolicy: tieneSeguro ? `POL-${Math.floor(100000 + Math.random() * 900000)}` : null,
           insurancePhone: aseguradoraAleatoria ? `800${String(1000000 + Math.floor(Math.random() * 9000000)).slice(0, 7)}` : null,

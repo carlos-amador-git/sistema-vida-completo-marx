@@ -12,11 +12,9 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { TFunction } from 'i18next';
 
-// Verificar si el modo demo está habilitado (solo en desarrollo)
-const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO_MODE !== 'false';
-
-// Usuarios demo para presentaciones (solo visibles si DEMO_ENABLED)
-const DEMO_USERS = [
+// Credenciales demo eliminadas del bundle de producción via Vite tree-shaking
+// cuando VITE_ENABLE_DEMO_MODE !== 'true' (controlado por __DEMO_ENABLED__ en vite.config.ts)
+const DEMO_USERS = __DEMO_ENABLED__ ? [
   {
     email: 'demo@sistemavida.mx',
     password: 'Demo123!',
@@ -25,7 +23,7 @@ const DEMO_USERS = [
     plan: 'Premium',
     color: 'from-emerald-500 to-teal-500',
   },
-];
+] : null;
 
 const getLoginSchema = (t: TFunction) => z.object({
   email: z.string().email(t('validation.invalidEmail')),
@@ -107,7 +105,7 @@ export default function Login() {
   };
 
   // Login con usuario demo
-  const handleDemoLogin = async (demoUser: typeof DEMO_USERS[0]) => {
+  const handleDemoLogin = async (demoUser: { email: string; password: string; name: string; description: string; plan: string; color: string }) => {
     setIsLoading(true);
     try {
       await login({ email: demoUser.email, password: demoUser.password });
@@ -182,8 +180,8 @@ export default function Login() {
         </p>
       </div>
 
-      {/* Sección de Demo - Acceso Rápido (solo visible si DEMO_ENABLED) */}
-      {DEMO_ENABLED && (
+      {/* Sección de Demo - Acceso Rápido (solo visible si __DEMO_ENABLED__) */}
+      {__DEMO_ENABLED__ && DEMO_USERS && (
         <>
           <div className="mb-8 p-4 bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl border border-violet-200">
             <div className="flex items-center gap-2 mb-3">

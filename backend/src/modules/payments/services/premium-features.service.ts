@@ -1,8 +1,7 @@
 // src/modules/payments/services/premium-features.service.ts
-import { PrismaClient, SubscriptionStatus } from '@prisma/client';
+import { SubscriptionStatus } from '@prisma/client';
 import type { PlanFeatures, PlanLimits } from '../types/payments.types';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../common/prisma';
 
 // Modo Demo - simula Premium para todos los usuarios
 const DEMO_PREMIUM_MODE = process.env.DEMO_PREMIUM_MODE === 'true';
@@ -397,7 +396,7 @@ export const premiumFeaturesService = {
         donorPreferences: false,
         nom151Seal: false,
         smsNotifications: false,
-        exportData: false,
+        exportData: true, // Free per LFPDPPP data portability right
         prioritySupport: false,
       },
       limits: {

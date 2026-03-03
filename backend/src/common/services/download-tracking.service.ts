@@ -10,14 +10,13 @@
  * - Alertas de seguridad
  */
 
-import { PrismaClient } from '@prisma/client';
 import { logger } from './logger.service';
 import { cacheService, CACHE_PREFIXES } from './cache.service';
 import { emailService } from './email.service';
 import { emailTemplates } from './email-templates.service';
 import config from '../../config';
 
-const prisma = new PrismaClient();
+import { prisma } from '../prisma';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TIPOS

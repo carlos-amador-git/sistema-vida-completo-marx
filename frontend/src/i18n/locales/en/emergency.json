@@ -89,6 +89,8 @@
       "additional_notes": "Additional notes:",
       "yes": "YES",
       "no": "NO",
+      "legal_binding": "Notarized document",
+      "informational": "No legal validity — informational document",
       "no_directive": "Patient has no advance directive on record"
     },
     "donation": {
@@ -100,7 +102,7 @@
       "section_title": "Medical Documents",
       "view": "View",
       "categories": {
-        "CLINICAL_HISTORY": "Clinical History",
+        "EMERGENCY_PROFILE": "Emergency Profile",
         "LAB_RESULTS": "Lab Results",
         "IMAGING": "Imaging",
         "PRESCRIPTIONS": "Prescription",

@@ -9,18 +9,18 @@ export const config = {
 
   // Base de datos
   database: {
-    url: process.env.DATABASE_URL || 'postgres://postgres:KQqiN935P8ShyTDxYIgJRvOE0udE0itRCZDWHiboOpaPmVbHAdhxJcDnvKcPMOTg@pk4wo4s0goco8wgcgwwwkw40:5432/postgres',
+    url: process.env.DATABASE_URL!,
   },
 
   // Redis
   redis: {
-    url: process.env.REDIS_URL || 'redis://default:SfUbrDH4lrqeLpjvWSvsSM4b1I0Gb9Fcsdh4GbqTFV88WemfJITmGnE4DP5hk51X@yc8004w8gsckcg404goc8wss:6379/0',
+    url: process.env.REDIS_URL!,
   },
 
   // JWT - NOTA: Estas variables son validadas en env-validation.ts antes de cargar este archivo
   jwt: {
     secret: process.env.JWT_SECRET!, // Requerido - validado al iniciar
-    adminSecret: process.env.JWT_ADMIN_SECRET || process.env.JWT_SECRET!, // Usa JWT_SECRET como fallback en desarrollo
+    adminSecret: process.env.JWT_ADMIN_SECRET || process.env.JWT_SECRET!, // Validado en env-validation.ts — debe ser diferente en producción
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },

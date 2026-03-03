@@ -20,11 +20,9 @@ import toast, { Toaster } from 'react-hot-toast';
 import LanguageSwitcher from '../LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 
-// Verificar si el modo demo está habilitado (solo en desarrollo)
-const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO_MODE !== 'false';
-
-// Usuarios demo para presentaciones (solo visibles si DEMO_ENABLED)
-const DEMO_ACCOUNTS = {
+// Credenciales demo eliminadas del bundle de producción via Vite tree-shaking
+// cuando VITE_ENABLE_DEMO_MODE !== 'true' (controlado por __DEMO_ENABLED__ en vite.config.ts)
+const DEMO_ACCOUNTS = __DEMO_ENABLED__ ? {
   user: {
     email: 'demo@sistemavida.mx',
     password: 'Demo123!',
@@ -39,7 +37,7 @@ const DEMO_ACCOUNTS = {
     type: 'Panel Admin',
     redirect: '/admin/dashboard',
   },
-};
+} : null;
 
 const featureIcons = [FileText, QrCode, Users, Shield];
 
@@ -61,6 +59,7 @@ export default function Landing() {
   }));
 
   const handleDemoLogin = async (type: 'user' | 'admin') => {
+    if (!DEMO_ACCOUNTS) return;
     setIsLoading(type);
     const account = DEMO_ACCOUNTS[type];
 
@@ -69,7 +68,7 @@ export default function Landing() {
         const response = await authApi.login({ email: account.email, password: account.password });
         if (response.success && response.data) {
           localStorage.setItem('accessToken', response.data.tokens.accessToken);
-          localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
+          // refreshToken set as httpOnly cookie by server
           toast.success(t('toast.welcome', { name: account.name }));
           navigate(account.redirect);
         }
@@ -109,8 +108,8 @@ export default function Landing() {
         </nav>
       </header>
 
-      {/* Banner de Demo Flotante (solo visible si DEMO_ENABLED) */}
-      {DEMO_ENABLED && (
+      {/* Banner de Demo Flotante (solo visible si __DEMO_ENABLED__) */}
+      {__DEMO_ENABLED__ && (
         <div className="fixed bottom-4 right-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl border border-violet-200 p-4 w-72">
             <div className="flex items-center gap-2 mb-3">
@@ -303,8 +302,8 @@ export default function Landing() {
               <span className="text-xl font-bold text-white">VIDA</span>
             </div>
             <div className="flex items-center gap-6 text-gray-400 text-sm">
-              <a href="#" className="hover:text-white">{t('footer.terms')}</a>
-              <a href="#" className="hover:text-white">{t('footer.privacy')}</a>
+              <a href="/privacy" className="hover:text-white">{t('footer.terms')}</a>
+              <a href="/privacy" className="hover:text-white">{t('footer.privacy')}</a>
               <a href="#" className="hover:text-white">{t('footer.contact')}</a>
             </div>
             <p className="text-gray-500 text-sm">

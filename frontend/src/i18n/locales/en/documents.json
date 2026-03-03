@@ -3,7 +3,7 @@
   "subtitle": "Clinical history, studies and medical documents",
   "uploadButton": "Upload Document",
   "categories": {
-    "CLINICAL_HISTORY": "Clinical History",
+    "EMERGENCY_PROFILE": "Emergency Profile",
     "LAB_RESULTS": "Lab Results",
     "IMAGING": "Imaging Studies",
     "PRESCRIPTIONS": "Medical Prescriptions",

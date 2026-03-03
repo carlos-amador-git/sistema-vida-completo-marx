@@ -7,10 +7,11 @@ validateEnvironment();
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './common/prisma';
 
 // Middleware de seguridad
 import { csrfProtection, securityHeaders } from './common/middleware/csrf.middleware';
@@ -44,6 +45,8 @@ import documentsController from './modules/documents/documents.controller';
 import secureDownloadController, { getSecureLocalUrl } from './modules/documents/secure-download.controller';
 import odooController from './modules/odoo/odoo.controller';
 import walletController from './modules/wallet/wallet.controller';
+import consentController from './modules/consent/consent.controller';
+import arcoController from './modules/arco/arco.controller';
 
 // Inicializar generador de URLs seguras para S3 local
 import { initSecureUrlGenerator } from './common/services/s3.service';
@@ -52,9 +55,7 @@ initSecureUrlGenerator(getSecureLocalUrl);
 // Socket.io
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
-
-// Inicializar Prisma
-const prisma = new PrismaClient();
+import jwt from 'jsonwebtoken';
 
 // Crear aplicación Express
 const app = express();
@@ -65,8 +66,7 @@ const httpServer = createServer(app);
 // Configurar Socket.io
 const io = new SocketIOServer(httpServer, {
   cors: {
-    //origin: config.corsOrigins,
-    origin: true,
+    origin: config.corsOrigins,
     methods: ['GET', 'POST'],
     credentials: true,
   },
@@ -77,7 +77,10 @@ export { io };
 
 // ==================== MIDDLEWARE GLOBAL ====================
 
-// Seguridad - Configuración más permisiva para CORS en producción
+// Trust proxy para rate limiting detrás de reverse proxy (Coolify/Caddy)
+app.set('trust proxy', 1);
+
+// Seguridad - Helmet con protecciones activas
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -85,15 +88,20 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "https://api.stripe.com", "wss:"],
+      fontSrc: ["'self'", "https:", "data:"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      upgradeInsecureRequests: [],
     },
   },
   crossOriginEmbedderPolicy: false,
-  // Remover completamente los headers restrictivos
-  crossOriginOpenerPolicy: false,
-  crossOriginResourcePolicy: false,
-  // También remover otros headers que puedan interferir
-  originAgentCluster: false,
-  referrerPolicy: false,
+  crossOriginOpenerPolicy: { policy: 'same-origin' },
+  crossOriginResourcePolicy: { policy: 'same-site' },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
 }));
 
 // CORS - permitir múltiples orígenes
@@ -122,6 +130,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // Protección CSRF (validación de Origin/Referer)
 app.use(csrfProtection);
+
+// Cookie parser (for httpOnly refresh token cookies)
+app.use(cookieParser());
 
 // Compresión
 app.use(compression());
@@ -200,20 +211,16 @@ app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    version: '1.0.0',
-    environment: config.env,
   });
 });
 
 app.get('/api/v1/health', async (req: Request, res: Response) => {
   try {
-    // Verificar conexión a la base de datos
     await prisma.$queryRaw`SELECT 1`;
 
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      version: '1.0.0',
       services: {
         database: 'connected',
         api: 'running',
@@ -274,6 +281,12 @@ app.use('/api/v1/secure-download', secureDownloadController);
 // Wallet (Apple/Google Wallet passes)
 app.use('/api/v1/wallet', walletController);
 
+// Privacy & Consent (LFPDPPP)
+app.use('/api/v1/consent', consentController);
+
+// ARCO Rights (LFPDPPP)
+app.use('/api/v1/arco', arcoController);
+
 // ==================== RUTAS DE ADMINISTRACION ====================
 
 // Autenticacion de administradores (con rate limiting)
@@ -328,18 +341,46 @@ const startServer = async () => {
     await prisma.$connect();
     console.log('✅ Conectado a la base de datos PostgreSQL');
 
+    // WebSocket JWT authentication middleware
+    io.use(async (socket, next) => {
+      const token = socket.handshake.auth?.token;
+      if (!token) {
+        return next(new Error('Authentication required'));
+      }
+      try {
+        const decoded = jwt.verify(token, config.jwt.secret) as { userId: string; email: string; type: string };
+        if (decoded.type !== 'access') {
+          return next(new Error('Invalid token type'));
+        }
+        socket.data.userId = decoded.userId;
+        socket.data.email = decoded.email;
+        next();
+      } catch (err) {
+        return next(new Error('Invalid or expired token'));
+      }
+    });
+
     // Configurar eventos de Socket.io
     io.on('connection', (socket) => {
       console.log(`🔌 Cliente conectado: ${socket.id}`);
 
       // Unirse a una sala por userId (para recibir alertas)
       socket.on('join-user', (userId: string) => {
+        if (userId !== socket.data.userId) {
+          socket.emit('error', { message: 'Unauthorized: cannot join another user room' });
+          return;
+        }
         socket.join(`user-${userId}`);
         console.log(`👤 Usuario ${userId} unido a su sala`);
       });
 
       // Unirse a sala de representante
       socket.on('join-representative', (userId: string) => {
+        // Representatives join their OWN room to receive notifications about their patients
+        if (userId !== socket.data.userId) {
+          socket.emit('error', { message: 'Unauthorized: cannot join another user room' });
+          return;
+        }
         socket.join(`representative-${userId}`);
         console.log(`👥 Representante unido a sala de usuario ${userId}`);
       });

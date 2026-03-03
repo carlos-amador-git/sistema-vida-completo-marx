@@ -1,6 +1,5 @@
 // src/modules/payments/payments-webhook.controller.ts
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { stripeService } from './services/stripe.service';
 import { subscriptionService } from './services/subscription.service';
 import { paymentService } from './services/payment.service';
@@ -14,7 +13,7 @@ import config from '../../config';
 import { PaymentStatus, PaymentMethodType } from '@prisma/client';
 import Stripe from 'stripe';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 const router = Router();
 
@@ -144,9 +143,6 @@ router.post(
           const subscription = event.data.object as Stripe.Subscription;
 
           // Buscar usuario por stripeSubscriptionId y degradar a plan gratuito
-          const { PrismaClient } = await import('@prisma/client');
-          const prisma = new PrismaClient();
-
           const dbSubscription = await prisma.subscription.findFirst({
             where: { stripeSubscriptionId: subscription.id },
           });
@@ -206,9 +202,6 @@ router.post(
 
           // Crear registro de pago
           if (invoice.customer && (invoice as any).subscription) {
-            const { PrismaClient } = await import('@prisma/client');
-            const prisma = new PrismaClient();
-
             const subscription = await prisma.subscription.findFirst({
               where: { stripeCustomerId: invoice.customer as string },
               include: {
@@ -333,9 +326,6 @@ router.post(
             // Crear pago si no existe
             const metadata = paymentIntent.metadata as { userId?: string };
             if (metadata?.userId) {
-              const { PrismaClient } = await import('@prisma/client');
-              const prisma = new PrismaClient();
-
               const existingPayment = await prisma.payment.findFirst({
                 where: { stripePaymentIntentId: paymentIntent.id },
               });

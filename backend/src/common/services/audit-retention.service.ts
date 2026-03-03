@@ -8,14 +8,13 @@
  * - GDPR/regulaciones de privacidad
  */
 
-import { PrismaClient } from '@prisma/client';
 import { createHash } from 'crypto';
 import { gzipSync } from 'zlib';
 import { s3Service } from './s3.service';
 import { logger } from './logger.service';
 import config from '../../config';
 
-const prisma = new PrismaClient();
+import { prisma } from '../prisma';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURACIÓN DE RETENCIÓN

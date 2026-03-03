@@ -1,7 +1,7 @@
 // src/modules/payments/payments-admin.controller.ts
 import { logger } from '../../common/services/logger.service';
 import { Router, Request, Response } from 'express';
-import { PrismaClient, PaymentStatus, InvoiceStatus, SubscriptionStatus } from '@prisma/client';
+import { PaymentStatus, InvoiceStatus, SubscriptionStatus } from '@prisma/client';
 import { adminAuthMiddleware } from '../../common/guards/admin-auth.middleware';
 import { subscriptionService } from './services/subscription.service';
 import { paymentService } from './services/payment.service';
@@ -9,8 +9,9 @@ import { invoiceService } from './services/invoice.service';
 import { premiumFeaturesService } from './services/premium-features.service';
 import type { RevenueStats, PlanFeatures, PlanLimits } from './types/payments.types';
 
+import { prisma } from '../../common/prisma';
+
 const router = Router();
-const prisma = new PrismaClient();
 
 // Todos los endpoints requieren autenticación de admin
 router.use(adminAuthMiddleware);

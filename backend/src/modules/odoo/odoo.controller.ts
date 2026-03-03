@@ -2,10 +2,9 @@
 import { Router, Request, Response } from 'express';
 import { adminAuthMiddleware } from '../../common/guards/admin-auth.middleware';
 import { odooService } from './odoo.service';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../common/prisma';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * GET /api/v1/admin/odoo/status

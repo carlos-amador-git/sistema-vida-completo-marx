@@ -13,14 +13,14 @@ import type {
   AuthenticationResponseJSON,
   AuthenticatorTransportFuture,
 } from '@simplewebauthn/types';
-import { PrismaClient } from '@prisma/client';
 import config from '../../config';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 // Configuración del RP (Relying Party)
 const rpName = 'Sistema VIDA';
 const rpID = config.env === 'production' ? 'mdconsultoria-ti.org' : 'localhost';
+const CHALLENGE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 const origin = [
   'http://localhost:5173',
   'http://localhost:3000',
@@ -66,10 +66,13 @@ export class WebAuthnService {
       timeout: 60000,
     });
 
-    // Guardar el challenge para verificación posterior
+    // Guardar el challenge con TTL para verificación posterior
     await prisma.user.update({
       where: { id: userId },
-      data: { webauthnChallenge: options.challenge },
+      data: {
+        webauthnChallenge: options.challenge,
+        webauthnChallengeExpires: new Date(Date.now() + CHALLENGE_TTL_MS),
+      },
     });
 
     return options;
@@ -89,6 +92,15 @@ export class WebAuthnService {
 
     if (!user || !user.webauthnChallenge) {
       throw new Error('Usuario no encontrado o challenge inválido');
+    }
+
+    // LOW-03: Verify challenge has not expired
+    if (user.webauthnChallengeExpires && user.webauthnChallengeExpires < new Date()) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { webauthnChallenge: null, webauthnChallengeExpires: null },
+      });
+      throw new Error('Challenge expirado. Intente de nuevo.');
     }
 
     let verification: VerifiedRegistrationResponse;
@@ -132,7 +144,7 @@ export class WebAuthnService {
     // Limpiar el challenge
     await prisma.user.update({
       where: { id: userId },
-      data: { webauthnChallenge: null },
+      data: { webauthnChallenge: null, webauthnChallengeExpires: null },
     });
 
     return { success: true, credentialId: credentialIdBase64 };
@@ -168,10 +180,13 @@ export class WebAuthnService {
       timeout: 60000,
     });
 
-    // Guardar el challenge
+    // Guardar el challenge con TTL
     await prisma.user.update({
       where: { id: user.id },
-      data: { webauthnChallenge: options.challenge },
+      data: {
+        webauthnChallenge: options.challenge,
+        webauthnChallengeExpires: new Date(Date.now() + CHALLENGE_TTL_MS),
+      },
     });
 
     return { options, userId: user.id };
@@ -191,6 +206,15 @@ export class WebAuthnService {
 
     if (!user || !user.webauthnChallenge) {
       throw new Error('Usuario no encontrado o challenge inválido');
+    }
+
+    // LOW-03: Verify challenge has not expired
+    if (user.webauthnChallengeExpires && user.webauthnChallengeExpires < new Date()) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { webauthnChallenge: null, webauthnChallengeExpires: null },
+      });
+      throw new Error('Challenge expirado. Intente de nuevo.');
     }
 
     // Buscar la credencial usada
@@ -241,7 +265,7 @@ export class WebAuthnService {
     // Limpiar el challenge
     await prisma.user.update({
       where: { id: userId },
-      data: { webauthnChallenge: null },
+      data: { webauthnChallenge: null, webauthnChallengeExpires: null },
     });
 
     return {

@@ -1,8 +1,8 @@
 // src/modules/admin/admin-insurance.service.ts
-import { PrismaClient, InsuranceType } from '@prisma/client';
+import { InsuranceType } from '@prisma/client';
 import { adminAuthService } from './admin-auth.service';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 interface ListInsuranceParams {
   page?: number;

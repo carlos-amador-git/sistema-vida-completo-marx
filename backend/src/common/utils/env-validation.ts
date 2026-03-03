@@ -81,16 +81,21 @@ function performValidation(): ValidationResult {
     errors.push('DATABASE_URL es requerido');
   }
 
+  // REDIS_URL
+  if (!process.env.REDIS_URL) {
+    errors.push('REDIS_URL es requerido');
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // VALIDACIONES DE PRODUCCIÓN - Solo en producción
   // ═══════════════════════════════════════════════════════════════════════════
 
   if (isProduction) {
-    // JWT_ADMIN_SECRET separado en producción
+    // JWT_ADMIN_SECRET separado en producción — obligatorio y diferente de JWT_SECRET
     if (!process.env.JWT_ADMIN_SECRET) {
       errors.push('JWT_ADMIN_SECRET es requerido en producción');
     } else if (process.env.JWT_ADMIN_SECRET === process.env.JWT_SECRET) {
-      warnings.push('JWT_ADMIN_SECRET debería ser diferente de JWT_SECRET en producción');
+      errors.push('JWT_ADMIN_SECRET DEBE ser diferente de JWT_SECRET en producción');
     }
 
     // Stripe completo en producción

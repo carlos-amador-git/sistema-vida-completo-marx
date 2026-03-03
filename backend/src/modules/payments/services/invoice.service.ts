@@ -1,6 +1,6 @@
 // src/modules/payments/services/invoice.service.ts
 import { logger } from '../../../common/services/logger.service';
-import { PrismaClient, InvoiceStatus } from '@prisma/client';
+import { InvoiceStatus } from '@prisma/client';
 import config from '../../../config';
 import type {
   InvoiceDTO,
@@ -9,7 +9,7 @@ import type {
   GenerateInvoiceInput,
 } from '../types/payments.types';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../../common/prisma';
 
 // Cliente HTTP para Facturama
 async function facturamaRequest(

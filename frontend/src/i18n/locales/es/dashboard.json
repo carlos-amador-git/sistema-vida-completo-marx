@@ -55,7 +55,7 @@
     "noDocuments": "No tienes documentos cargados",
     "visible": "Visible",
     "categories": {
-      "CLINICAL_HISTORY": "Historial",
+      "EMERGENCY_PROFILE": "Emergencia",
       "LAB_RESULTS": "Lab",
       "IMAGING": "Imagen",
       "PRESCRIPTIONS": "Receta",

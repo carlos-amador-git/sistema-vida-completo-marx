@@ -1,8 +1,8 @@
 // src/modules/hospital/hospital.service.ts
-import { PrismaClient, MedicalInstitution, InstitutionType, AttentionLevel } from '@prisma/client';
+import { MedicalInstitution, InstitutionType, AttentionLevel } from '@prisma/client';
 import { haversineDistance } from '../../common/utils/geolocation';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 // Mapeo de condiciones medicas a especialidades requeridas
 export const conditionToSpecialties: Record<string, string[]> = {

@@ -89,6 +89,8 @@
       "additional_notes": "Notas adicionales:",
       "yes": "SÍ",
       "no": "NO",
+      "legal_binding": "Documento con fe pública",
+      "informational": "Sin validez legal — documento informativo",
       "no_directive": "El paciente no tiene voluntad anticipada registrada"
     },
     "donation": {
@@ -100,7 +102,7 @@
       "section_title": "Documentos Médicos",
       "view": "Ver",
       "categories": {
-        "CLINICAL_HISTORY": "Historial Clínico",
+        "EMERGENCY_PROFILE": "Perfil de Emergencia",
         "LAB_RESULTS": "Laboratorio",
         "IMAGING": "Imagen",
         "PRESCRIPTIONS": "Receta",

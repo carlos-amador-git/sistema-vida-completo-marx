@@ -1,6 +1,6 @@
 // src/modules/notification/notification.service.ts
 
-import { PrismaClient, NotificationType, NotificationChannel, NotificationStatus } from '@prisma/client';
+import { NotificationType, NotificationChannel, NotificationStatus } from '@prisma/client';
 import { logger } from '../../common/services/logger.service';
 import {
   WhatsAppProviderFactory,
@@ -13,7 +13,7 @@ import {
   type SendResult,
 } from './providers';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 interface NotificationResult {
   representativeId: string;

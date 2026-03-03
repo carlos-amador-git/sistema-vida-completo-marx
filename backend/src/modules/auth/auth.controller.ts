@@ -6,6 +6,8 @@ import { authService, AuthError } from './auth.service';
 import { authMiddleware } from '../../common/guards/auth.middleware';
 import { securityMetrics } from '../../common/services/security-metrics.service';
 import { logger } from '../../common/services/logger.service';
+import { prisma } from '../../common/prisma';
+import { setRefreshTokenCookie, clearRefreshTokenCookie, getRefreshToken } from '../../common/utils/auth-cookies';
 
 const router = Router();
 
@@ -36,11 +38,11 @@ function getAuthErrorMessage(req: Request, code: string, fallback: string): stri
 // RATE LIMITERS ESPECÍFICOS PARA AUTH
 // ═══════════════════════════════════════════════════════════════════════════
 
-// Rate limiter para login: 20 intentos por minuto (más permisivo para desarrollo)
+// Rate limiter para login: 5 intentos por minuto
 // TODO: i18n - rate limiting fires before i18n middleware, message is static
 const loginLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 20,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -156,6 +158,9 @@ router.post('/register', registerLimiter, registerValidation, handleValidation, 
       sex,
     });
     
+    // Set refresh token as httpOnly cookie
+    setRefreshTokenCookie(res, result.tokens.refreshToken);
+
     res.status(201).json({
       success: true,
       message: req.t!('api:auth.registerSuccess'),
@@ -206,6 +211,9 @@ router.post('/login', loginLimiter, loginValidation, handleValidation, async (re
     securityMetrics.recordSuccessfulLogin(ip, result.user.id);
     logger.info('Login exitoso', { userId: result.user.id, ip });
 
+    // Set refresh token as httpOnly cookie
+    setRefreshTokenCookie(res, result.tokens.refreshToken);
+
     res.json({
       success: true,
       data: {
@@ -250,8 +258,8 @@ router.post('/login', loginLimiter, loginValidation, handleValidation, async (re
  */
 router.post('/refresh', async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.body;
-    
+    const refreshToken = getRefreshToken(req);
+
     if (!refreshToken) {
       return res.status(400).json({
         success: false,
@@ -260,6 +268,9 @@ router.post('/refresh', async (req: Request, res: Response) => {
     }
 
     const tokens = await authService.refreshTokens(refreshToken);
+
+    // Set new refresh token as httpOnly cookie
+    setRefreshTokenCookie(res, tokens.refreshToken);
 
     res.json({
       success: true,
@@ -289,12 +300,15 @@ router.post('/refresh', async (req: Request, res: Response) => {
  */
 router.post('/logout', async (req: Request, res: Response) => {
   try {
-    const { refreshToken } = req.body;
-    
+    const refreshToken = getRefreshToken(req);
+
     if (refreshToken) {
       await authService.logout(refreshToken);
     }
-    
+
+    // Clear refresh token cookie
+    clearRefreshTokenCookie(res);
+
     res.json({
       success: true,
       message: req.t!('api:auth.logoutSuccess'),
@@ -446,9 +460,6 @@ router.post('/reset-password',
  */
 router.get('/me', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const { PrismaClient } = require('@prisma/client');
-    const prisma = new PrismaClient();
-    
     const user = await prisma.user.findUnique({
       where: { id: req.userId },
       include: { profile: true },

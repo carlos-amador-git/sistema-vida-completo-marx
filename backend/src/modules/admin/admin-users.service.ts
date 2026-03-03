@@ -1,8 +1,7 @@
 // src/modules/admin/admin-users.service.ts
-import { PrismaClient } from '@prisma/client';
 import { adminAuthService } from './admin-auth.service';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 interface ListUsersOptions {
   page?: number;

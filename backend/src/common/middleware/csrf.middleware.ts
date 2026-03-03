@@ -21,8 +21,6 @@ const CSRF_EXEMPT_PATHS = [
   '/api/v1/webhooks/', // Webhooks de terceros (tienen su propia autenticación)
   '/api/v1/emergency/access', // Acceso de emergencia público
   '/api/v1/emergency/panic', // Alertas de pánico (requieren autenticación JWT pero validación CSRF adicional no necesaria)
-  '/api/v1/profile', // Perfil del usuario (requiere autenticación JWT, CSRF es menos crítico)
-  '/api/v1/representatives', // CRUD de representantes (requiere autenticación JWT)
   '/api/v1/auth/login', // Login inicial
   '/api/v1/auth/register', // Registro inicial
   '/api/v1/auth/refresh', // Refresh de tokens

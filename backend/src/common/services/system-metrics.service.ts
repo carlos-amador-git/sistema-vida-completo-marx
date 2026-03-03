@@ -12,12 +12,11 @@
  */
 
 import * as os from 'os';
-import { PrismaClient } from '@prisma/client';
 import config from '../../config';
 import { cacheService } from './cache.service';
 import { logger } from './logger.service';
 
-const prisma = new PrismaClient();
+import { prisma } from '../prisma';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // TIPOS

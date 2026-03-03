@@ -15,72 +15,94 @@ datasource db {
 // ==================== USUARIOS ====================
 
 model User {
-  id                String   @id @default(uuid())
-  email             String   @unique
-  passwordHash      String
-  curp              String   @unique
-  name              String
-  dateOfBirth       DateTime?
-  sex               String?  // H/M
-  phone             String?
-  address           String?
-  
-  // Estado de la cuenta
-  isActive          Boolean  @default(true)
-  isVerified        Boolean  @default(false)
-  verificationToken String?
-  verificationExpires DateTime?
-  
-  // Recuperación de contraseña
-  resetToken        String?
-  resetExpires      DateTime?
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  curp         String    @unique
+  name         String
+  dateOfBirth  DateTime?
+  sex          String? // H/M
+  phone        String?
+  address      String?
 
-  // WebAuthn challenge temporal
-  webauthnChallenge String?
+  // Campos cifrados (V2 - field-level encryption)
+  nameEnc        String? // Nombre cifrado
+  phoneEnc       String? // Teléfono cifrado
+  curpEnc        String? // CURP cifrado
+  dateOfBirthEnc String? // Fecha de nacimiento cifrada
+  addressEnc     String? // Dirección cifrada
+
+  // Blind indexes para búsqueda sobre campos cifrados
+  emailBlindIndex String? // HMAC-SHA256 del email
+  curpBlindIndex  String? // HMAC-SHA256 del CURP
+
+  // Envelope Encryption (KEK/DEK)
+  encryptedDEK String? // DEK cifrada con KEK, formato: kekId:iv:ciphertext:authTag
+  dekKeyId     String? // ID de la KEK usada para cifrar el DEK
+
+  // Estado de la cuenta
+  isActive            Boolean   @default(true)
+  isVerified          Boolean   @default(false)
+  verificationToken   String?
+  verificationExpires DateTime?
+
+  // Recuperación de contraseña
+  resetToken   String?
+  resetExpires DateTime?
+
+  // WebAuthn challenge temporal (TTL: 5 min)
+  webauthnChallenge        String?
+  webauthnChallengeExpires DateTime?
 
   // Preferencia de idioma
-  preferredLanguage String   @default("es") @db.VarChar(5)
+  preferredLanguage String @default("es") @db.VarChar(5)
 
   // Timestamps
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  lastLoginAt       DateTime?
-  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
+
   // Relaciones
-  profile           PatientProfile?
-  directives        AdvanceDirective[]
-  representatives   Representative[]
-  documents         MedicalDocument[]
-  emergencyAccesses EmergencyAccess[]  @relation("PatientAccesses")
-  panicAlerts       PanicAlert[]
-  auditLogs         AuditLog[]
-  sessions          Session[]
+  profile             PatientProfile?
+  directives          AdvanceDirective[]
+  representatives     Representative[]
+  documents           MedicalDocument[]
+  emergencyAccesses   EmergencyAccess[]    @relation("PatientAccesses")
+  panicAlerts         PanicAlert[]
+  auditLogs           AuditLog[]
+  sessions            Session[]
   webauthnCredentials WebAuthnCredential[]
 
   // Relaciones de pagos y suscripciones
-  subscription      Subscription?
-  payments          Payment[]
-  paymentMethods    PaymentMethod[]
-  fiscalData        FiscalData?
-  invoices          Invoice[]
-  qrDownloads       QRDownload[]
+  subscription   Subscription?
+  payments       Payment[]
+  paymentMethods PaymentMethod[]
+  fiscalData     FiscalData?
+  invoices       Invoice[]
+  qrDownloads    QRDownload[]
+
+  // Privacy & ARCO
+  consents     ConsentRecord[]
+  arcoRequests ARCORequest[]
 
   @@index([curp])
   @@index([email])
   @@index([isActive])
+  @@index([emailBlindIndex])
+  @@index([curpBlindIndex])
 }
 
 model Session {
-  id            String   @id @default(uuid())
-  userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  refreshToken  String   @unique
-  userAgent     String?
-  ipAddress     String?
+  refreshToken String  @unique
+  userAgent    String?
+  ipAddress    String?
 
-  expiresAt     DateTime
-  createdAt     DateTime @default(now())
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([refreshToken])
@@ -89,23 +111,23 @@ model Session {
 // ==================== WEBAUTHN / BIOMETRÍA ====================
 
 model WebAuthnCredential {
-  id                  String   @id @default(uuid())
-  userId              String
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Credencial WebAuthn
-  credentialId        String   @unique  // Base64URL encoded
-  credentialPublicKey Bytes               // Public key in COSE format
-  counter             BigInt   @default(0)
+  credentialId        String @unique // Base64URL encoded
+  credentialPublicKey Bytes // Public key in COSE format
+  counter             BigInt @default(0)
 
   // Metadatos del dispositivo
-  deviceType          String?  // "platform" (Face ID) or "cross-platform" (security key)
-  deviceName          String?  // Nombre amigable: "iPhone de Juan", "MacBook Pro"
-  transports          String[] // ["internal", "usb", "ble", "nfc"]
+  deviceType String? // "platform" (Face ID) or "cross-platform" (security key)
+  deviceName String? // Nombre amigable: "iPhone de Juan", "MacBook Pro"
+  transports String[] // ["internal", "usb", "ble", "nfc"]
 
   // Timestamps
-  createdAt           DateTime @default(now())
-  lastUsedAt          DateTime?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
 
   @@index([userId])
   @@index([credentialId])
@@ -114,69 +136,73 @@ model WebAuthnCredential {
 // ==================== PERFIL DEL PACIENTE (PUP) ====================
 
 model PatientProfile {
-  id              String   @id @default(uuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Datos médicos críticos (almacenados cifrados)
-  bloodType       String?
-  allergiesEnc    String?  // JSON cifrado: ["Penicilina", "Mariscos"]
-  conditionsEnc   String?  // JSON cifrado: ["Diabetes", "Hipertensión"]
-  medicationsEnc  String?  // JSON cifrado: ["Metformina 500mg"]
-  
+  bloodType      String?
+  allergiesEnc   String? // JSON cifrado: ["Penicilina", "Mariscos"]
+  conditionsEnc  String? // JSON cifrado: ["Diabetes", "Hipertensión"]
+  medicationsEnc String? // JSON cifrado: ["Metformina 500mg"]
+
   // Datos de seguro médico
   insuranceProvider String?
   insurancePolicy   String?
   insurancePhone    String?
-  
+
+  // Campos cifrados (V2)
+  bloodTypeEnc       String? // Tipo de sangre cifrado
+  insurancePolicyEnc String? // Póliza de seguro cifrada
+
   // Foto de perfil (URL en S3 o base64)
-  photoUrl        String?
-  
+  photoUrl String?
+
   // Donación de órganos
-  isDonor              Boolean  @default(false)
-  donorPreferencesEnc  String?  // JSON cifrado con preferencias granulares
-  donorVideoUrl        String?  // Testimonio personal en video
-  
+  isDonor             Boolean @default(false)
+  donorPreferencesEnc String? // JSON cifrado con preferencias granulares
+  donorVideoUrl       String? // Testimonio personal en video
+
   // QR único para acceso de emergencia
-  qrToken         String   @unique @default(uuid())
-  qrGeneratedAt   DateTime @default(now())
-  
+  qrToken       String   @unique @default(uuid())
+  qrGeneratedAt DateTime @default(now())
+
   // Timestamps
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([qrToken])
 }
 
 // ==================== DOCUMENTOS MÉDICOS ====================
 
 model MedicalDocument {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Información del documento
-  title       String              // "Estudios de sangre", "Resonancia magnética", etc.
-  description String?             // Descripción opcional
-  category    DocumentCategory    // Tipo de documento
+  title       String // "Estudios de sangre", "Resonancia magnética", etc.
+  description String? // Descripción opcional
+  category    DocumentCategory // Tipo de documento
 
   // Archivo
-  fileName    String              // Nombre original del archivo
-  fileType    String              // MIME type: application/pdf, image/jpeg, etc.
-  fileSize    Int                 // Tamaño en bytes
-  fileUrl     String              // URL en S3
-  s3Key       String              // Key en S3 para eliminar
+  fileName String // Nombre original del archivo
+  fileType String // MIME type: application/pdf, image/jpeg, etc.
+  fileSize Int // Tamaño en bytes
+  fileUrl  String // URL en S3
+  s3Key    String // Key en S3 para eliminar
 
   // Metadatos médicos
-  documentDate DateTime?          // Fecha del estudio/documento
-  doctorName   String?            // Médico que emitió
-  institution  String?            // Hospital/laboratorio
+  documentDate DateTime? // Fecha del estudio/documento
+  doctorName   String? // Médico que emitió
+  institution  String? // Hospital/laboratorio
 
   // Control
-  isVisible    Boolean @default(true)  // Visible en emergencias
+  isVisible Boolean @default(true) // Visible en emergencias
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([category])
@@ -184,41 +210,46 @@ model MedicalDocument {
 }
 
 enum DocumentCategory {
-  CLINICAL_HISTORY      // Historial clínico general
-  LAB_RESULTS          // Resultados de laboratorio
-  IMAGING              // Rayos X, resonancias, tomografías
-  PRESCRIPTIONS        // Recetas médicas
-  DISCHARGE_SUMMARY    // Resúmenes de alta
-  SURGICAL_REPORT      // Reportes quirúrgicos
-  VACCINATION          // Cartilla de vacunación
-  INSURANCE            // Pólizas de seguro
-  IDENTIFICATION       // INE, CURP, etc.
-  OTHER                // Otros documentos
+  EMERGENCY_PROFILE // Perfil de emergencia (no constituye expediente clínico conforme a NOM-004-SSA3-2012)
+  LAB_RESULTS // Resultados de laboratorio
+  IMAGING // Rayos X, resonancias, tomografías
+  PRESCRIPTIONS // Recetas médicas
+  DISCHARGE_SUMMARY // Resúmenes de alta
+  SURGICAL_REPORT // Reportes quirúrgicos
+  VACCINATION // Cartilla de vacunación
+  INSURANCE // Pólizas de seguro
+  IDENTIFICATION // INE, CURP, etc.
+  OTHER // Otros documentos
 }
 
 // ==================== REPRESENTANTES ====================
 
 model Representative {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  name        String
-  phone       String
-  email       String?
-  relation    String   // Esposo/a, Hijo/a, Hermano/a, etc.
-  priority    Int      @default(1)  // 1 = primario, 2+ = suplentes
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name     String
+  phone    String
+  email    String?
+  relation String // Esposo/a, Hijo/a, Hermano/a, etc.
+  priority Int     @default(1) // 1 = primario, 2+ = suplentes
+
+  // Campos cifrados (V2)
+  nameEnc  String? // Nombre cifrado
+  phoneEnc String? // Teléfono cifrado
+  emailEnc String? // Email cifrado
+
   // Para portavoz de donación
   isDonorSpokesperson Boolean @default(false)
-  
+
   // Notificaciones
-  notifyOnEmergency   Boolean @default(true)
-  notifyOnAccess      Boolean @default(true)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  notifyOnEmergency Boolean @default(true)
+  notifyOnAccess    Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
   @@index([priority])
 }
@@ -226,144 +257,153 @@ model Representative {
 // ==================== DIRECTIVAS DE VOLUNTAD ANTICIPADA ====================
 
 model AdvanceDirective {
-  id              String   @id @default(uuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   // Tipo y estado
-  type            DirectiveType
-  status          DirectiveStatus @default(DRAFT)
-  
+  type   DirectiveType
+  status DirectiveStatus @default(DRAFT)
+
   // Documento PDF (para documentos notarizados subidos)
-  documentUrl     String?
-  documentHash    String?  // SHA-256 para verificación de integridad
+  documentUrl      String?
+  documentHash     String? // SHA-256 para verificación de integridad
   originalFileName String?
-  
+
   // Constancia NOM-151
-  nom151Sealed      Boolean  @default(false)
+  nom151Sealed      Boolean   @default(false)
   nom151Timestamp   DateTime?
-  nom151Certificate String?  @db.Text
+  nom151Certificate String?   @db.Text
   nom151Provider    String?
-  
+
   // Contenido del borrador digital
-  acceptsCPR        Boolean?
-  acceptsIntubation Boolean?
-  acceptsDialysis   Boolean?
-  acceptsTransfusion Boolean?
+  acceptsCPR                 Boolean?
+  acceptsIntubation          Boolean?
+  acceptsDialysis            Boolean?
+  acceptsTransfusion         Boolean?
   acceptsArtificialNutrition Boolean?
-  palliativeCareOnly Boolean?
-  additionalNotes   String?  @db.Text
-  
+  palliativeCareOnly         Boolean?
+  additionalNotes            String?  @db.Text
+
+  // Campo cifrado consolidado (V2) — todas las decisiones como JSON cifrado
+  directiveDecisionsEnc String? // JSON cifrado con todas las decisiones médicas
+
   // Estado jurídico del documento (para el armonizador legal)
-  originState       String?  // CDMX, Jalisco, etc.
-  legalBasisSummary String?  @db.Text
-  
+  originState       String? // CDMX, Jalisco, etc.
+  legalBasisSummary String? @db.Text
+
   // Validación
-  validatedAt     DateTime?
-  validatedBy     String?
-  validationMethod String?  // EMAIL, SMS, WITNESS
-  
+  validatedAt      DateTime?
+  validatedBy      String?
+  validationMethod String? // EMAIL, SMS, WITNESS
+
   // Timestamps
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  revokedAt       DateTime?
-  expiresAt       DateTime?
-  
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  revokedAt DateTime?
+  expiresAt DateTime?
+
   // Relaciones
-  witnesses       Witness[]
-  
+  witnesses Witness[]
+
   @@index([userId])
   @@index([status])
   @@index([type])
 }
 
 enum DirectiveType {
-  NOTARIZED_DOCUMENT   // Documento notariado existente (PDF)
-  DIGITAL_DRAFT        // Borrador creado en app (sin validación legal completa)
-  DIGITAL_WITNESSED    // Formato con testigos digitales (Fase 2)
+  NOTARIZED_DOCUMENT // Documento notariado existente (PDF)
+  DIGITAL_DRAFT // Borrador creado en app (sin validación legal completa)
+  DIGITAL_WITNESSED // Formato con testigos digitales (Fase 2)
 }
 
 enum DirectiveStatus {
-  DRAFT              // Borrador en proceso
+  DRAFT // Borrador en proceso
   PENDING_VALIDATION // Esperando validación
-  ACTIVE             // Activo y válido
-  REVOKED            // Revocado por el usuario
-  EXPIRED            // Expirado
+  ACTIVE // Activo y válido
+  REVOKED // Revocado por el usuario
+  EXPIRED // Expirado
 }
 
 // ==================== TESTIGOS (FASE 2) ====================
 
 model Witness {
-  id            String   @id @default(uuid())
-  directiveId   String
-  directive     AdvanceDirective @relation(fields: [directiveId], references: [id], onDelete: Cascade)
-  
-  name          String
-  curp          String?
-  email         String?
-  phone         String?
-  
+  id          String           @id @default(uuid())
+  directiveId String
+  directive   AdvanceDirective @relation(fields: [directiveId], references: [id], onDelete: Cascade)
+
+  name  String
+  curp  String?
+  email String?
+  phone String?
+
+  // Campos cifrados (V2)
+  nameEnc  String? // Nombre cifrado
+  phoneEnc String? // Teléfono cifrado
+  emailEnc String? // Email cifrado
+  curpEnc  String? // CURP cifrado
+
   // Verificación de identidad
-  ineImageUrl       String?
-  selfieImageUrl    String?
-  identityVerified  Boolean @default(false)
-  verifiedAt        DateTime?
-  
+  ineImageUrl      String?
+  selfieImageUrl   String?
+  identityVerified Boolean   @default(false)
+  verifiedAt       DateTime?
+
   // Firma digital
   signatureImageUrl String?
   signedAt          DateTime?
-  
+
   // Sesión de testificación (videoconferencia)
   sessionId           String?
   sessionRecordingUrl String?
   sessionStartedAt    DateTime?
   sessionEndedAt      DateTime?
-  
-  createdAt     DateTime @default(now())
-  
+
+  createdAt DateTime @default(now())
+
   @@index([directiveId])
 }
 
 // ==================== ACCESO DE EMERGENCIA (PAE) ====================
 
 model EmergencyAccess {
-  id            String   @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Paciente
-  patientId     String
-  patient       User     @relation("PatientAccesses", fields: [patientId], references: [id])
-  
+  patientId String
+  patient   User   @relation("PatientAccesses", fields: [patientId], references: [id])
+
   // Profesional que accede
-  accessorId        String?  // ID si está registrado
-  accessorName      String
-  accessorRole      String   // Paramédico, Médico Urgencias, etc.
-  accessorLicense   String?  // Cédula profesional
-  institutionId     String?
-  institution       MedicalInstitution? @relation(fields: [institutionId], references: [id])
-  institutionName   String?
+  accessorId      String? // ID si está registrado
+  accessorName    String
+  accessorRole    String // Paramédico, Médico Urgencias, etc.
+  accessorLicense String? // Cédula profesional
+  institutionId   String?
+  institution     MedicalInstitution? @relation(fields: [institutionId], references: [id])
+  institutionName String?
 
   // Aseguradora (si aplica)
   insuranceId       String?
   insurance         InsuranceCompany? @relation("InsuranceEmergencyAccess", fields: [insuranceId], references: [id])
-  insurancePolicyNo String?  // Número de póliza del paciente
-  
+  insurancePolicyNo String? // Número de póliza del paciente
+
   // Contexto del acceso
-  qrTokenUsed   String
-  ipAddress     String?
-  userAgent     String?
-  latitude      Float?
-  longitude     Float?
-  locationName  String?
-  
+  qrTokenUsed  String
+  ipAddress    String?
+  userAgent    String?
+  latitude     Float?
+  longitude    Float?
+  locationName String?
+
   // Datos accedidos (para auditoría)
-  dataAccessed  String[] // ["profile", "allergies", "directives", etc.]
+  dataAccessed String[] // ["profile", "allergies", "directives", etc.]
 
   // Verificación de credenciales con SEP
-  trustLevel              String?  // VERIFIED, HIGH, MEDIUM, LOW, UNVERIFIED
+  trustLevel              String? // VERIFIED, HIGH, MEDIUM, LOW, UNVERIFIED
   sepVerified             Boolean? // Si la cédula fue verificada con SEP
-  sepProfessionalName     String?  // Nombre del profesional según SEP
-  sepTitle                String?  // Título profesional según SEP
-  sepInstitution          String?  // Institución donde estudió según SEP
+  sepProfessionalName     String? // Nombre del profesional según SEP
+  sepTitle                String? // Título profesional según SEP
+  sepInstitution          String? // Institución donde estudió según SEP
   sepIsHealthProfessional Boolean? // Si SEP confirma que es profesional de salud
   sepNameMatches          Boolean? // Si el nombre coincide con el proporcionado
   credentialWarnings      String[] // Advertencias de verificación
@@ -371,12 +411,12 @@ model EmergencyAccess {
   // Notificaciones enviadas
   representativesNotified String[] // IDs de representantes notificados
   notificationsSentAt     DateTime?
-  
+
   // Token de sesión temporal
-  accessToken   String   @unique @default(uuid())
-  accessedAt    DateTime @default(now())
-  expiresAt     DateTime // Típicamente 60 minutos después
-  
+  accessToken String   @unique @default(uuid())
+  accessedAt  DateTime @default(now())
+  expiresAt   DateTime // Típicamente 60 minutos después
+
   @@index([patientId])
   @@index([accessedAt])
   @@index([accessToken])
@@ -386,47 +426,47 @@ model EmergencyAccess {
 // ==================== INSTITUCIONES MÉDICAS ====================
 
 model MedicalInstitution {
-  id          String   @id @default(uuid())
-  name        String
-  type        InstitutionType
-  cluesCode   String?  @unique // Clave CLUES de la DGIS
+  id        String          @id @default(uuid())
+  name      String
+  type      InstitutionType
+  cluesCode String?         @unique // Clave CLUES de la DGIS
 
   // Ubicación
-  address     String?
-  city        String?
-  state       String?
-  zipCode     String?
-  latitude    Float?
-  longitude   Float?
+  address   String?
+  city      String?
+  state     String?
+  zipCode   String?
+  latitude  Float?
+  longitude Float?
 
   // Contacto
-  phone           String?
-  emergencyPhone  String?
-  email           String?
+  phone          String?
+  emergencyPhone String?
+  email          String?
 
   // Nivel de atención (CLUES)
-  attentionLevel  AttentionLevel?  // Primer, segundo o tercer nivel
+  attentionLevel AttentionLevel? // Primer, segundo o tercer nivel
 
   // Especialidades disponibles
-  specialties     String[]  // ["Urgencias", "Cardiologia", "Traumatologia", etc.]
+  specialties String[] // ["Urgencias", "Cardiologia", "Traumatologia", etc.]
 
   // Servicios de emergencia
-  hasEmergency    Boolean  @default(true)   // Tiene servicio de urgencias
-  has24Hours      Boolean  @default(false)  // Atención 24 horas
-  hasICU          Boolean  @default(false)  // Unidad de Cuidados Intensivos
-  hasTrauma       Boolean  @default(false)  // Atención de trauma
+  hasEmergency Boolean @default(true) // Tiene servicio de urgencias
+  has24Hours   Boolean @default(false) // Atención 24 horas
+  hasICU       Boolean @default(false) // Unidad de Cuidados Intensivos
+  hasTrauma    Boolean @default(false) // Atención de trauma
 
   // Credenciales OAuth para PAE
-  oauthClientId     String?  @unique
-  oauthClientSecret String?  // Hash del secret
+  oauthClientId     String? @unique
+  oauthClientSecret String? // Hash del secret
 
   // Estado
-  isActive      Boolean  @default(true)
-  isVerified    Boolean  @default(false)
-  verifiedAt    DateTime?
+  isActive   Boolean   @default(true)
+  isVerified Boolean   @default(false)
+  verifiedAt DateTime?
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relaciones
   emergencyAccesses EmergencyAccess[]
@@ -440,9 +480,9 @@ model MedicalInstitution {
 }
 
 enum AttentionLevel {
-  FIRST    // Primer nivel - Atención primaria, consulta general
-  SECOND   // Segundo nivel - Hospitales generales, especialidades básicas
-  THIRD    // Tercer nivel - Alta especialidad, hospitales de referencia
+  FIRST // Primer nivel - Atención primaria, consulta general
+  SECOND // Segundo nivel - Hospitales generales, especialidades básicas
+  THIRD // Tercer nivel - Alta especialidad, hospitales de referencia
 }
 
 enum InstitutionType {
@@ -458,53 +498,53 @@ enum InstitutionType {
 // ==================== ASEGURADORAS ====================
 
 model InsuranceCompany {
-  id              String   @id @default(uuid())
-  name            String
-  shortName       String?  // Nombre corto o siglas (ej: "GNP", "AXA")
-  type            InsuranceType
+  id        String        @id @default(uuid())
+  name      String
+  shortName String? // Nombre corto o siglas (ej: "GNP", "AXA")
+  type      InsuranceType
 
   // Registro oficial
-  cnsfNumber      String?  @unique  // Número de registro CNSF
-  rfc             String?  @unique  // RFC de la empresa
+  cnsfNumber String? @unique // Número de registro CNSF
+  rfc        String? @unique // RFC de la empresa
 
   // Contacto corporativo
-  address         String?
-  city            String?
-  state           String?
-  zipCode         String?
-  phone           String?
-  emergencyPhone  String?  // Línea de emergencias 24h
-  email           String?
-  website         String?
+  address        String?
+  city           String?
+  state          String?
+  zipCode        String?
+  phone          String?
+  emergencyPhone String? // Línea de emergencias 24h
+  email          String?
+  website        String?
 
   // Cobertura
-  coverageTypes   String[]  // ["Gastos Médicos Mayores", "Vida", "Accidentes", etc.]
-  networkSize     Int?      // Número de hospitales en red
-  hasNationalCoverage Boolean @default(false)
-  statesCovered   String[]  // Estados donde opera
+  coverageTypes       String[] // ["Gastos Médicos Mayores", "Vida", "Accidentes", etc.]
+  networkSize         Int? // Número de hospitales en red
+  hasNationalCoverage Boolean  @default(false)
+  statesCovered       String[] // Estados donde opera
 
   // Planes disponibles
-  plans           InsurancePlan[]
+  plans InsurancePlan[]
 
   // Red de hospitales asociados
   networkHospitals MedicalInstitution[] @relation("InsuranceNetwork")
 
   // Verificación
-  isVerified      Boolean  @default(false)
-  verifiedAt      DateTime?
-  verifiedBy      String?
+  isVerified Boolean   @default(false)
+  verifiedAt DateTime?
+  verifiedBy String?
 
   // Integración API (para verificación automática de pólizas)
-  apiEnabled      Boolean  @default(false)
-  apiEndpoint     String?
+  apiEnabled  Boolean @default(false)
+  apiEndpoint String?
 
   // Metadatos
-  logoUrl         String?
-  description     String?
-  isActive        Boolean  @default(true)
+  logoUrl     String?
+  description String?
+  isActive    Boolean @default(true)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relaciones
   emergencyAccesses EmergencyAccess[] @relation("InsuranceEmergencyAccess")
@@ -515,98 +555,98 @@ model InsuranceCompany {
 }
 
 enum InsuranceType {
-  HEALTH           // Gastos médicos mayores
-  LIFE             // Seguro de vida
-  ACCIDENT         // Accidentes personales
-  HEALTH_LIFE      // Combinado salud y vida
-  GOVERNMENT       // Seguro Popular, INSABI, etc.
+  HEALTH // Gastos médicos mayores
+  LIFE // Seguro de vida
+  ACCIDENT // Accidentes personales
+  HEALTH_LIFE // Combinado salud y vida
+  GOVERNMENT // Seguro Popular, INSABI, etc.
   OTHER
 }
 
 model InsurancePlan {
-  id              String   @id @default(uuid())
-  insuranceId     String
-  insurance       InsuranceCompany @relation(fields: [insuranceId], references: [id], onDelete: Cascade)
+  id          String           @id @default(uuid())
+  insuranceId String
+  insurance   InsuranceCompany @relation(fields: [insuranceId], references: [id], onDelete: Cascade)
 
-  name            String   // "Plan Platinum", "Cobertura Básica", etc.
-  code            String?  // Código interno del plan
+  name String // "Plan Platinum", "Cobertura Básica", etc.
+  code String? // Código interno del plan
 
   // Cobertura
-  sumAssured      Float?   // Suma asegurada
-  deductible      Float?   // Deducible
-  coinsurance     Float?   // Coaseguro (porcentaje)
+  sumAssured  Float? // Suma asegurada
+  deductible  Float? // Deducible
+  coinsurance Float? // Coaseguro (porcentaje)
 
   // Características
-  features        String[] // ["Cobertura internacional", "Maternidad", etc.]
-  exclusions      String[] // Exclusiones principales
+  features   String[] // ["Cobertura internacional", "Maternidad", etc.]
+  exclusions String[] // Exclusiones principales
 
   // Hospitales
-  hospitalLevel   String?  // "Red Amplia", "Red Selecta", etc.
+  hospitalLevel String? // "Red Amplia", "Red Selecta", etc.
 
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([insuranceId])
 }
 
 model MedicalStaff {
-  id              String   @id @default(uuid())
-  institutionId   String
-  institution     MedicalInstitution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
-  
-  name            String
-  email           String   @unique
-  passwordHash    String
-  role            StaffRole
-  license         String?  // Cédula profesional
-  
-  isActive        Boolean  @default(true)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  lastLoginAt     DateTime?
-  
+  id            String             @id @default(uuid())
+  institutionId String
+  institution   MedicalInstitution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         StaffRole
+  license      String? // Cédula profesional
+
+  isActive Boolean @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  lastLoginAt DateTime?
+
   @@index([institutionId])
   @@index([email])
 }
 
 enum StaffRole {
-  ADMIN           // Administrador de la institución
-  DOCTOR          // Médico
-  PARAMEDIC       // Paramédico
-  NURSE           // Enfermero/a
-  EMERGENCY_TECH  // Técnico en emergencias
+  ADMIN // Administrador de la institución
+  DOCTOR // Médico
+  PARAMEDIC // Paramédico
+  NURSE // Enfermero/a
+  EMERGENCY_TECH // Técnico en emergencias
 }
 
 // ==================== AUDITORÍA ====================
 
 model AuditLog {
-  id          String   @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Actor
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
-  actorType   String   // USER, STAFF, SYSTEM
-  actorId     String?
-  actorName   String?
-  
+  userId    String?
+  user      User?   @relation(fields: [userId], references: [id])
+  actorType String // USER, STAFF, SYSTEM
+  actorId   String?
+  actorName String?
+
   // Acción
-  action      String   // CREATE, READ, UPDATE, DELETE, LOGIN, etc.
-  resource    String   // users, profiles, directives, etc.
-  resourceId  String?
-  
+  action     String // CREATE, READ, UPDATE, DELETE, LOGIN, etc.
+  resource   String // users, profiles, directives, etc.
+  resourceId String?
+
   // Detalles
-  details     Json?
-  oldValue    Json?
-  newValue    Json?
-  
+  details  Json?
+  oldValue Json?
+  newValue Json?
+
   // Contexto
-  ipAddress   String?
-  userAgent   String?
-  
-  createdAt   DateTime @default(now())
-  
+  ipAddress String?
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([action])
   @@index([resource])
@@ -616,26 +656,26 @@ model AuditLog {
 // ==================== TRACKING DE DESCARGAS ====================
 
 model DocumentAccessLog {
-  id                String   @id @default(uuid())
+  id String @id @default(uuid())
 
   // Documento accedido
-  documentKey       String   // S3 key o ruta del archivo
-  documentId        String?  // ID del documento si está en BD
+  documentKey String // S3 key o ruta del archivo
+  documentId  String? // ID del documento si está en BD
 
   // Quién accedió
-  userId            String?  // Usuario autenticado (si aplica)
-  emergencyAccessId String?  // ID del acceso de emergencia (si aplica)
-  accessType        String   // owner, emergency, representative, admin
+  userId            String? // Usuario autenticado (si aplica)
+  emergencyAccessId String? // ID del acceso de emergencia (si aplica)
+  accessType        String // owner, emergency, representative, admin
 
   // Contexto
-  ipAddress         String?
-  userAgent         String?
+  ipAddress String?
+  userAgent String?
 
   // Resultado
-  success           Boolean  @default(true)
-  errorReason       String?
+  success     Boolean @default(true)
+  errorReason String?
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([documentKey])
   @@index([userId])
@@ -647,60 +687,60 @@ model DocumentAccessLog {
 // ==================== PLANTILLAS LEGALES POR ESTADO ====================
 
 model StateLegalTemplate {
-  id              String   @id @default(uuid())
-  stateCode       String   @unique // CDMX, JAL, NL, etc.
-  stateName       String
-  
+  id        String @id @default(uuid())
+  stateCode String @unique // CDMX, JAL, NL, etc.
+  stateName String
+
   // Información de la ley
-  lawName         String
-  lawDate         DateTime?
-  lawSummary      String?  @db.Text
-  
+  lawName    String
+  lawDate    DateTime?
+  lawSummary String?   @db.Text
+
   // Plantilla del documento
-  templateHtml    String?  @db.Text
-  templateFields  Json?    // Campos requeridos por el estado
-  
+  templateHtml   String? @db.Text
+  templateFields Json? // Campos requeridos por el estado
+
   // Requisitos
   requiresNotary      Boolean @default(true)
   requiresWitnesses   Int     @default(2)
   requiresMedicalCert Boolean @default(false)
-  
-  isActive        Boolean  @default(true)
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([stateCode])
 }
 
 // ==================== NOTIFICACIONES ====================
 
 model Notification {
-  id          String   @id @default(uuid())
-  
+  id String @id @default(uuid())
+
   // Destinatario
-  userId      String?
-  email       String?
-  phone       String?
-  
+  userId String?
+  email  String?
+  phone  String?
+
   // Contenido
-  type        NotificationType
-  channel     NotificationChannel
-  subject     String?
-  body        String   @db.Text
-  
+  type    NotificationType
+  channel NotificationChannel
+  subject String?
+  body    String              @db.Text
+
   // Estado
-  status      NotificationStatus @default(PENDING)
-  sentAt      DateTime?
-  deliveredAt DateTime?
-  failedAt    DateTime?
+  status       NotificationStatus @default(PENDING)
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  failedAt     DateTime?
   errorMessage String?
-  
+
   // Metadata
-  metadata    Json?
-  
-  createdAt   DateTime @default(now())
-  
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
   @@index([userId])
   @@index([status])
   @@index([type])
@@ -733,30 +773,33 @@ enum NotificationStatus {
 // ==================== ALERTAS DE PANICO ====================
 
 model PanicAlert {
-  id              String      @id @default(uuid())
-  userId          String
-  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(uuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Ubicacion
-  latitude        Float
-  longitude       Float
-  accuracy        Float?
-  locationName    String?
+  latitude     Float
+  longitude    Float
+  accuracy     Float?
+  locationName String?
+
+  // Campo cifrado (V2) — coordenadas como JSON cifrado
+  locationEnc String? // JSON cifrado: { lat, lon, accuracy }
 
   // Estado
-  status          PanicStatus @default(ACTIVE)
-  message         String?
+  status  PanicStatus @default(ACTIVE)
+  message String?
 
   // Timestamps
-  cancelledAt     DateTime?
-  resolvedAt      DateTime?
+  cancelledAt DateTime?
+  resolvedAt  DateTime?
 
   // Datos de respuesta
-  nearbyHospitals Json?       // Array de hospitales cercanos al momento de la alerta
-  notificationsSent Json?     // Resumen de notificaciones enviadas
+  nearbyHospitals   Json? // Array de hospitales cercanos al momento de la alerta
+  notificationsSent Json? // Resumen de notificaciones enviadas
 
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
   @@index([status])
@@ -764,74 +807,74 @@ model PanicAlert {
 }
 
 enum PanicStatus {
-  ACTIVE      // Alerta activa
-  CANCELLED   // Cancelada por el usuario
-  RESOLVED    // Resuelta (atendida)
-  EXPIRED     // Expirada automaticamente (24h)
+  ACTIVE // Alerta activa
+  CANCELLED // Cancelada por el usuario
+  RESOLVED // Resuelta (atendida)
+  EXPIRED // Expirada automaticamente (24h)
 }
 
 // ==================== ADMINISTRADORES DEL SISTEMA ====================
 
 model AdminUser {
-  id              String      @id @default(uuid())
-  email           String      @unique
-  passwordHash    String
-  name            String
-  role            AdminRole   @default(VIEWER)
-  permissions     String[]    // ['metrics:read', 'users:write', etc.]
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  role         AdminRole @default(VIEWER)
+  permissions  String[] // ['metrics:read', 'users:write', etc.]
 
-  isActive        Boolean     @default(true)
-  isSuperAdmin    Boolean     @default(false)
+  isActive     Boolean @default(true)
+  isSuperAdmin Boolean @default(false)
 
   // Preferencia de idioma
-  preferredLanguage String    @default("es") @db.VarChar(5)
+  preferredLanguage String @default("es") @db.VarChar(5)
 
   // Seguridad
-  lastLoginAt     DateTime?
-  lastLoginIp     String?
-  failedAttempts  Int         @default(0)
-  lockedUntil     DateTime?
+  lastLoginAt    DateTime?
+  lastLoginIp    String?
+  failedAttempts Int       @default(0)
+  lockedUntil    DateTime?
 
   // MFA (Multi-Factor Authentication)
-  mfaEnabled      Boolean     @default(false)
-  mfaSecret       String?     // Secreto TOTP cifrado (AES-256-GCM)
-  mfaBackupCodes  String[]    // Códigos de respaldo (formato: "XXXX-XXXX" o "USED:XXXX-XXXX")
-  mfaEnabledAt    DateTime?
-  mfaPendingSecret String?    // Secreto temporal durante setup (expira en 10 min)
+  mfaEnabled        Boolean   @default(false)
+  mfaSecret         String? // Secreto TOTP cifrado (AES-256-GCM)
+  mfaBackupCodes    String[] // Códigos de respaldo (formato: "XXXX-XXXX" o "USED:XXXX-XXXX")
+  mfaEnabledAt      DateTime?
+  mfaPendingSecret  String? // Secreto temporal durante setup (expira en 10 min)
   mfaPendingExpires DateTime? // Expiración del secreto pendiente
 
   // Timestamps
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  createdBy       String?     // ID del admin que lo creo
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy String? // ID del admin que lo creo
 
   // Relaciones
-  sessions        AdminSession[]
-  auditActions    AdminAuditLog[]
+  sessions     AdminSession[]
+  auditActions AdminAuditLog[]
 
   @@index([email])
   @@index([role])
 }
 
 enum AdminRole {
-  SUPER_ADMIN   // Acceso total al sistema
-  ADMIN         // Gestion completa de usuarios e instituciones
-  MODERATOR     // Gestion limitada, solo lectura de auditoria
-  VIEWER        // Solo lectura de metricas
-  SUPPORT       // Soporte tecnico, acceso a logs
+  SUPER_ADMIN // Acceso total al sistema
+  ADMIN // Gestion completa de usuarios e instituciones
+  MODERATOR // Gestion limitada, solo lectura de auditoria
+  VIEWER // Solo lectura de metricas
+  SUPPORT // Soporte tecnico, acceso a logs
 }
 
 model AdminSession {
-  id            String    @id @default(uuid())
-  adminId       String
-  admin         AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  id      String    @id @default(uuid())
+  adminId String
+  admin   AdminUser @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
-  refreshToken  String    @unique
-  userAgent     String?
-  ipAddress     String?
+  refreshToken String  @unique
+  userAgent    String?
+  ipAddress    String?
 
-  expiresAt     DateTime
-  createdAt     DateTime  @default(now())
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
   @@index([adminId])
   @@index([refreshToken])
@@ -839,23 +882,23 @@ model AdminSession {
 
 // Auditoria de acciones de administradores
 model AdminAuditLog {
-  id          String    @id @default(uuid())
+  id String @id @default(uuid())
 
-  adminId     String
-  admin       AdminUser @relation(fields: [adminId], references: [id])
+  adminId String
+  admin   AdminUser @relation(fields: [adminId], references: [id])
 
-  action      String    // LOGIN, VIEW_USER, DEACTIVATE_USER, VIEW_AUDIT, EXPORT_DATA
-  resource    String    // users, audit_logs, institutions, metrics
-  resourceId  String?
+  action     String // LOGIN, VIEW_USER, DEACTIVATE_USER, VIEW_AUDIT, EXPORT_DATA
+  resource   String // users, audit_logs, institutions, metrics
+  resourceId String?
 
-  details     Json?
-  oldValue    Json?
-  newValue    Json?
+  details  Json?
+  oldValue Json?
+  newValue Json?
 
-  ipAddress   String?
-  userAgent   String?
+  ipAddress String?
+  userAgent String?
 
-  createdAt   DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([adminId])
   @@index([action])
@@ -866,53 +909,53 @@ model AdminAuditLog {
 // ==================== SUSCRIPCIONES Y PLANES ====================
 
 model SubscriptionPlan {
-  id                    String   @id @default(uuid())
-  name                  String   // "Plan Gratuito", "Plan Premium"
-  slug                  String   @unique // "free", "premium-monthly", "premium-annual"
-  description           String?  @db.Text
-  priceMonthly          Decimal? @db.Decimal(10, 2)
-  priceAnnual           Decimal? @db.Decimal(10, 2)
-  currency              String   @default("MXN")
-  stripePriceIdMonthly  String?
-  stripePriceIdAnnual   String?
-  stripeProductId       String?
-  features              Json     // { "advanceDirectives": true, "smsNotifications": true, ... }
-  limits                Json     // { "representativesLimit": 2, "qrDownloadsPerMonth": 3, ... }
-  trialDays             Int      @default(0)
-  isActive              Boolean  @default(true)
-  isDefault             Boolean  @default(false) // Plan por defecto para nuevos usuarios
-  displayOrder          Int      @default(0)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                   String   @id @default(uuid())
+  name                 String // "Plan Gratuito", "Plan Premium"
+  slug                 String   @unique // "free", "premium-monthly", "premium-annual"
+  description          String?  @db.Text
+  priceMonthly         Decimal? @db.Decimal(10, 2)
+  priceAnnual          Decimal? @db.Decimal(10, 2)
+  currency             String   @default("MXN")
+  stripePriceIdMonthly String?
+  stripePriceIdAnnual  String?
+  stripeProductId      String?
+  features             Json // { "advanceDirectives": true, "smsNotifications": true, ... }
+  limits               Json // { "representativesLimit": 2, "qrDownloadsPerMonth": 3, ... }
+  trialDays            Int      @default(0)
+  isActive             Boolean  @default(true)
+  isDefault            Boolean  @default(false) // Plan por defecto para nuevos usuarios
+  displayOrder         Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   // Relaciones
-  subscriptions         Subscription[]
+  subscriptions Subscription[]
 
   @@index([slug])
   @@index([isActive])
 }
 
 model Subscription {
-  id                    String   @id @default(uuid())
-  userId                String   @unique
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  planId                String
-  plan                  SubscriptionPlan @relation(fields: [planId], references: [id])
-  stripeSubscriptionId  String?  @unique
-  stripeCustomerId      String?
-  billingCycle          BillingCycle @default(MONTHLY)
-  status                SubscriptionStatus @default(ACTIVE)
-  trialEndsAt           DateTime?
-  currentPeriodStart    DateTime
-  currentPeriodEnd      DateTime
-  cancelAtPeriodEnd     Boolean  @default(false)
-  cancelledAt           DateTime?
-  cancelReason          String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                   String             @id @default(uuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId               String
+  plan                 SubscriptionPlan   @relation(fields: [planId], references: [id])
+  stripeSubscriptionId String?            @unique
+  stripeCustomerId     String?
+  billingCycle         BillingCycle       @default(MONTHLY)
+  status               SubscriptionStatus @default(ACTIVE)
+  trialEndsAt          DateTime?
+  currentPeriodStart   DateTime
+  currentPeriodEnd     DateTime
+  cancelAtPeriodEnd    Boolean            @default(false)
+  cancelledAt          DateTime?
+  cancelReason         String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
   // Relaciones
-  payments              Payment[]
+  payments Payment[]
 
   @@index([status])
   @@index([stripeCustomerId])
@@ -924,43 +967,43 @@ enum BillingCycle {
 }
 
 enum SubscriptionStatus {
-  ACTIVE       // Suscripción activa
-  TRIALING     // En periodo de prueba
-  PAST_DUE     // Pago vencido
-  CANCELED     // Cancelada
-  UNPAID       // Sin pago
-  INCOMPLETE   // Incompleta (esperando primer pago)
-  PAUSED       // Pausada
+  ACTIVE // Suscripción activa
+  TRIALING // En periodo de prueba
+  PAST_DUE // Pago vencido
+  CANCELED // Cancelada
+  UNPAID // Sin pago
+  INCOMPLETE // Incompleta (esperando primer pago)
+  PAUSED // Pausada
 }
 
 // ==================== PAGOS ====================
 
 model Payment {
-  id                    String   @id @default(uuid())
+  id                    String            @id @default(uuid())
   userId                String
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   subscriptionId        String?
-  subscription          Subscription? @relation(fields: [subscriptionId], references: [id])
-  stripePaymentIntentId String?  @unique
+  subscription          Subscription?     @relation(fields: [subscriptionId], references: [id])
+  stripePaymentIntentId String?           @unique
   stripeChargeId        String?
   stripeInvoiceId       String?
-  amount                Decimal  @db.Decimal(10, 2)
-  currency              String   @default("MXN")
+  amount                Decimal           @db.Decimal(10, 2)
+  currency              String            @default("MXN")
   paymentMethod         PaymentMethodType
   last4                 String?
   cardBrand             String?
-  oxxoVoucherUrl        String?  // URL del voucher para pago en OXXO
+  oxxoVoucherUrl        String? // URL del voucher para pago en OXXO
   oxxoExpiresAt         DateTime? // Fecha límite para pago en OXXO
-  status                PaymentStatus @default(PENDING)
+  status                PaymentStatus     @default(PENDING)
   description           String?
   failureCode           String?
   failureMessage        String?
   paidAt                DateTime?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
   // Relaciones
-  invoice               Invoice?
+  invoice Invoice?
 
   @@index([userId])
   @@index([status])
@@ -973,30 +1016,30 @@ enum PaymentMethodType {
 }
 
 enum PaymentStatus {
-  PENDING          // Pendiente
-  PROCESSING       // Procesando
-  REQUIRES_ACTION  // Requiere acción (3D Secure, OXXO voucher)
-  SUCCEEDED        // Exitoso
-  FAILED           // Fallido
-  CANCELED         // Cancelado
-  REFUNDED         // Reembolsado
+  PENDING // Pendiente
+  PROCESSING // Procesando
+  REQUIRES_ACTION // Requiere acción (3D Secure, OXXO voucher)
+  SUCCEEDED // Exitoso
+  FAILED // Fallido
+  CANCELED // Cancelado
+  REFUNDED // Reembolsado
 }
 
 model PaymentMethod {
-  id                      String   @id @default(uuid())
-  userId                  String
-  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stripePaymentMethodId   String   @unique
-  type                    PaymentMethodType @default(CARD)
-  last4                   String
-  brand                   String
-  expMonth                Int
-  expYear                 Int
-  cardholderName          String?
-  isDefault               Boolean  @default(false)
-  isActive                Boolean  @default(true)
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
+  id                    String            @id @default(uuid())
+  userId                String
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripePaymentMethodId String            @unique
+  type                  PaymentMethodType @default(CARD)
+  last4                 String
+  brand                 String
+  expMonth              Int
+  expYear               Int
+  cardholderName        String?
+  isDefault             Boolean           @default(false)
+  isActive              Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
   @@index([userId])
 }
@@ -1009,7 +1052,7 @@ model FiscalData {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   rfc               String
   razonSocial       String
-  regimenFiscal     String   // Código SAT: "601", "612", etc.
+  regimenFiscal     String // Código SAT: "601", "612", etc.
   usoCFDI           String   @default("G03") // Gastos en general
   codigoPostal      String
   calle             String?
@@ -1019,40 +1062,40 @@ model FiscalData {
   municipio         String?
   estado            String?
   emailFacturacion  String
-  facturamaClientId String?  // ID del cliente en Facturama
+  facturamaClientId String? // ID del cliente en Facturama
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
   // Relaciones
-  invoices          Invoice[]
+  invoices Invoice[]
 
   @@index([rfc])
   @@index([userId])
 }
 
 model Invoice {
-  id                  String   @id @default(uuid())
-  userId              String
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  paymentId           String   @unique
-  payment             Payment  @relation(fields: [paymentId], references: [id])
-  fiscalDataId        String?
-  fiscalData          FiscalData? @relation(fields: [fiscalDataId], references: [id])
-  facturamaInvoiceId  String?  @unique  // ID en Facturama
-  uuid                String?  @unique  // UUID del CFDI (folio fiscal)
-  serie               String?
-  folio               String?
-  subtotal            Decimal  @db.Decimal(10, 2)
-  iva                 Decimal  @db.Decimal(10, 2)
-  total               Decimal  @db.Decimal(10, 2)
-  xmlUrl              String?  // URL del archivo XML
-  pdfUrl              String?  // URL del archivo PDF
-  status              InvoiceStatus @default(PENDING)
-  issuedAt            DateTime?
-  cancelledAt         DateTime?
-  errorMessage        String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                 String        @id @default(uuid())
+  userId             String
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paymentId          String        @unique
+  payment            Payment       @relation(fields: [paymentId], references: [id])
+  fiscalDataId       String?
+  fiscalData         FiscalData?   @relation(fields: [fiscalDataId], references: [id])
+  facturamaInvoiceId String?       @unique // ID en Facturama
+  uuid               String?       @unique // UUID del CFDI (folio fiscal)
+  serie              String?
+  folio              String?
+  subtotal           Decimal       @db.Decimal(10, 2)
+  iva                Decimal       @db.Decimal(10, 2)
+  total              Decimal       @db.Decimal(10, 2)
+  xmlUrl             String? // URL del archivo XML
+  pdfUrl             String? // URL del archivo PDF
+  status             InvoiceStatus @default(PENDING)
+  issuedAt           DateTime?
+  cancelledAt        DateTime?
+  errorMessage       String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   @@index([userId])
   @@index([uuid])
@@ -1060,26 +1103,26 @@ model Invoice {
 }
 
 enum InvoiceStatus {
-  PENDING    // Pendiente de timbrar
-  ISSUED     // Timbrada/Emitida
-  SENT       // Enviada al cliente
-  CANCELLED  // Cancelada
-  ERROR      // Error al timbrar
+  PENDING // Pendiente de timbrar
+  ISSUED // Timbrada/Emitida
+  SENT // Enviada al cliente
+  CANCELLED // Cancelada
+  ERROR // Error al timbrar
 }
 
 // ==================== AUDIT ARCHIVE ====================
 
 model AuditArchive {
-  id              String   @id @default(uuid())
-  originalTable   String   // AdminAuditLog, EmergencyAccess, etc.
-  originalId      String   // ID del registro original
-  data            Json     // Datos del registro archivado
-  archivedAt      DateTime @default(now())
-  deleteAfter     DateTime // Fecha después de la cual se puede eliminar permanentemente
-  s3Key           String?  // Clave S3 si se archivó a S3
-  s3Bucket        String?  // Bucket S3
-  compressedSize  Int?     // Tamaño comprimido en bytes
-  checksum        String?  // SHA256 para verificar integridad
+  id             String   @id @default(uuid())
+  originalTable  String // AdminAuditLog, EmergencyAccess, etc.
+  originalId     String // ID del registro original
+  data           Json // Datos del registro archivado
+  archivedAt     DateTime @default(now())
+  deleteAfter    DateTime // Fecha después de la cual se puede eliminar permanentemente
+  s3Key          String? // Clave S3 si se archivó a S3
+  s3Bucket       String? // Bucket S3
+  compressedSize Int? // Tamaño comprimido en bytes
+  checksum       String? // SHA256 para verificar integridad
 
   @@index([originalTable])
   @@index([deleteAfter])
@@ -1089,15 +1132,88 @@ model AuditArchive {
 // ==================== QR DOWNLOAD TRACKING ====================
 
 model QRDownload {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  downloadType String  // 'png', 'svg', 'pdf', 'wallet'
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  downloadType String // 'png', 'svg', 'pdf', 'wallet'
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
 
   @@index([userId])
   @@index([createdAt])
   @@index([userId, createdAt])
+}
+
+// ==================== PRIVACY & CONSENT (LFPDPPP) ====================
+
+model PrivacyPolicyVersion {
+  id          String   @id @default(uuid())
+  version     String   @unique // e.g. "1.0", "1.1", "2.0"
+  content     String   @db.Text // Full HTML/markdown of policy
+  summary     String?  @db.Text // Short change summary
+  publishedAt DateTime @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  consents ConsentRecord[]
+
+  @@index([isActive])
+  @@index([publishedAt])
+}
+
+model ConsentRecord {
+  id              String               @id @default(uuid())
+  userId          String
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  policyVersionId String
+  policyVersion   PrivacyPolicyVersion @relation(fields: [policyVersionId], references: [id])
+  acceptedAt      DateTime             @default(now())
+  ipAddress       String?
+  userAgent       String?
+  scope           String[] // e.g. ["essential", "analytics", "marketing"]
+  revokedAt       DateTime?
+
+  @@index([userId])
+  @@index([policyVersionId])
+  @@index([userId, policyVersionId])
+}
+
+// ==================== ARCO RIGHTS (LFPDPPP Art. 28-35) ====================
+
+model ARCORequest {
+  id          String     @id @default(uuid())
+  folio       String     @unique // Unique tracking number e.g. ARCO-2026-0001
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        ARCOType
+  status      ARCOStatus @default(RECEIVED)
+  description String?    @db.Text // User's description of request
+  response    String?    @db.Text // Admin/system response
+  resolvedAt  DateTime? // When request was resolved
+  dueDate     DateTime // Legal deadline (20 business days from creation)
+  ipAddress   String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([userId])
+  @@index([folio])
+  @@index([status])
+  @@index([type])
+  @@index([dueDate])
+}
+
+enum ARCOType {
+  ACCESS // Acceso a datos personales
+  RECTIFICATION // Rectificación de datos
+  CANCELLATION // Cancelación (eliminación)
+  OPPOSITION // Oposición al tratamiento
+}
+
+enum ARCOStatus {
+  RECEIVED // Recibida
+  IN_PROGRESS // En proceso
+  COMPLETED // Completada
+  REJECTED // Rechazada (con fundamento legal)
+  EXPIRED // Venció el plazo
 }

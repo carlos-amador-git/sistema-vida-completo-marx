@@ -1,13 +1,14 @@
 // src/modules/pup/pup.service.ts
-import { PrismaClient, PatientProfile, DocumentCategory } from '@prisma/client';
+import { PatientProfile, DocumentCategory } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 import { encrypt, decrypt, encryptJSON, decryptJSON } from '../../common/utils/encryption';
+import { encryptionV2 } from '../../common/services/encryption-v2.service';
 import { generateEmergencyQR } from '../../common/utils/qr-generator';
 import { pdfGeneratorService } from '../../common/services/pdf-generator.service';
 import { s3Service } from '../../common/services/s3.service';
 import { logger } from '../../common/services/logger.service';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 // Tipos para datos médicos (descifrados)
 interface MedicalData {
@@ -58,11 +59,22 @@ class PupService {
     const profile = await prisma.patientProfile.findUnique({
       where: { userId },
     });
-    
+
     if (!profile) {
       return null;
     }
-    
+
+    // MED-11: Audit profile reads
+    prisma.auditLog.create({
+      data: {
+        userId,
+        actorType: 'USER',
+        action: 'READ',
+        resource: 'patient_profile',
+        resourceId: profile.id,
+      },
+    }).catch(err => logger.error('Error registering profile read audit', err));
+
     return this.decryptProfile(profile);
   }
   
@@ -75,6 +87,7 @@ class PupService {
 
     if (input.bloodType !== undefined) {
       updateData.bloodType = input.bloodType;
+      updateData.bloodTypeEnc = input.bloodType ? encryptionV2.encryptField(input.bloodType) : null;
     }
 
     if (input.allergies !== undefined) {
@@ -95,6 +108,7 @@ class PupService {
 
     if (input.insurancePolicy !== undefined) {
       updateData.insurancePolicy = input.insurancePolicy;
+      updateData.insurancePolicyEnc = input.insurancePolicy ? encryptionV2.encryptField(input.insurancePolicy) : null;
     }
 
     if (input.insurancePhone !== undefined) {
@@ -368,7 +382,7 @@ class PupService {
         where: {
           userId,
           title: documentTitle,
-          category: 'CLINICAL_HISTORY' as DocumentCategory,
+          category: 'EMERGENCY_PROFILE' as DocumentCategory,
         },
       });
 
@@ -414,7 +428,7 @@ class PupService {
             userId,
             title: documentTitle,
             description: 'Documento generado automáticamente con la información de tu perfil médico de emergencia. Se actualiza cada vez que modificas tu perfil.',
-            category: 'CLINICAL_HISTORY' as DocumentCategory,
+            category: 'EMERGENCY_PROFILE' as DocumentCategory,
             fileName,
             fileType: 'application/pdf',
             fileSize: pdfBuffer.length,

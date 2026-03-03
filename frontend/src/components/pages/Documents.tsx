@@ -34,7 +34,7 @@ interface DocumentStats {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  CLINICAL_HISTORY: 'bg-blue-100 text-blue-700',
+  EMERGENCY_PROFILE: 'bg-blue-100 text-blue-700',
   LAB_RESULTS: 'bg-purple-100 text-purple-700',
   IMAGING: 'bg-indigo-100 text-indigo-700',
   PRESCRIPTIONS: 'bg-green-100 text-green-700',
@@ -47,7 +47,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  CLINICAL_HISTORY: <FileText className="w-5 h-5" />,
+  EMERGENCY_PROFILE: <FileText className="w-5 h-5" />,
   LAB_RESULTS: <FileText className="w-5 h-5" />,
   IMAGING: <Image className="w-5 h-5" />,
   PRESCRIPTIONS: <FileText className="w-5 h-5" />,
@@ -99,7 +99,7 @@ export default function Documents() {
 
   // Category labels derived from translations
   const CATEGORY_LABELS: Record<string, string> = {
-    CLINICAL_HISTORY: t('categories.CLINICAL_HISTORY'),
+    EMERGENCY_PROFILE: t('categories.EMERGENCY_PROFILE'),
     LAB_RESULTS: t('categories.LAB_RESULTS'),
     IMAGING: t('categories.IMAGING'),
     PRESCRIPTIONS: t('categories.PRESCRIPTIONS'),
@@ -1015,11 +1015,9 @@ export default function Documents() {
                   <Trash2 className="w-8 h-8 text-red-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">{t('deleteModal.title')}</h3>
-                <p className="text-gray-600 mb-6"
-                  dangerouslySetInnerHTML={{
-                    __html: t('deleteModal.description', { name: selectedDocument.title })
-                  }}
-                />
+                <p className="text-gray-600 mb-6">
+                  {t('deleteModal.description', { name: selectedDocument.title })}
+                </p>
                 <div className="flex gap-3">
                   <button onClick={closeDeleteConfirm} className="btn-secondary flex-1">
                     {t('deleteModal.buttons.cancel')}

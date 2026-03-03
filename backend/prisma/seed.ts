@@ -9,8 +9,12 @@ dotenv.config();
 
 const prisma = new PrismaClient();
 
-// Usar ENCRYPTION_KEY del .env
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+// Usar ENCRYPTION_KEY del .env — requerido, sin fallback
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+if (!ENCRYPTION_KEY) {
+  console.error('ENCRYPTION_KEY is required for seeding');
+  process.exit(1);
+}
 
 function encrypt(plaintext: string): string {
   const key = Buffer.from(ENCRYPTION_KEY, 'hex');
@@ -438,14 +442,13 @@ async function main() {
   console.log('Perfil medico creado con QR Token:', profile.qrToken);
 
   // Crear representantes
-  // NOTA: El número +52 55 3508 4672 está registrado en Twilio para recibir SMS reales
   const representatives = await Promise.all([
     prisma.representative.create({
       data: {
         userId: testUser.id,
-        name: 'Rafael Chavez',
-        phone: '+52 55 3508 4672',  // Número real registrado en Twilio
-        email: 'representante.demo@sistemavida.mx',  // Email demo para notificaciones
+        name: 'Usuario Demo',
+        phone: '+525500000000',
+        email: 'representante.demo@sistemavida.mx',
         relation: 'Apoderado Legal',
         priority: 1,
         isDonorSpokesperson: true,
@@ -457,8 +460,8 @@ async function main() {
       data: {
         userId: testUser.id,
         name: 'Roberto Garcia Martinez',
-        phone: '+52 55 5555 1234',
-        email: 'roberto.garcia@email.com',
+        phone: '+525500000001',
+        email: 'roberto.garcia@demo.test',
         relation: 'Hijo',
         priority: 2,
         isDonorSpokesperson: false,
@@ -470,8 +473,8 @@ async function main() {
       data: {
         userId: testUser.id,
         name: 'Ana Patricia Garcia Martinez',
-        phone: '+52 55 5555 5678',
-        email: 'ana.garcia@email.com',
+        phone: '+525500000002',
+        email: 'ana.garcia@demo.test',
         relation: 'Hija',
         priority: 3,
         isDonorSpokesperson: false,
@@ -483,8 +486,8 @@ async function main() {
       data: {
         userId: testUser.id,
         name: 'Dr. Carlos Mendez',
-        phone: '+52 55 9999 8888',
-        email: 'dr.mendez@hospital-demo.mx',
+        phone: '+525500000003',
+        email: 'dr.mendez@demo.test',
         relation: 'Médico Personal',
         priority: 4,
         isDonorSpokesperson: false,
@@ -495,9 +498,9 @@ async function main() {
     prisma.representative.create({
       data: {
         userId: testUser.id,
-        name: 'Carlos Amador',
-        phone: '+52 55 7777 8888',
-        email: 'carlos_amador@outlook.com',
+        name: 'Representante Demo',
+        phone: '+525500000004',
+        email: 'representante@demo.test',
         relation: 'Representante Legal',
         priority: 5,
         isDonorSpokesperson: false,
@@ -532,7 +535,7 @@ expreso mi voluntad de:
 6. SI deseo recibir cuidados paliativos completos para control del dolor
 
 Mi prioridad es mantener mi dignidad y calidad de vida, evitando el ensanamiento terapeutico.
-Confio en Rafael Chavez como mi apoderado legal para tomar decisiones en mi nombre.`,
+Confio en mi apoderado legal para tomar decisiones en mi nombre.`,
       originState: 'CDMX',
       legalBasisSummary: 'Ley de Voluntad Anticipada para el Distrito Federal (2008)',
       validatedAt: new Date(),

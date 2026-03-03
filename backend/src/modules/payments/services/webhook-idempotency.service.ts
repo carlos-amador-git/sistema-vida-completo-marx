@@ -8,12 +8,11 @@
  * - Base de datos (para persistencia a largo plazo)
  */
 
-import { PrismaClient } from '@prisma/client';
 import config from '../../../config';
 import { cacheService, CACHE_PREFIXES } from '../../../common/services/cache.service';
 import { logger } from '../../../common/services/logger.service';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../../common/prisma';
 
 // TTL para eventos procesados (24 horas)
 const EVENT_TTL = 24 * 60 * 60;

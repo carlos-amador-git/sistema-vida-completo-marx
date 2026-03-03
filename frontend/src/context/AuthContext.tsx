@@ -60,12 +60,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setUser(null);
         localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        // refreshToken now managed via httpOnly cookie
       }
     } catch (error) {
       setUser(null);
       localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      // refreshToken now managed via httpOnly cookie
     } finally {
       setIsLoading(false);
     }
@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await authApi.login(data);
     if (response.success && response.data) {
       localStorage.setItem('accessToken', response.data.tokens.accessToken);
-      localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
+      // refreshToken set as httpOnly cookie by server
       setUser(response.data.user);
       syncLanguageFromUser(response.data.user);
     } else {
@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithTokens = (user: User, tokens: AuthTokens) => {
     localStorage.setItem('accessToken', tokens.accessToken);
-    localStorage.setItem('refreshToken', tokens.refreshToken);
+    // refreshToken set as httpOnly cookie by server
     setUser(user);
     syncLanguageFromUser(user);
   };
@@ -98,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const response = await authApi.register(data);
     if (response.success && response.data) {
       localStorage.setItem('accessToken', response.data.tokens.accessToken);
-      localStorage.setItem('refreshToken', response.data.tokens.refreshToken);
+      // refreshToken set as httpOnly cookie by server
       setUser(response.data.user);
     } else {
       throw new Error(response.error?.message || t('toast.registerError', { ns: 'auth' }));
@@ -112,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Ignorar errores de logout
     } finally {
       localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
+      // refreshToken now managed via httpOnly cookie
       setUser(null);
     }
   };

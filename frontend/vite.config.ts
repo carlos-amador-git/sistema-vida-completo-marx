@@ -2,7 +2,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
   resolve: {
     alias: {
@@ -28,4 +28,10 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: false,
   },
-});
+  esbuild: mode === 'production' ? {
+    drop: ['console', 'debugger'],
+  } : undefined,
+  define: {
+    __DEMO_ENABLED__: JSON.stringify(process.env.VITE_ENABLE_DEMO_MODE === 'true'),
+  },
+}));

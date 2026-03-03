@@ -4,11 +4,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAdminAuth } from '../../../context/AdminAuthContext';
 
-// Verificar si el modo demo está habilitado (solo en desarrollo)
-const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO_MODE !== 'false';
-
-// Administradores demo para presentaciones (solo visibles si DEMO_ENABLED)
-const DEMO_ADMINS = [
+// Credenciales demo eliminadas del bundle de producción via Vite tree-shaking
+// cuando VITE_ENABLE_DEMO_MODE !== 'true' (controlado por __DEMO_ENABLED__ en vite.config.ts)
+const DEMO_ADMINS = __DEMO_ENABLED__ ? [
   {
     email: 'superadmin@sistemavida.mx',
     password: 'Admin123!',
@@ -33,7 +31,7 @@ const DEMO_ADMINS = [
     descriptionKey: 'demo_admins.viewer_desc',
     color: 'from-slate-500 to-gray-600',
   },
-];
+] : null;
 
 const AdminLogin: React.FC = () => {
   const { t } = useTranslation('admin');
@@ -68,7 +66,7 @@ const AdminLogin: React.FC = () => {
   };
 
   // Login con admin demo
-  const handleDemoLogin = async (demoAdmin: typeof DEMO_ADMINS[0]) => {
+  const handleDemoLogin = async (demoAdmin: { email: string; password: string; name: string; role: string; descriptionKey: string; color: string }) => {
     setError('');
     setIsLoading(true);
 
@@ -200,8 +198,8 @@ const AdminLogin: React.FC = () => {
             </button>
           </form>
 
-          {/* Sección de Demo - Acceso Rápido (solo visible si DEMO_ENABLED) */}
-          {DEMO_ENABLED && (
+          {/* Sección de Demo - Acceso Rápido (solo visible si __DEMO_ENABLED__) */}
+          {__DEMO_ENABLED__ && DEMO_ADMINS && (
             <div className="mt-6 pt-6 border-t border-white/10">
               <div className="flex items-center gap-2 mb-4">
                 <svg className="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -1,6 +1,6 @@
 // src/modules/payments/services/payment.service.ts
 import { logger } from '../../../common/services/logger.service';
-import { PrismaClient, PaymentStatus, PaymentMethodType } from '@prisma/client';
+import { PaymentStatus, PaymentMethodType } from '@prisma/client';
 import { stripeService } from './stripe.service';
 import type {
   PaymentDTO,
@@ -8,7 +8,7 @@ import type {
   SavePaymentMethodInput,
 } from '../types/payments.types';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../../common/prisma';
 
 export const paymentService = {
   /**

@@ -1,10 +1,12 @@
 // src/modules/directives/directives.service.ts
-import { PrismaClient, AdvanceDirective, DirectiveType, DirectiveStatus } from '@prisma/client';
+import { AdvanceDirective, DirectiveType, DirectiveStatus } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-import { hashSHA256, generateSecureToken } from '../../common/utils/encryption';
+import { hashSHA256 } from '../../common/utils/encryption';
+import { encryptionV2 } from '../../common/services/encryption-v2.service';
+import { nom151Service } from '../../common/services/nom151.service';
 import config from '../../config';
 
-const prisma = new PrismaClient();
+import { prisma } from '../../common/prisma';
 
 // Tipos
 interface CreateDraftInput {
@@ -89,6 +91,46 @@ class DirectivesService {
    * Crea un borrador de voluntad anticipada
    */
   async createDraft(userId: string, input: CreateDraftInput): Promise<DirectiveResponse> {
+    // Verify user is 18+ (MED-16) — extract birth date from CURP positions 5-10 (YYMMDD)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { curp: true, dateOfBirth: true },
+    });
+
+    if (user) {
+      let birthDate: Date | null = user.dateOfBirth;
+
+      if (!birthDate && user.curp && user.curp.length >= 10) {
+        const yy = parseInt(user.curp.substring(4, 6), 10);
+        const mm = parseInt(user.curp.substring(6, 8), 10) - 1;
+        const dd = parseInt(user.curp.substring(8, 10), 10);
+        const year = yy <= 30 ? 2000 + yy : 1900 + yy; // CURP convention
+        birthDate = new Date(year, mm, dd);
+      }
+
+      if (birthDate) {
+        const age = Math.floor((Date.now() - birthDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+        if (age < 18) {
+          throw {
+            code: 'UNDERAGE',
+            message: 'Debe ser mayor de 18 años para crear una directiva anticipada de voluntad',
+            status: 400,
+          };
+        }
+      }
+    }
+
+    // Encrypt directive decisions as consolidated JSON
+    const decisionsPayload = {
+      acceptsCPR: input.acceptsCPR,
+      acceptsIntubation: input.acceptsIntubation,
+      acceptsDialysis: input.acceptsDialysis,
+      acceptsTransfusion: input.acceptsTransfusion,
+      acceptsArtificialNutrition: input.acceptsArtificialNutrition,
+      palliativeCareOnly: input.palliativeCareOnly,
+      additionalNotes: input.additionalNotes,
+    };
+
     const directive = await prisma.advanceDirective.create({
       data: {
         userId,
@@ -102,6 +144,7 @@ class DirectivesService {
         palliativeCareOnly: input.palliativeCareOnly,
         additionalNotes: input.additionalNotes,
         originState: input.originState,
+        directiveDecisionsEnc: encryptionV2.encryptJSON(decisionsPayload),
       },
     });
     
@@ -150,17 +193,22 @@ class DirectivesService {
       return null;
     }
     
+    const mergedDecisions = {
+      acceptsCPR: input.acceptsCPR ?? existing.acceptsCPR,
+      acceptsIntubation: input.acceptsIntubation ?? existing.acceptsIntubation,
+      acceptsDialysis: input.acceptsDialysis ?? existing.acceptsDialysis,
+      acceptsTransfusion: input.acceptsTransfusion ?? existing.acceptsTransfusion,
+      acceptsArtificialNutrition: input.acceptsArtificialNutrition ?? existing.acceptsArtificialNutrition,
+      palliativeCareOnly: input.palliativeCareOnly ?? existing.palliativeCareOnly,
+      additionalNotes: input.additionalNotes ?? existing.additionalNotes,
+    };
+
     const directive = await prisma.advanceDirective.update({
       where: { id: directiveId },
       data: {
-        acceptsCPR: input.acceptsCPR ?? existing.acceptsCPR,
-        acceptsIntubation: input.acceptsIntubation ?? existing.acceptsIntubation,
-        acceptsDialysis: input.acceptsDialysis ?? existing.acceptsDialysis,
-        acceptsTransfusion: input.acceptsTransfusion ?? existing.acceptsTransfusion,
-        acceptsArtificialNutrition: input.acceptsArtificialNutrition ?? existing.acceptsArtificialNutrition,
-        palliativeCareOnly: input.palliativeCareOnly ?? existing.palliativeCareOnly,
-        additionalNotes: input.additionalNotes ?? existing.additionalNotes,
+        ...mergedDecisions,
         originState: input.originState ?? existing.originState,
+        directiveDecisionsEnc: encryptionV2.encryptJSON(mergedDecisions),
       },
     });
     
@@ -209,25 +257,28 @@ class DirectivesService {
     const directive = await prisma.advanceDirective.findFirst({
       where: { id: directiveId, userId },
     });
-    
+
     if (!directive || !directive.documentHash) {
       return null;
     }
-    
-    // En producción, aquí se llamaría al PSC
-    // Por ahora, simulamos el sellado
-    const mockCertificate = `NOM151-CERT-${generateSecureToken(16)}`;
-    
+
+    // HIGH-14: Use NOM-151 service abstraction (mock or real PSC)
+    const sealResult = await nom151Service.sealDocument({
+      documentHash: directive.documentHash,
+      documentId: directiveId,
+      requestedBy: userId,
+    });
+
     const updated = await prisma.advanceDirective.update({
       where: { id: directiveId },
       data: {
-        nom151Sealed: true,
-        nom151Timestamp: new Date(),
-        nom151Certificate: mockCertificate,
-        nom151Provider: 'PSC Demo Provider',
+        nom151Sealed: sealResult.sealed,
+        nom151Timestamp: sealResult.timestamp,
+        nom151Certificate: sealResult.certificate,
+        nom151Provider: sealResult.provider,
       },
     });
-    
+
     return this.formatDirective(updated);
   }
   
@@ -291,6 +342,9 @@ class DirectivesService {
     additionalNotes: string | null;
     documentUrl: string | null;
     validatedAt: Date | null;
+    directiveType: string | null;
+    legalStatus: 'LEGALLY_BINDING' | 'INFORMATIONAL' | null;
+    palliativeCareOnly: boolean | null;
   } | null> {
     const directive = await prisma.advanceDirective.findFirst({
       where: { 
@@ -308,9 +362,17 @@ class DirectivesService {
         additionalNotes: null,
         documentUrl: null,
         validatedAt: null,
+        directiveType: null,
+        legalStatus: null,
+        palliativeCareOnly: null,
       };
     }
-    
+
+    // CRIT-11/R-03: Determinar estatus legal de la directiva
+    const legalStatus = directive.type === DirectiveType.NOTARIZED_DOCUMENT
+      ? 'LEGALLY_BINDING' as const
+      : 'INFORMATIONAL' as const;
+
     return {
       hasActiveDirective: true,
       acceptsCPR: directive.acceptsCPR,
@@ -318,6 +380,9 @@ class DirectivesService {
       additionalNotes: directive.additionalNotes,
       documentUrl: directive.documentUrl,
       validatedAt: directive.validatedAt,
+      directiveType: directive.type,
+      legalStatus,
+      palliativeCareOnly: directive.palliativeCareOnly,
     };
   }
   

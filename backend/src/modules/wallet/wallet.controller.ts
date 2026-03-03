@@ -5,11 +5,11 @@ import { authMiddleware } from '../../common/guards/auth.middleware';
 import { walletService } from './wallet.service';
 import { pupService } from '../pup/pup.service';
 import { premiumFeaturesService } from '../payments/services/premium-features.service';
-import { PrismaClient } from '@prisma/client';
 import { config } from '../../config';
 
+import { prisma } from '../../common/prisma';
+
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * GET /api/v1/wallet/status

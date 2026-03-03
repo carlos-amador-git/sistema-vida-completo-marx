@@ -76,35 +76,30 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
         throw new Error(t('panic.button.errors.no_session'));
       }
 
-      // Get current location
-      const position = await new Promise<GeolocationPosition>((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          resolve,
-          (error) => {
-            console.warn('Geolocation error (using fallback):', error);
-            // Fallback location (CDMX) for development/HTTP environment
-            resolve({
-              coords: {
-                latitude: 19.4326,
-                longitude: -99.1332,
-                accuracy: 100,
-                altitude: null,
-                altitudeAccuracy: null,
-                heading: null,
-                speed: null
-              },
-              timestamp: Date.now()
-            } as GeolocationPosition);
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 0,
-          }
-        );
-      });
+      // Get current location (optional — alert still sent without GPS)
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+      let accuracy: number | null = null;
 
-      const { latitude, longitude, accuracy } = position.coords;
+      try {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            resolve,
+            reject,
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0,
+            }
+          );
+        });
+        latitude = position.coords.latitude;
+        longitude = position.coords.longitude;
+        accuracy = position.coords.accuracy;
+      } catch {
+        // GPS unavailable — send alert without coordinates
+        console.warn('Geolocation unavailable, sending alert without coordinates');
+      }
 
       // Call API - use environment variable for API base URL
       const apiBaseUrl = import.meta.env.VITE_API_URL || '';

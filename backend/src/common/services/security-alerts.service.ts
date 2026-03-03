@@ -14,7 +14,6 @@
  * - email.service.ts (envío de notificaciones)
  */
 
-import { PrismaClient } from '@prisma/client';
 import { emailService } from './email.service';
 import { emailTemplates } from './email-templates.service';
 import { securityMetrics } from './security-metrics.service';
@@ -22,7 +21,7 @@ import { logger } from './logger.service';
 import { cacheService, CACHE_PREFIXES } from './cache.service';
 import config from '../../config';
 
-const prisma = new PrismaClient();
+import { prisma } from '../prisma';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // CONFIGURACIÓN
