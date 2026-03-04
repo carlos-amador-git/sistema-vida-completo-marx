@@ -1,9 +1,9 @@
 # STATUS - Sistema VIDA
 
-**Actualizado:** 2026-02-26 (Sesión 6)
-**Fase:** MVP Fase 1 - Listo para Pruebas
+**Actualizado:** 2026-03-03 (Sesión 7)
+**Fase:** MVP Fase 1 - Listo para Deploy
 **Branch:** main
-**Plan Activo:** Ninguno — sistema operativo
+**Plan Activo:** Ninguno — pendiente deploy a producción
 
 ## Estado General
 
@@ -32,19 +32,31 @@
 
 ### WABA Templates
 1. `acceso_qr_vida_v1` — **APPROVED** (UTILITY, es_MX) — probado OK con CEO
-2. `emergencia_vida_v1` es_MX — **PENDING** (UTILITY, id: 954722793796826)
-3. `emergencia_vida_v1` en_US — **PENDING** (UTILITY, id: 1432208321692178)
+2. `emergencia_vida_v1` es_MX — **APPROVED** (UTILITY, id: 954722793796826)
+3. `emergencia_vida_v1` en_US — **APPROVED** (UTILITY, id: 1432208321692178)
 4. Template MARKETING actual probado: funciona con sesión activa, fallback texto plano sin sesión
 
 ### Diagnóstico WABA
 - Template MARKETING requiere sesión 24h → causa fallback texto plano para algunos usuarios
-- Nuevo template UTILITY eliminará esta restricción cuando Meta apruebe
+- Templates UTILITY aprobados eliminan esta restricción
 - No existe webhook para mensajes entrantes WhatsApp
 - Footer "no responda" incluido en nuevo template
 
-## Pendiente para Deploy
+## Sesión 7 — Deploy Prep (2026-03-03)
 
-1. Esperar aprobación `emergencia_vida_v1` → cambiar `WABA_TEMPLATE_EMERGENCY` en .env
-2. Ejecutar migración SQL: `prisma/migrations/add_whatsapp_channel.sql`
-3. Configurar variables WABA en Coolify
-4. Fix BLOCKER-002: representantes con notifyOnEmergency=false
+### Completado
+1. Templates WABA corregidos en `.env` y `.env.example`: `emergencia_vida_v1`, `acceso_qr_vida_v1`
+2. `WABA_API_VERSION` actualizado de v18.0 a v22.0
+3. Migración SQL `add_whatsapp_channel.sql` ejecutada en BD local — enum `WHATSAPP` confirmado
+4. Build verificado: tsc 0 errores (backend + frontend)
+
+### Pendiente para Deploy (Producción / Coolify)
+
+1. Configurar variables WABA reales en Coolify:
+   - `WABA_PHONE_NUMBER_ID`, `WABA_ACCESS_TOKEN`, `WABA_BUSINESS_ACCOUNT_ID`
+   - `WABA_TEMPLATE_EMERGENCY=emergencia_vida_v1`
+   - `WABA_TEMPLATE_ACCESS=acceso_qr_vida_v1`
+   - `WHATSAPP_PROVIDER=waba`
+2. Configurar email: `RESEND_API_KEY`, `EMAIL_FROM_RESEND`
+3. Ejecutar migración SQL en BD de producción: `add_whatsapp_channel.sql`
+4. Fix BLOCKER-002 en producción: `UPDATE "Representative" SET "notifyOnEmergency" = true, "notifyOnAccess" = true;`

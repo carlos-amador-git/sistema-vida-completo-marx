@@ -1,7 +1,7 @@
 # HANDOFF - Backend
 
-**Ultima actualizacion:** 2026-02-26 (Sesion 2)
-**Sesion anterior:** Implementación completa migración WABA
+**Ultima actualizacion:** 2026-03-03 (Sesion 7)
+**Sesion anterior:** Deploy prep — templates, migración local, build check
 
 ## Estado Actual
 
@@ -43,12 +43,21 @@ MODIFICADOS:
 └── common/utils/env-validation.ts   # Validación WABA al startup
 ```
 
-## Pendiente para Deploy
+## Sesión 7 — Deploy Prep (2026-03-03)
 
-1. **EJECUTAR SQL:** `prisma/migrations/add_whatsapp_channel.sql` en BD
-2. **CONFIGURAR** en Coolify: WABA_PHONE_NUMBER_ID, WABA_ACCESS_TOKEN, etc.
-3. **ACTIVAR:** `WHATSAPP_PROVIDER=waba` (iniciar con WABA_FALLBACK_TO_TWILIO=true)
-4. **MONITOREAR** logs y desactivar fallback cuando esté estable
+1. Templates WABA corregidos: `emergencia_vida_v1`, `acceso_qr_vida_v1` (todos APPROVED)
+2. `WABA_API_VERSION` actualizado v18.0 → v22.0
+3. Migración SQL ejecutada en BD local (enum WHATSAPP confirmado)
+4. Build verificado: tsc 0 errores
+
+## Pendiente para Deploy (Producción)
+
+1. **CONFIGURAR** en Coolify: `WABA_PHONE_NUMBER_ID`, `WABA_ACCESS_TOKEN`, `WABA_BUSINESS_ACCOUNT_ID`
+2. **TEMPLATES:** `WABA_TEMPLATE_EMERGENCY=emergencia_vida_v1`, `WABA_TEMPLATE_ACCESS=acceso_qr_vida_v1`
+3. **EJECUTAR SQL** en BD producción: `prisma/migrations/add_whatsapp_channel.sql`
+4. **ACTIVAR:** `WHATSAPP_PROVIDER=waba`
+5. **BLOCKER-002:** `UPDATE "Representative" SET "notifyOnEmergency" = true, "notifyOnAccess" = true;`
+6. **MONITOREAR** logs post-deploy
 
 ## API Compatibility
 

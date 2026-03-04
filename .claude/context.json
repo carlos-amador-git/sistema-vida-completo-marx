@@ -1,36 +1,80 @@
 {
   "project": "Sistema VIDA",
-  "phase": "MVP Fase 1 - Funcional → Pruebas",
+  "phase": "Auditoría de Seguridad → Remediación",
   "branch": "main",
-  "lastSession": "2026-02-26T18:30:00-06:00",
-  "sessionCount": 6,
+  "lastSession": "2026-03-02T17:30:00-06:00",
+  "sessionCount": 7,
   "status": {
-    "backend": "FUNCIONAL",
-    "frontend": "FUNCIONAL",
+    "backend": "FUNCIONAL - REQUIERE HARDENING",
+    "frontend": "FUNCIONAL - REQUIERE HARDENING",
     "database": "FUNCIONAL",
-    "auth": "FUNCIONAL",
-    "encryption": "FUNCIONAL",
-    "notifications": "MIGRADO - Provider Pattern (WABA + Twilio fallback)",
-    "i18n": "COMPLETO - Residuales post-auditoría corregidos"
+    "auth": "FUNCIONAL - VULNERABILIDADES DETECTADAS",
+    "encryption": "PARCIAL - 80% campos sensibles sin cifrar",
+    "notifications": "MIGRADO - Provider Pattern (WABA default)",
+    "i18n": "COMPLETO",
+    "security": "ROJO - 14 CRITICOS, 24 HIGH, 21 MEDIUM, 10 LOW",
+    "compliance": "52/100 - NO APTO PARA PRODUCCION"
   },
-  "activePlan": "Ninguno — sistema listo para pruebas operativas",
+  "activePlan": "Remediación de seguridad en 4 fases — ver DIAGNOSTICO_SEGURIDAD_VIDA.md",
   "lastCommit": {
-    "hash": "1ccd924",
-    "message": "fix(i18n): Corregir residuales post-auditoría — tildes, brand names, hooks y controllers",
+    "hash": "d0c0049",
+    "message": "fix: optimize backend Dockerfile build memory for Coolify",
     "pushed": true,
     "remote": "origin (MarxCha/sistema-vida-completo-marx)"
   },
   "builds": {
-    "frontend": "OK - tsc + vite build (1670 modules, 6.81s, 0 errors)",
-    "backend": "OK - tsc --noEmit (0 errors)",
-    "verifiedAt": "2026-02-26"
+    "frontend": "OK - vite dev (5173)",
+    "backend": "OK - ts-node-dev (3001)",
+    "verifiedAt": "2026-03-02"
+  },
+  "securityAudit": {
+    "date": "2026-03-02",
+    "score": "52/100 (ajustado por Gemini cross-audit)",
+    "verdict": "ROJO - NO OPERAR",
+    "document": "DIAGNOSTICO_SEGURIDAD_VIDA.md",
+    "auditors": ["Claude Code (4 agentes paralelos)", "Gemini (cross-audit)"],
+    "criticalFindings": 14,
+    "highFindings": 24,
+    "mediumFindings": 21,
+    "lowFindings": 10,
+    "topCriticals": [
+      "CRIT-01: Credenciales producción hardcodeadas en config/index.ts",
+      "CRIT-02: JWT en localStorage (vulnerable a XSS)",
+      "CRIT-03: Demo credentials en bundle de producción",
+      "CRIT-04: WebSocket sin autenticación + CORS wildcard",
+      "CRIT-05: XSS almacenado via renderizado HTML sin sanitizar",
+      "CRIT-06: Decisiones voluntad anticipada sin cifrar",
+      "CRIT-07: CURP en texto plano",
+      "CRIT-09: Aviso de Privacidad inexistente (viola LFPDPPP)",
+      "CRIT-10: Derechos ARCO sin implementar (viola LFPDPPP)"
+    ],
+    "geminiAdditions": [
+      "CRIT-14: Enumeración de usuarios via WebSocket rooms",
+      "HIGH-15: Blind Index necesario para CURP cifrado",
+      "HIGH-16: Race condition en validación de directivas",
+      "MED-17: CSP unsafe-inline permite exfiltración CSS"
+    ],
+    "remediationPlan": {
+      "fase1": "Emergencias de seguridad (1-2 sem)",
+      "fase2": "Cifrado y protección de datos (4-6 sem, ajustado por Gemini)",
+      "fase3": "Cumplimiento regulatorio LFPDPPP (3-4 sem)",
+      "fase4": "Hardening y certificación (2-3 sem)"
+    }
+  },
+  "infrastructure": {
+    "docker": {
+      "postgres": "localhost:5434 (vida-postgres, healthy)",
+      "redis": "localhost:6381 (vida-redis, healthy)",
+      "note": "Puertos cambiados de 5433/6380 por conflicto con proyecto hidros"
+    },
+    "backend": "http://localhost:3001 (dev mode)",
+    "frontend": "http://localhost:5173 (vite dev)"
   },
   "completedMilestones": [
     "Migración Twilio → WABA con Provider Pattern (ac03680)",
-    "i18n completa ES/EN - 99 archivos, +6394/-1883 (9c47745, 32b89ab)",
-    "i18n QA: frontend residuales corregidos + backend 180 strings conectados a req.t()",
-    "i18n residuales post-auditoría: 23 archivos, +264/-192 (1ccd924)",
-    "Templates WABA: QR aprobado y probado, emergencia UTILITY registrado"
+    "i18n completa ES/EN - 99 archivos (9c47745, 32b89ab, 1ccd924)",
+    "Templates WABA: QR aprobado y probado, emergencia UTILITY registrado",
+    "Auditoría de seguridad integral — 4 ejes + cross-audit Gemini (2026-03-02)"
   ],
   "knownIssues": [
     {
@@ -46,33 +90,39 @@
       "fix": "UPDATE Representative SET notifyOnEmergency=true, notifyOnAccess=true"
     },
     {
-      "id": "ISSUE-001",
-      "title": "Push denegado al repo remoto",
-      "status": "RESUELTO"
+      "id": "SECURITY-001",
+      "title": "Credenciales producción hardcodeadas en config/index.ts",
+      "status": "CRITICO",
+      "fix": "Eliminar fallbacks + rotar credenciales inmediatamente"
     },
     {
-      "id": "ISSUE-002",
-      "title": "Template emergencia MARKETING causa fallback texto plano sin sesión 24h",
-      "status": "EN_PROGRESO",
-      "fix": "Template UTILITY emergencia_vida_v1 registrado, pendiente aprobación Meta"
+      "id": "SECURITY-002",
+      "title": "80% de datos sensibles sin cifrar en BD",
+      "status": "CRITICO",
+      "fix": "Plan de cifrado progresivo — ver Fase 2 del diagnóstico"
+    },
+    {
+      "id": "LEGAL-001",
+      "title": "Aviso de Privacidad y Derechos ARCO inexistentes",
+      "status": "CRITICO",
+      "fix": "Bloquea operación legal — ver Fase 3 del diagnóstico"
     }
   ],
-  "wabaTemplates": {
-    "copy_copy_urgente": "APPROVED (MARKETING, es_MX) — deprecar cuando v1 apruebe",
-    "acceso_qr_vida_v1": "APPROVED (UTILITY, es_MX) — probado OK",
-    "emergencia_vida_v1_es": "PENDING (UTILITY, es_MX, id: 954722793796826)",
-    "emergencia_vida_v1_en": "PENDING (UTILITY, en_US, id: 1432208321692178)"
+  "remediationPlan": {
+    "document": "PLAN_REMEDIACION_VIDA.md",
+    "version": "1.1 (post cross-audit Gemini)",
+    "geminiScore": "92/100 — APROBADO",
+    "status": "PENDIENTE APROBACION CEO",
+    "phases": 4,
+    "sprints": 14,
+    "estimatedDays": "28-38",
+    "coverage": "56/56 hallazgos + 6 regulatorios = 100%"
   },
   "nextSteps": [
-    "Pruebas operativas del sistema completo",
-    "Esperar aprobación Meta de emergencia_vida_v1 → cambiar WABA_TEMPLATE_EMERGENCY en .env",
-    "Deploy WABA: SQL migration + vars Coolify",
-    "Fix BLOCKER-002: representantes sin notificaciones"
-  ],
-  "i18nCoverage": {
-    "frontend": "100% - tildes corregidas, brand names EN consistentes, hooks migrados",
-    "backendControllers": "100% - documents + hospital migrados a req.t(), global error handlers migrados",
-    "backendServices": "Internal throws kept as constants (58) - acceptable",
-    "localeKeys": "api.json: auth, emergency, panic, representatives, directives, documents, payments, pup, insurance, odoo, wallet, admin, generic, hospital"
-  }
+    "CEO: Aprobar PLAN_REMEDIACION_VIDA.md para iniciar ejecución",
+    "INMEDIATO post-aprobación: Ejecutar Sprint 1.1 (hotfixes — 2-4 horas)",
+    "Sprint 1.1: Agent Team (3 paralelos) — CRIT-01, CRIT-03, CRIT-08, CRIT-13, HIGH-02, HIGH-06, HIGH-07",
+    "Paralelo: Iniciar revisión legal del Aviso de Privacidad (Fase 3 depende de esto)",
+    "Paralelo: Rotar credenciales de producción en Coolify"
+  ]
 }
