@@ -1,5 +1,5 @@
 // src/components/panic/PanicAlertModal.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import EmergencyMap from '../maps/EmergencyMap';
 import { panicAlertFeedback } from '../../utils/notificationFeedback';
@@ -46,10 +46,49 @@ export default function PanicAlertModal({
   const { t } = useTranslation('emergency');
   const [isCancelling, setIsCancelling] = useState(false);
   const [selectedHospitalId, setSelectedHospitalId] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   // Reproducir sonido y vibrar al abrir el modal
   useEffect(() => {
     panicAlertFeedback();
+  }, []);
+
+  // Focus the close button when modal opens
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+  }, []);
+
+  // Escape key closes the modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
+  // Focus trap: keep Tab/Shift+Tab inside the dialog
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== 'Tab' || !dialogRef.current) return;
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
   }, []);
 
   const handleHospitalClick = (hospital: Hospital) => {
@@ -82,19 +121,30 @@ export default function PanicAlertModal({
   const successCount = result.representativesNotified.filter((r) => r.smsStatus === 'sent').length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl my-8">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 overflow-y-auto"
+      role="presentation"
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="panic-alert-modal-title"
+        aria-describedby="panic-alert-modal-desc"
+        onKeyDown={handleKeyDown}
+        className="bg-white rounded-2xl w-full max-w-lg shadow-2xl my-8"
+      >
         {/* Header */}
         <div className="bg-red-600 text-white p-6 rounded-t-2xl">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center" aria-hidden="true">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold">{t('panic.modal.header.title')}</h2>
-              <p className="text-red-100 text-sm">{t('panic.modal.header.subtitle')}</p>
+              <h2 id="panic-alert-modal-title" className="text-xl font-bold">{t('panic.modal.header.title')}</h2>
+              <p id="panic-alert-modal-desc" className="text-red-100 text-sm">{t('panic.modal.header.subtitle')}</p>
             </div>
           </div>
         </div>
@@ -243,12 +293,15 @@ export default function PanicAlertModal({
           <button
             onClick={handleCancel}
             disabled={isCancelling}
+            aria-label={isCancelling ? t('panic.modal.buttons.cancelling') : t('panic.modal.buttons.cancel_alert')}
             className="flex-1 py-3 bg-gray-200 text-gray-800 rounded-xl font-semibold hover:bg-gray-300 transition disabled:opacity-50"
           >
             {isCancelling ? t('panic.modal.buttons.cancelling') : t('panic.modal.buttons.cancel_alert')}
           </button>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
+            aria-label={t('panic.modal.buttons.close')}
             className="flex-1 py-3 bg-vida-600 text-white rounded-xl font-semibold hover:bg-vida-700 transition"
           >
             {t('panic.modal.buttons.close')}

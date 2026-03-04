@@ -12,6 +12,7 @@ export interface User {
   isVerified: boolean;
   hasProfile: boolean;
   preferredLanguage?: 'es' | 'en';
+  mfaEnabled?: boolean;
 }
 
 export interface AuthTokens {

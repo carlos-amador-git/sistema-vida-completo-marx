@@ -49,6 +49,17 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const socketRef = useRef<Socket | null>(null);
   const mountedRef = useRef(true);
 
+  // Use refs for callbacks to avoid stale closures on reconnect
+  const onPanicAlertRef = useRef(onPanicAlert);
+  const onQRAccessAlertRef = useRef(onQRAccessAlert);
+  const onPanicCancelledRef = useRef(onPanicCancelled);
+  const userIdRef = useRef(userId);
+
+  onPanicAlertRef.current = onPanicAlert;
+  onQRAccessAlertRef.current = onQRAccessAlert;
+  onPanicCancelledRef.current = onPanicCancelled;
+  userIdRef.current = userId;
+
   const connect = useCallback(() => {
     // Use global socket if already exists
     if (globalSocket?.connected) {
@@ -65,9 +76,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     const wsUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
     const socket = io(wsUrl, {
-      auth: {
-        token: localStorage.getItem('accessToken'),
-      },
+      withCredentials: true,
       transports: ['websocket', 'polling'],
       autoConnect: true,
       reconnection: true,
@@ -80,6 +89,12 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       if (mountedRef.current) {
         setIsConnected(true);
       }
+      // Re-join rooms on reconnect (server clears rooms on disconnect)
+      const uid = userIdRef.current;
+      if (uid) {
+        socket.emit('join-user', uid);
+        socket.emit('join-representative', uid);
+      }
     });
 
     socket.on('disconnect', () => {
@@ -91,22 +106,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     socket.on('connect_error', (err) => {
       console.warn('WebSocket error de conexion:', err.message);
-      // If the error is auth-related, try to reconnect with a fresh token from localStorage.
-      // The token may have been refreshed by the HTTP auth interceptor between attempts.
-      const authErrors = ['Authentication required', 'Invalid or expired token', 'Invalid token type'];
-      if (authErrors.some((msg) => err.message.includes(msg))) {
-        console.warn('WebSocket auth fallida — reintentando con token actualizado');
-        // Update auth token for the next reconnection attempt
-        socket.auth = { token: localStorage.getItem('accessToken') };
-      }
     });
 
-    // Eventos de alerta de panico
+    // Event listeners use refs to always call latest callbacks
     socket.on('panic-alert', (data: PanicAlert) => {
       console.log('Alerta de panico recibida:', data);
       if (mountedRef.current) {
         setLastAlert(data);
-        onPanicAlert?.(data);
+        onPanicAlertRef.current?.(data);
       }
     });
 
@@ -119,15 +126,14 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     socket.on('panic-cancelled', (data: { alertId: string }) => {
       console.log('Alerta de panico cancelada:', data);
-      onPanicCancelled?.(data);
+      onPanicCancelledRef.current?.(data);
     });
 
-    // Eventos de acceso QR
     socket.on('qr-access-alert', (data: QRAccessAlert) => {
       console.log('Alerta de acceso QR recibida:', data);
       if (mountedRef.current) {
         setLastAlert(data);
-        onQRAccessAlert?.(data);
+        onQRAccessAlertRef.current?.(data);
       }
     });
 
@@ -140,7 +146,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
 
     globalSocket = socket;
     socketRef.current = socket;
-  }, [onPanicAlert, onQRAccessAlert, onPanicCancelled]);
+  }, []);
 
   const disconnect = useCallback(() => {
     connectionCount--;

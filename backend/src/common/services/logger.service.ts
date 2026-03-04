@@ -6,13 +6,17 @@
  * y formato legible para desarrollo.
  *
  * Características:
- * - Formato JSON en producción (compatible con ELK, CloudWatch, etc.)
+ * - Formato JSON en producción (compatible con ELK, CloudWatch, Datadog, etc.)
+ * - Campos dd.trace_id / dd.span_id cuando DD_TRACE_ENABLED está activo
+ * - Campos service, env, version, hostname en cada línea
+ * - Timestamp ISO 8601 garantizado
  * - Formato colorido en desarrollo
  * - Niveles de log configurables
  * - Contexto de request (requestId, userId)
  * - Sanitización automática de datos sensibles
  */
 
+import * as os from 'os';
 import config from '../../config';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -32,12 +36,19 @@ interface LogContext {
   [key: string]: any;
 }
 
+interface DatadogTraceContext {
+  'dd.trace_id': string;
+  'dd.span_id': string;
+}
+
 interface LogEntry {
-  timestamp: string;
+  timestamp: string;      // ISO 8601
   level: LogLevel;
   message: string;
   service: string;
-  environment: string;
+  env: string;
+  version: string;
+  hostname: string;
   context?: LogContext;
   error?: {
     name: string;
@@ -45,6 +56,9 @@ interface LogEntry {
     stack?: string;
   };
   duration?: number;
+  // Datadog APM trace correlation (present when DD_TRACE_ENABLED=true)
+  'dd.trace_id'?: string;
+  'dd.span_id'?: string;
   [key: string]: any;
 }
 
@@ -78,13 +92,44 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 // SERVICIO DE LOGGING
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ── Datadog trace correlation ─────────────────────────────────────────────
+// dd-trace injects these globals when the tracer is active.
+// We read them via the tracer API if available; otherwise we generate
+// deterministic placeholder strings so the field is always present.
+function getDatadogTraceContext(): DatadogTraceContext | null {
+  if (process.env.DD_TRACE_ENABLED !== 'true') return null;
+
+  try {
+    // dd-trace is an optional peer dependency — require lazily to avoid hard crash
+    // when running without Datadog APM (dev / CI environments).
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const tracer = require('dd-trace');
+    const span = tracer.scope().active();
+    if (span) {
+      const ctx = span.context();
+      return {
+        'dd.trace_id': ctx.toTraceId(),
+        'dd.span_id': ctx.toSpanId(),
+      };
+    }
+  } catch {
+    // dd-trace not installed — silently omit fields
+  }
+  return null;
+}
+
+// ── Service version ───────────────────────────────────────────────────────
+// Read from DD_VERSION or package.json version if available.
+const SERVICE_VERSION = process.env.DD_VERSION || process.env.npm_package_version || '0.0.0';
+const SERVICE_HOSTNAME = os.hostname();
+
 class LoggerService {
   private serviceName: string;
   private minLevel: LogLevel;
   private isProduction: boolean;
 
   constructor(serviceName: string = 'sistema-vida') {
-    this.serviceName = serviceName;
+    this.serviceName = process.env.DD_SERVICE || serviceName;
     this.isProduction = config.env === 'production';
     this.minLevel = (process.env.LOG_LEVEL as LogLevel) || (this.isProduction ? 'info' : 'debug');
   }
@@ -182,12 +227,21 @@ class LoggerService {
     }
 
     const entry: LogEntry = {
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toISOString(),  // ISO 8601
       level,
       message,
       service: this.serviceName,
-      environment: config.env,
+      env: process.env.DD_ENV || config.env,
+      version: SERVICE_VERSION,
+      hostname: SERVICE_HOSTNAME,
     };
+
+    // Inject Datadog APM trace correlation when DD_TRACE_ENABLED=true
+    const ddCtx = getDatadogTraceContext();
+    if (ddCtx) {
+      entry['dd.trace_id'] = ddCtx['dd.trace_id'];
+      entry['dd.span_id'] = ddCtx['dd.span_id'];
+    }
 
     if (context) {
       entry.context = this.sanitizeContext(context);

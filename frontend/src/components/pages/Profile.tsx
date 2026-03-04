@@ -173,8 +173,9 @@ export default function Profile() {
               <p className="text-gray-900">{user?.email}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">{t('fields.bloodType')}</label>
+              <label htmlFor="bloodType" className="block text-sm font-medium text-gray-500 mb-1">{t('fields.bloodType')}</label>
               <select
+                id="bloodType"
                 {...register('bloodType')}
                 className="input"
               >
@@ -198,7 +199,9 @@ export default function Profile() {
           </p>
 
           <div className="flex gap-2 mb-4">
+            <label htmlFor="newAllergy" className="sr-only">{t('placeholders.allergies')}</label>
             <input
+              id="newAllergy"
               type="text"
               value={newAllergy}
               onChange={(e) => setNewAllergy(e.target.value)}
@@ -210,8 +213,9 @@ export default function Profile() {
               type="button"
               onClick={() => addItem('allergies', newAllergy, setNewAllergy)}
               className="btn-secondary"
+              aria-label={t('buttons.addAllergy', { defaultValue: 'Agregar alergia' })}
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
@@ -245,7 +249,9 @@ export default function Profile() {
           </p>
 
           <div className="flex gap-2 mb-4">
+            <label htmlFor="newCondition" className="sr-only">{t('placeholders.conditions')}</label>
             <input
+              id="newCondition"
               type="text"
               value={newCondition}
               onChange={(e) => setNewCondition(e.target.value)}
@@ -257,8 +263,9 @@ export default function Profile() {
               type="button"
               onClick={() => addItem('conditions', newCondition, setNewCondition)}
               className="btn-secondary"
+              aria-label={t('buttons.addCondition', { defaultValue: 'Agregar condición médica' })}
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
@@ -292,7 +299,9 @@ export default function Profile() {
           </p>
 
           <div className="flex gap-2 mb-4">
+            <label htmlFor="newMedication" className="sr-only">{t('placeholders.medications')}</label>
             <input
+              id="newMedication"
               type="text"
               value={newMedication}
               onChange={(e) => setNewMedication(e.target.value)}
@@ -304,8 +313,9 @@ export default function Profile() {
               type="button"
               onClick={() => addItem('medications', newMedication, setNewMedication)}
               className="btn-secondary"
+              aria-label={t('buttons.addMedication', { defaultValue: 'Agregar medicamento' })}
             >
-              <Plus className="w-5 h-5" />
+              <Plus className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
 
@@ -412,8 +422,9 @@ export default function Profile() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.insurancePolicy')}</label>
+              <label htmlFor="insurancePolicy" className="block text-sm font-medium text-gray-700 mb-1">{t('fields.insurancePolicy')}</label>
               <input
+                id="insurancePolicy"
                 type="text"
                 {...register('insurancePolicy')}
                 className="input"
@@ -421,8 +432,9 @@ export default function Profile() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.insurancePhone')}</label>
+              <label htmlFor="insurancePhone" className="block text-sm font-medium text-gray-700 mb-1">{t('fields.insurancePhone')}</label>
               <input
+                id="insurancePhone"
                 type="tel"
                 {...register('insurancePhone')}
                 className="input"
@@ -443,22 +455,28 @@ export default function Profile() {
 
         {/* Modal de Hospitales en Red */}
         {showNetworkModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div
+            className="fixed inset-0 z-50 overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="network-modal-title"
+          >
             <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20">
-              <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setShowNetworkModal(false)} />
+              <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setShowNetworkModal(false)} aria-hidden="true" />
 
               <div className="relative bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden">
                 <div className="flex items-center justify-between p-4 border-b">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{t('networkModal.title')}</h3>
+                    <h3 id="network-modal-title" className="text-lg font-semibold text-gray-900">{t('networkModal.title')}</h3>
                     <p className="text-sm text-gray-500">{t('networkModal.subtitle', { name: selectedInsurance, count: networkHospitals.length })}</p>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowNetworkModal(false)}
                     className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+                    aria-label={t('networkModal.close')}
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-5 h-5" aria-hidden="true" />
                   </button>
                 </div>
 
@@ -528,19 +546,22 @@ export default function Profile() {
             <h2 className="text-lg font-semibold text-gray-900">{t('sections.organDonation')}</h2>
           </div>
           <div className="flex items-center gap-4">
-            <label className="relative inline-flex items-center cursor-pointer">
+            <label htmlFor="isDonor" className="relative inline-flex items-center cursor-pointer">
               <input
+                id="isDonor"
                 type="checkbox"
                 {...register('isDonor')}
                 className="sr-only peer"
+                aria-describedby="isDonor-desc"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-vida-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-salud-500"></div>
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-vida-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-salud-500" aria-hidden="true"></div>
+              <span className="sr-only">{t('sections.organDonation')}</span>
             </label>
             <div>
               <p className="font-medium text-gray-900">
                 {isDonor ? t('donor.yes') : t('donor.no')}
               </p>
-              <p className="text-sm text-gray-500">
+              <p id="isDonor-desc" className="text-sm text-gray-500">
                 {t('descriptions.organDonation')}
               </p>
             </div>

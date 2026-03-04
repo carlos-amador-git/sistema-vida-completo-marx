@@ -54,6 +54,11 @@ model User {
   webauthnChallenge        String?
   webauthnChallengeExpires DateTime?
 
+  // TOTP Multi-Factor Authentication
+  totpSecret    String?   // Encrypted TOTP secret (AES-256-GCM)
+  mfaEnabled    Boolean   @default(false)
+  mfaVerifiedAt DateTime?
+
   // Preferencia de idioma
   preferredLanguage String @default("es") @db.VarChar(5)
 
@@ -85,11 +90,63 @@ model User {
   consents     ConsentRecord[]
   arcoRequests ARCORequest[]
 
+  // RBAC
+  roles        UserRole[]
+
   @@index([curp])
   @@index([email])
   @@index([isActive])
   @@index([emailBlindIndex])
   @@index([curpBlindIndex])
+}
+
+// ==================== RBAC — ROLES & PERMISSIONS ====================
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique  // PATIENT, DOCTOR, NURSE, EMERGENCY, ADMIN, AUDITOR
+  description String?
+  permissions RolePermission[]
+  users       UserRole[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String   // create, read, update, delete, execute
+  resource    String   // directive, patient, alert, hospital, user, audit, system
+  description String?
+  roles       RolePermission[]
+  createdAt   DateTime @default(now())
+
+  @@unique([action, resource])
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  roleId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+  assignedBy String?  // Admin userId who assigned this role
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
 }
 
 model Session {
@@ -631,7 +688,7 @@ model AuditLog {
   actorId   String?
   actorName String?
 
-  // Acción
+  // Accion
   action     String // CREATE, READ, UPDATE, DELETE, LOGIN, etc.
   resource   String // users, profiles, directives, etc.
   resourceId String?
@@ -644,6 +701,11 @@ model AuditLog {
   // Contexto
   ipAddress String?
   userAgent String?
+
+  // Hash chain inmutable (INSERT-only, NOM-024 compliance)
+  previousHash String? // SHA-256 del registro anterior (null para genesis)
+  currentHash  String? // SHA-256(id + action + resource + details + previousHash + createdAt)
+  sequence     Int?    @unique // Numero secuencial para verificacion de continuidad
 
   createdAt DateTime @default(now())
 

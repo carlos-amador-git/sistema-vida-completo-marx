@@ -19,7 +19,8 @@ export const config = {
 
   // JWT - NOTA: Estas variables son validadas en env-validation.ts antes de cargar este archivo
   jwt: {
-    secret: process.env.JWT_SECRET!, // Requerido - validado al iniciar
+    secret: process.env.JWT_SECRET!, // Requerido - para access tokens
+    refreshSecret: process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET!, // Separado para refresh tokens — debe ser diferente en producción
     adminSecret: process.env.JWT_ADMIN_SECRET || process.env.JWT_SECRET!, // Validado en env-validation.ts — debe ser diferente en producción
     accessExpiresIn: process.env.JWT_ACCESS_EXPIRES_IN || '15m',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
@@ -35,6 +36,27 @@ export const config = {
   // Cifrado - NOTA: ENCRYPTION_KEY es validado en env-validation.ts antes de cargar este archivo
   encryption: {
     key: process.env.ENCRYPTION_KEY!, // Requerido - validado al iniciar (64 caracteres hex = 256 bits)
+  },
+
+  // KMS — Key Management Service
+  // Provider selection:
+  //   'local'   -> LocalKeyProvider  (development, uses ENCRYPTION_KEY as KEK)
+  //   'aws-kms' -> AWSKMSKeyProvider (production, delegates to AWS KMS)
+  //
+  // Env vars:
+  //   KMS_PROVIDER        'local' | 'aws-kms'  (default: 'local')
+  //   AWS_KMS_KEY_ID      KMS key ID or full ARN (takes precedence over alias)
+  //   AWS_KMS_KEY_ALIAS   KMS key alias (without the 'alias/' prefix)
+  //   AWS_REGION          AWS region for KMS (default: inherits from aws.region)
+  //   DEK_CACHE_TTL_MS    In-memory DEK cache TTL in milliseconds (default: 300000 = 5 min)
+  kms: {
+    provider: (process.env.KMS_PROVIDER || 'local') as 'local' | 'aws-kms',
+    awsRegion: process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || 'us-east-1',
+    awsKmsKeyId: process.env.AWS_KMS_KEY_ID || '',
+    awsKmsKeyAlias: process.env.AWS_KMS_KEY_ALIAS || '',
+    dekCacheTtlMs: process.env.DEK_CACHE_TTL_MS
+      ? parseInt(process.env.DEK_CACHE_TTL_MS, 10)
+      : 5 * 60 * 1000, // 5 minutes
   },
 
   // PSC NOM-151

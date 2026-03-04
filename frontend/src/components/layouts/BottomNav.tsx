@@ -89,7 +89,7 @@ export default function BottomNav() {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe z-40 md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe z-40 md:hidden" aria-label={t('bottomNav.nav_label')}>
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -97,11 +97,12 @@ export default function BottomNav() {
             <NavLink
               key={item.path}
               to={item.path}
+              aria-current={isActive ? 'page' : undefined}
               className={`flex flex-col items-center justify-center w-full h-full min-h-[44px] transition-colors ${
                 isActive ? 'text-vida-600' : 'text-gray-500'
               }`}
             >
-              <div className="relative">
+              <div className="relative" aria-hidden="true">
                 {isActive ? item.activeIcon || item.icon : item.icon}
                 {isActive && (
                   <span className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-vida-600 rounded-full" />

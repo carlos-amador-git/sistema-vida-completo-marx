@@ -44,9 +44,7 @@ export default function WalletPass() {
 
     try {
       const response = await fetch('/api/v1/wallet/apple-pass', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-        },
+        credentials: 'include',
       });
 
       if (!response.ok) {
@@ -91,8 +89,8 @@ export default function WalletPass() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vida-600"></div>
+      <div className="flex items-center justify-center min-h-screen" role="status" aria-label="Cargando">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vida-600" aria-hidden="true"></div>
       </div>
     );
   }
@@ -102,24 +100,24 @@ export default function WalletPass() {
   const anyConfigured = appleConfigured || googleConfigured;
 
   return (
-    <div className="max-w-lg mx-auto p-4 space-y-6">
+    <section className="max-w-lg mx-auto p-4 space-y-6" aria-labelledby="wallet-title">
       {/* Header */}
       <div className="text-center">
-        <div className="w-16 h-16 bg-gradient-to-br from-vida-500 to-sky-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-16 h-16 bg-gradient-to-br from-vida-500 to-sky-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg" aria-hidden="true">
+          <svg className="w-8 h-8 text-white" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('wallet.pageTitle')}</h1>
+        <h1 id="wallet-title" className="text-2xl font-bold text-gray-900">{t('wallet.pageTitle')}</h1>
         <p className="text-gray-600 mt-2">
           {t('wallet.pageDescription')}
         </p>
       </div>
 
       {/* Info */}
-      <div className="bg-sky-50 border border-sky-200 rounded-xl p-4">
+      <aside className="bg-sky-50 border border-sky-200 rounded-xl p-4">
         <h3 className="font-semibold text-sky-800 mb-2 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           {t('wallet.whyUse.title')}
@@ -130,11 +128,11 @@ export default function WalletPass() {
           <li>• {t('wallet.whyUse.reason3')}</li>
           <li>• {t('wallet.whyUse.reason4')}</li>
         </ul>
-      </div>
+      </aside>
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4" role="alert">
           <p className="text-red-700 text-sm">{error}</p>
         </div>
       )}
@@ -236,6 +234,6 @@ export default function WalletPass() {
       <div className="text-center text-xs text-gray-400 pt-4">
         <p>{t('wallet.requirements')}</p>
       </div>
-    </div>
+    </section>
   );
 }

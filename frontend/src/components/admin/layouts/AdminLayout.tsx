@@ -90,6 +90,7 @@ const AdminLayout: React.FC = () => {
         className={`${
           sidebarOpen ? 'w-64' : 'w-20'
         } bg-slate-800 text-white transition-all duration-300 flex flex-col fixed h-full z-40`}
+        aria-label={t('nav.admin_panel')}
       >
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-700">
@@ -111,12 +112,15 @@ const AdminLayout: React.FC = () => {
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-1.5 rounded-lg hover:bg-slate-700 transition"
+            aria-label={sidebarOpen ? t('nav.collapse_sidebar') : t('nav.expand_sidebar')}
+            aria-expanded={sidebarOpen}
           >
             <svg
               className={`w-5 h-5 transition-transform ${sidebarOpen ? '' : 'rotate-180'}`}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
+              aria-hidden="true"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
@@ -124,21 +128,24 @@ const AdminLayout: React.FC = () => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
+        <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto" aria-label={t('nav.admin_panel')}>
           {navItems.map((item) => {
             if (!hasPermission(item.permission)) return null;
+            const active = isActive(item.path);
 
             return (
               <Link
                 key={item.path}
                 to={item.path}
+                aria-current={active ? 'page' : undefined}
+                aria-label={!sidebarOpen ? item.name : undefined}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                  isActive(item.path)
+                  active
                     ? 'bg-sky-600 text-white'
                     : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                 }`}
               >
-                {item.icon}
+                <span aria-hidden="true">{item.icon}</span>
                 {sidebarOpen && <span className="font-medium">{item.name}</span>}
               </Link>
             );
@@ -183,8 +190,8 @@ const AdminLayout: React.FC = () => {
 
           <div className="flex items-center gap-4">
             {/* Notifications placeholder */}
-            <button className="p-2 rounded-lg hover:bg-gray-100 relative">
-              <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <button className="p-2 rounded-lg hover:bg-gray-100 relative" aria-label={t('nav.notifications')}>
+              <svg className="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </button>
@@ -194,13 +201,16 @@ const AdminLayout: React.FC = () => {
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100"
+                aria-label={t('user_menu.open_menu', { name: admin?.name })}
+                aria-expanded={showUserMenu}
+                aria-haspopup="menu"
               >
-                <div className="w-8 h-8 bg-sky-600 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-sky-600 rounded-full flex items-center justify-center" aria-hidden="true">
                   <span className="text-white font-semibold">
                     {admin?.name?.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
@@ -211,8 +221,12 @@ const AdminLayout: React.FC = () => {
                     className="fixed inset-0"
                     onClick={() => setShowUserMenu(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-100">
+                  <div
+                    className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+                    role="menu"
+                    aria-label={t('user_menu.label')}
+                  >
+                    <div className="px-4 py-2 border-b border-gray-100" role="menuitem" aria-disabled="true">
                       <p className="font-medium text-gray-900">{admin?.name}</p>
                       <p className="text-sm text-gray-500">{admin?.email}</p>
                     </div>
@@ -221,9 +235,10 @@ const AdminLayout: React.FC = () => {
                         e.stopPropagation();
                         handleLogout();
                       }}
+                      role="menuitem"
                       className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 flex items-center gap-2"
                     >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                       </svg>
                       {t('user_menu.sign_out')}
@@ -236,7 +251,7 @@ const AdminLayout: React.FC = () => {
         </header>
 
         {/* Page content */}
-        <main className="p-6">
+        <main id="main-content" className="p-6">
           <Outlet />
         </main>
       </div>

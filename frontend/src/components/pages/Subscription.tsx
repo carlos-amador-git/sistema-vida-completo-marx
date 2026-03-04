@@ -83,8 +83,8 @@ export default function Subscription() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center" role="status" aria-label="Cargando">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" aria-hidden="true"></div>
       </div>
     );
   }
@@ -92,7 +92,7 @@ export default function Subscription() {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('title')}</h1>
+        <h1 id="subscription-title" className="text-3xl font-bold text-gray-900 mb-8">{t('title')}</h1>
 
         {/* Banners de alerta */}
         <TrialExpiringBanner />
@@ -179,7 +179,7 @@ export default function Subscription() {
                   {Object.entries(features).map(([key, value]) => (
                     <div key={key} className="flex items-center">
                       {value ? (
-                        <svg className="w-5 h-5 text-green-500 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-5 h-5 text-green-500 mr-3" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                       ) : (
@@ -331,15 +331,24 @@ export default function Subscription() {
 
         {/* Modal de cancelación */}
         {showCancelModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-xl max-w-md w-full p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">{t('cancel_modal.title')}</h3>
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" aria-hidden="true" onClick={() => setShowCancelModal(false)} />
+        )}
+        {showCancelModal && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="cancel-modal-title"
+            className="bg-white rounded-xl max-w-md w-full p-6 pointer-events-auto"
+          >
+              <h3 id="cancel-modal-title" className="text-xl font-semibold text-gray-900 mb-4">{t('cancel_modal.title')}</h3>
               <p className="text-gray-600 mb-4">{t('cancel_modal.description')}</p>
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="cancel-reason" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('cancel_modal.reason_label')}
                 </label>
                 <textarea
+                  id="cancel-reason"
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg p-3 text-sm"

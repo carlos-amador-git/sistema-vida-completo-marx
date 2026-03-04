@@ -1,0 +1,192 @@
+# HANDOFF — Compactacion @ 2026-03-04_14:14:59
+## Session: 15680
+## CWD: /Users/marxchavez/Projects/VIDA marzo/sistema-vida-completo-marx/backend
+
+### Estado al momento de compactar:
+# STATUS - Sistema VIDA
+
+**Actualizado:** 2026-03-03 (Sesión 7)
+**Fase:** MVP Fase 1 - Listo para Deploy
+**Branch:** main
+**Plan Activo:** Ninguno — pendiente deploy a producción
+
+## Estado General
+
+| Componente | Estado | Notas |
+|------------|--------|-------|
+| Backend API | FUNCIONAL | Express + TypeScript + Prisma |
+| Frontend | FUNCIONAL | React 18 + Vite + Tailwind |
+| Base de Datos | FUNCIONAL | PostgreSQL + Redis |
+| Autenticación | FUNCIONAL | JWT con refresh tokens |
+| Encriptación | FUNCIONAL | AES-256-GCM |
+| Notificaciones | MIGRADO | Provider Pattern: WABA + Twilio fallback |
+| i18n | COMPLETO | ES/EN, residuales corregidos |
+
+## Sesión 6 — i18n Residuales + WABA Templates
+
+### i18n Residuales (commit 1ccd924, 23 archivos, +264/-192)
+1. ~85 tildes corregidas en locales ES (admin, notifications, common, extras, subscription)
+2. 9x "Sistema VIDA" → "VIDA System" en locales EN
+3. useSubscription.ts (6 errors) y useNFC.ts (13 strings) migrados a i18next.t()
+4. documents.controller.ts (18 strings) y hospital.controller.ts (10 strings) migrados a req.t()
+5. Global error handlers en main.ts migrados a req.t()
+6. AdminAuthContext.tsx (6 JSX strings) migrado a useTranslation('admin')
+7. ADMIN_ROLE_LABELS eliminado, reemplazado con t('roles.*')
+8. Nuevas secciones locale: roles, access, nfc.errors, hospital, subscription.errors
+9. Build verificado: tsc 0 errores (frontend + backend), vite build OK
+
+### WABA Templates
+1. `acceso_qr_vida_v1` — **APPROVED** (UTILITY, es_MX) — probado OK con CEO
+2. `emergencia_vida_v1` es_MX — **APPROVED** (UTILITY, id: 954722793796826)
+3. `emergencia_vida_v1` en_US — **APPROVED** (UTILITY, id: 1432208321692178)
+4. Template MARKETING actual probado: funciona con sesión activa, fallback texto plano sin sesión
+
+### Diagnóstico WABA
+- Template MARKETING requiere sesión 24h → causa fallback texto plano para algunos usuarios
+- Templates UTILITY aprobados eliminan esta restricción
+- No existe webhook para mensajes entrantes WhatsApp
+- Footer "no responda" incluido en nuevo template
+
+## Sesión 7 — Deploy Prep (2026-03-03)
+
+### Completado
+1. Templates WABA corregidos en `.env` y `.env.example`: `emergencia_vida_v1`, `acceso_qr_vida_v1`
+2. `WABA_API_VERSION` actualizado de v18.0 a v22.0
+3. Migración SQL `add_whatsapp_channel.sql` ejecutada en BD local — enum `WHATSAPP` confirmado
+4. Build verificado: tsc 0 errores (backend + frontend)
+
+### Pendiente para Deploy (Producción / Coolify)
+
+1. Configurar variables WABA reales en Coolify:
+   - `WABA_PHONE_NUMBER_ID`, `WABA_ACCESS_TOKEN`, `WABA_BUSINESS_ACCOUNT_ID`
+   - `WABA_TEMPLATE_EMERGENCY=emergencia_vida_v1`
+   - `WABA_TEMPLATE_ACCESS=acceso_qr_vida_v1`
+   - `WHATSAPP_PROVIDER=waba`
+2. Configurar email: `RESEND_API_KEY`, `EMAIL_FROM_RESEND`
+3. Ejecutar migración SQL en BD de producción: `add_whatsapp_channel.sql`
+4. Fix BLOCKER-002 en producción: `UPDATE "Representative" SET "notifyOnEmergency" = true, "notifyOnAccess" = true;`
+
+### Decisiones activas:
+# DECISIONS - Sistema VIDA
+
+## Decisiones Arquitectonicas
+
+### 2026-02-26 - Migración Twilio → WABA
+- **Decision:** Migrar WhatsApp de Twilio a WABA (Meta Cloud API directo)
+- **Razon:** Cliente ya tiene números WABA dados de alta
+- **Estrategia:** Provider Pattern + Feature Flags para rollback instantáneo
+- **Plan:** `.context/PLAN-current.md`
+
+### 2026-02-26 - Estructura de Contexto v5
+- **Decision:** Adoptar protocolo de contexto v5 con archivos separados
+- **Razon:** Mejor organizacion y continuidad entre sesiones
+- **Archivos:** STATUS.md, DECISIONS.md, BLOCKERS.md, AREAS.md, HANDOFF-*.md
+
+### Historicas (pre-contexto)
+
+#### Encriptacion de Datos Sensibles
+- **Decision:** AES-256-GCM para datos medicos
+- **Campos:** allergiesEnc, conditionsEnc, medicationsEnc, donorPreferencesEnc
+- **Razon:** Cumplimiento con regulaciones de datos de salud en Mexico
+
+#### Sistema de Notificaciones Multi-Canal
+- **Decision:** Twilio (SMS/WhatsApp) + Resend (Email)
+- **Razon:** Redundancia y cobertura para emergencias medicas
+- **Fallback:** Modo simulacion cuando credenciales no estan configuradas
+
+#### Autenticacion JWT
+- **Decision:** Access tokens 15min + Refresh tokens 7 dias
+- **Razon:** Balance entre seguridad y UX
+- **Implementacion:** Rotacion de tokens en cada refresh
+
+### Blockers actuales:
+# BLOCKERS - Sistema VIDA
+
+## Activos
+
+### BLOCKER-001: Migración WhatsApp a WABA
+- **Estado:** LOCAL LISTO — Pendiente deploy a producción
+- **Impacto:** ALTO - Representantes no reciben alertas reales en emergencias
+- **Código:** Migración completada (Provider Pattern + Feature Flags)
+- **Templates:** Todos aprobados por Meta (emergencia_vida_v1 es_MX/en_US, acceso_qr_vida_v1 es_MX)
+- **Local:** Migración SQL ejecutada, .env corregido, build OK
+- **Pendiente producción:**
+  1. Configurar en Coolify: `WABA_PHONE_NUMBER_ID`, `WABA_ACCESS_TOKEN`, `WABA_BUSINESS_ACCOUNT_ID`
+  2. Configurar templates: `WABA_TEMPLATE_EMERGENCY=emergencia_vida_v1`, `WABA_TEMPLATE_ACCESS=acceso_qr_vida_v1`
+  3. Ejecutar SQL en BD producción: `prisma/migrations/add_whatsapp_channel.sql`
+  4. Activar: `WHATSAPP_PROVIDER=waba`
+- **Variables Email (pendiente):**
+  - `RESEND_API_KEY`
+  - `EMAIL_FROM_RESEND`
+- **Owner:** CEO (Coolify) + Backend (monitoreo)
+
+### BLOCKER-002: Representantes sin Notificaciones Activadas
+- **Estado:** PENDIENTE EN PRODUCCIÓN (BD local vacía — no aplica)
+- **Impacto:** MEDIO - Algunos representantes con notifyOnEmergency=false
+- **Schema:** Defaults ya son `true` para nuevos registros
+- **Solucion SQL (ejecutar en producción):**
+```sql
+UPDATE "Representative"
+SET "notifyOnEmergency" = true, "notifyOnAccess" = true;
+```
+- **Owner:** CEO (acceso a BD producción)
+
+## Resueltos
+
+(ninguno documentado aun)
+
+### Plan en ejecucion:
+# PLAN: Migración Twilio → WABA (WhatsApp Business API)
+
+**Estado:** ACTIVO
+**Fecha:** 2026-02-26
+**Prioridad:** ALTA
+**Riesgo:** BAJO (migración gradual con feature flags)
+
+---
+
+## Objetivo
+
+Reemplazar Twilio por WABA (WhatsApp Business API directo) para mensajes WhatsApp, manteniendo:
+- Zero downtime
+- Rollback instantáneo
+- SMS funcionando (evaluar alternativa o mantener Twilio solo para SMS)
+
+---
+
+## Análisis del Estado Actual
+
+### Código Actual (`notification.service.ts`)
+```
+┌─────────────────────────────────────────────────────┐
+│ NotificationService                                  │
+├─────────────────────────────────────────────────────┤
+│ - twilioClient (SMS + WhatsApp)                     │
+│ - resend (Email)                                    │
+│ - isSimulationMode                                  │
+├─────────────────────────────────────────────────────┤
+│ Métodos:                                            │
+│ • sendEmergencySMS() → Twilio                       │
+│ • sendEmergencyWhatsApp() → Twilio                  │
+│ • sendEmergencyEmail() → Resend                     │
+│ • notifyAllRepresentatives() → Orquesta los 3      │
+└─────────────────────────────────────────────────────┘
+```
+
+### Variables Actuales (Twilio)
+- `TWILIO_ACCOUNT_SID`
+- `TWILIO_AUTH_TOKEN`
+- `TWILIO_PHONE_NUMBER` (SMS)
+- `TWILIO_WHATSAPP_NUMBER`
+- `TWILIO_WHATSAPP_TEMPLATE_ID`
+
+---
+
+## Arquitectura Propuesta
+
+```
+┌─────────────────────────────────────────────────────┐
+
+### INSTRUCCION POST-COMPACT:
+Lee .context/HANDOFF y .context/STATUS.md INMEDIATAMENTE.
+No asumas que conoces el estado — relee los archivos.

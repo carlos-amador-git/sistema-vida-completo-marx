@@ -65,14 +65,7 @@ export function PremiumProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Solo cargar si hay token
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      fetchStatus();
-    } else {
-      setStatus(defaultStatus);
-      setLoading(false);
-    }
+    fetchStatus();
   }, [fetchStatus]);
 
   const isPremium = status?.isPremium ?? false;

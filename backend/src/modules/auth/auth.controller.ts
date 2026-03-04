@@ -7,7 +7,8 @@ import { authMiddleware } from '../../common/guards/auth.middleware';
 import { securityMetrics } from '../../common/services/security-metrics.service';
 import { logger } from '../../common/services/logger.service';
 import { prisma } from '../../common/prisma';
-import { setRefreshTokenCookie, clearRefreshTokenCookie, getRefreshToken } from '../../common/utils/auth-cookies';
+import { setAuthCookies, clearAuthCookies, setRefreshTokenCookie, clearRefreshTokenCookie, getRefreshToken } from '../../common/utils/auth-cookies';
+import { generateMFAToken } from './mfa.controller';
 
 const router = Router();
 
@@ -158,8 +159,8 @@ router.post('/register', registerLimiter, registerValidation, handleValidation, 
       sex,
     });
     
-    // Set refresh token as httpOnly cookie
-    setRefreshTokenCookie(res, result.tokens.refreshToken);
+    // Set both tokens as httpOnly cookies
+    setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
 
     res.status(201).json({
       success: true,
@@ -207,12 +208,26 @@ router.post('/login', loginLimiter, loginValidation, handleValidation, async (re
 
     const result = await authService.login({ email, password }, ip, userAgent);
 
-    // Registrar login exitoso
+    // If MFA is enabled, do not issue full tokens — return a short-lived mfaToken
+    if (result.user.mfaEnabled) {
+      const mfaToken = generateMFAToken(result.user.id, result.user.email);
+      logger.info('Login parcial — MFA requerido', { userId: result.user.id, ip });
+
+      return res.json({
+        success: true,
+        data: {
+          requiresMFA: true,
+          mfaToken,
+        },
+      });
+    }
+
+    // No MFA — issue full tokens
     securityMetrics.recordSuccessfulLogin(ip, result.user.id);
     logger.info('Login exitoso', { userId: result.user.id, ip });
 
-    // Set refresh token as httpOnly cookie
-    setRefreshTokenCookie(res, result.tokens.refreshToken);
+    // Set both tokens as httpOnly cookies
+    setAuthCookies(res, result.tokens.accessToken, result.tokens.refreshToken);
 
     res.json({
       success: true,
@@ -269,8 +284,8 @@ router.post('/refresh', async (req: Request, res: Response) => {
 
     const tokens = await authService.refreshTokens(refreshToken);
 
-    // Set new refresh token as httpOnly cookie
-    setRefreshTokenCookie(res, tokens.refreshToken);
+    // Set both new tokens as httpOnly cookies
+    setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
 
     res.json({
       success: true,
@@ -306,8 +321,8 @@ router.post('/logout', async (req: Request, res: Response) => {
       await authService.logout(refreshToken);
     }
 
-    // Clear refresh token cookie
-    clearRefreshTokenCookie(res);
+    // Clear both auth cookies
+    clearAuthCookies(res);
 
     res.json({
       success: true,

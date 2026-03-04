@@ -1,5 +1,6 @@
 // src/components/admin/pages/AdminSystemHealth.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import ConfirmDialog from '../../ConfirmDialog';
 import { useTranslation } from 'react-i18next';
 import { useLocale } from '../../../hooks/useLocale';
 import { getSystemHealth, getPerformanceMetrics, runSystemCleanup } from '../../../services/adminApi';
@@ -15,6 +16,7 @@ const AdminSystemHealth: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [cleanupResult, setCleanupResult] = useState<any>(null);
   const [isRunningCleanup, setIsRunningCleanup] = useState(false);
+  const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
 
   const isSuperAdmin = admin?.isSuperAdmin;
 
@@ -46,7 +48,8 @@ const AdminSystemHealth: React.FC = () => {
   };
 
   const handleCleanup = async (dryRun: boolean) => {
-    if (!dryRun && !window.confirm(t('system.cleanup_confirm'))) {
+    if (!dryRun) {
+      setShowCleanupConfirm(true);
       return;
     }
 
@@ -61,6 +64,19 @@ const AdminSystemHealth: React.FC = () => {
       setIsRunningCleanup(false);
     }
   };
+
+  const handleConfirmedCleanup = useCallback(async () => {
+    setShowCleanupConfirm(false);
+    try {
+      setIsRunningCleanup(true);
+      const result = await runSystemCleanup(false);
+      setCleanupResult(result);
+    } catch (error) {
+      console.error('Cleanup error:', error);
+    } finally {
+      setIsRunningCleanup(false);
+    }
+  }, []);
 
   const getStatusLabel = (status: string) => {
     const key = `system.status_${status}`;
@@ -95,6 +111,17 @@ const AdminSystemHealth: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={showCleanupConfirm}
+        title={t('system.cleanup_confirm_title', { defaultValue: 'Confirm Cleanup' })}
+        description={t('system.cleanup_confirm')}
+        confirmLabel={t('system.cleanup_confirm_action', { defaultValue: 'Run Cleanup' })}
+        cancelLabel={t('common.cancel', { defaultValue: 'Cancel' })}
+        variant="danger"
+        onConfirm={handleConfirmedCleanup}
+        onCancel={() => setShowCleanupConfirm(false)}
+      />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

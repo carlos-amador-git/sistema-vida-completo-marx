@@ -57,6 +57,16 @@ interface MedicalProfileData {
   }>;
 }
 
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 class PDFGeneratorService {
   private browser: puppeteer.Browser | null = null;
 
@@ -65,6 +75,9 @@ class PDFGeneratorService {
       this.browser = await puppeteer.launch({
         headless: true,
         args: [
+          // --no-sandbox is required when running as root inside a container
+          // (e.g. Docker without a dedicated non-root user). If the process
+          // ever runs as a non-root user, this flag should be removed.
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
@@ -180,7 +193,7 @@ class PDFGeneratorService {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Perfil Médico - ${user.name}</title>
+  <title>Perfil Médico - ${escapeHtml(user.name)}</title>
   <style>
     * {
       margin: 0;
@@ -643,7 +656,7 @@ class PDFGeneratorService {
     <!-- Emergency Notice -->
     <div class="emergency-notice">
       <h3>DOCUMENTO DE INFORMACIÓN MÉDICA DE EMERGENCIA</h3>
-      <p>Este documento contiene información médica vital. En caso de emergencia, escanee el código QR o visite: ${config.frontendUrl}/emergency/${profile.qrToken}</p>
+      <p>Este documento contiene información médica vital. En caso de emergencia, escanee el código QR o visite: ${escapeHtml(config.frontendUrl)}/emergency/${escapeHtml(profile.qrToken)}</p>
     </div>
 
     <!-- Personal Info + Blood Type -->
@@ -655,27 +668,27 @@ class PDFGeneratorService {
       <div class="info-grid">
         <div class="info-item">
           <div class="info-label">Nombre Completo</div>
-          <div class="info-value">${user.name}</div>
+          <div class="info-value">${escapeHtml(user.name)}</div>
         </div>
         <div class="info-item blood-type">
           <div class="info-label">Tipo de Sangre</div>
-          <div class="info-value">${profile.bloodType || 'No especificado'}</div>
+          <div class="info-value">${escapeHtml(profile.bloodType || 'No especificado')}</div>
         </div>
         <div class="info-item">
           <div class="info-label">CURP</div>
-          <div class="info-value">${user.curp || 'No especificado'}</div>
+          <div class="info-value">${escapeHtml(user.curp || 'No especificado')}</div>
         </div>
         <div class="info-item">
           <div class="info-label">Fecha de Nacimiento</div>
-          <div class="info-value">${this.formatDate(user.birthDate)} ${user.birthDate ? `(${this.calculateAge(user.birthDate)})` : ''}</div>
+          <div class="info-value">${escapeHtml(this.formatDate(user.birthDate))} ${user.birthDate ? `(${escapeHtml(this.calculateAge(user.birthDate))})` : ''}</div>
         </div>
         <div class="info-item">
           <div class="info-label">Teléfono</div>
-          <div class="info-value">${user.phone || 'No especificado'}</div>
+          <div class="info-value">${escapeHtml(user.phone || 'No especificado')}</div>
         </div>
         <div class="info-item">
           <div class="info-label">Correo Electrónico</div>
-          <div class="info-value">${user.email}</div>
+          <div class="info-value">${escapeHtml(user.email)}</div>
         </div>
       </div>
     </div>
@@ -695,10 +708,10 @@ class PDFGeneratorService {
                 const reaction = typeof allergy === 'string' ? null : allergy.reaction;
                 return `
               <div class="alert-item allergy">
-                <span class="alert-badge ${severity?.toLowerCase() === 'alta' || severity?.toLowerCase() === 'high' ? 'badge-high' : severity?.toLowerCase() === 'media' || severity?.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-low'}">${severity}</span>
+                <span class="alert-badge ${severity?.toLowerCase() === 'alta' || severity?.toLowerCase() === 'high' ? 'badge-high' : severity?.toLowerCase() === 'media' || severity?.toLowerCase() === 'medium' ? 'badge-medium' : 'badge-low'}">${escapeHtml(severity)}</span>
                 <div class="alert-content">
-                  <div class="alert-name">${name}</div>
-                  ${reaction ? `<div class="alert-detail">Reacción: ${reaction}</div>` : ''}
+                  <div class="alert-name">${escapeHtml(name)}</div>
+                  ${reaction ? `<div class="alert-detail">Reacción: ${escapeHtml(reaction)}</div>` : ''}
                 </div>
               </div>
             `;}).join('')
@@ -722,9 +735,9 @@ class PDFGeneratorService {
                 return `
               <div class="alert-item condition">
                 <div class="alert-content">
-                  <div class="alert-name">${name}</div>
-                  ${diagnosedDate ? `<div class="alert-detail">Diagnosticado: ${diagnosedDate}</div>` : ''}
-                  ${notes ? `<div class="alert-detail">${notes}</div>` : ''}
+                  <div class="alert-name">${escapeHtml(name)}</div>
+                  ${diagnosedDate ? `<div class="alert-detail">Diagnosticado: ${escapeHtml(diagnosedDate)}</div>` : ''}
+                  ${notes ? `<div class="alert-detail">${escapeHtml(notes)}</div>` : ''}
                 </div>
               </div>
             `;}).join('')
@@ -749,8 +762,8 @@ class PDFGeneratorService {
               return `
             <div class="alert-item medication">
               <div class="alert-content">
-                <div class="alert-name">${name}</div>
-                ${dose || frequency ? `<div class="alert-detail">${dose} ${frequency ? `- ${frequency}` : ''}</div>` : ''}
+                <div class="alert-name">${escapeHtml(name)}</div>
+                ${dose || frequency ? `<div class="alert-detail">${escapeHtml(dose)} ${frequency ? `- ${escapeHtml(frequency)}` : ''}</div>` : ''}
               </div>
             </div>
           `;}).join('')
@@ -770,16 +783,16 @@ class PDFGeneratorService {
           ? `
             <div class="insurance-card">
               <div class="insurance-header">
-                <span class="insurance-provider">${profile.insuranceProvider}</span>
+                <span class="insurance-provider">${escapeHtml(profile.insuranceProvider)}</span>
               </div>
               <div class="insurance-grid">
                 <div class="insurance-item">
                   <div class="info-label">No. de Póliza</div>
-                  <div class="info-value">${profile.insurancePolicy || 'No especificado'}</div>
+                  <div class="info-value">${escapeHtml(profile.insurancePolicy || 'No especificado')}</div>
                 </div>
                 <div class="insurance-item">
                   <div class="info-label">Teléfono de Emergencia</div>
-                  <div class="info-value">${profile.insurancePhone || 'No especificado'}</div>
+                  <div class="info-value">${escapeHtml(profile.insurancePhone || 'No especificado')}</div>
                 </div>
               </div>
             </div>
@@ -803,7 +816,7 @@ class PDFGeneratorService {
               <div class="donor-pref-item">
                 <div class="donor-pref-label">Órganos</div>
                 <div class="donor-pref-list">
-                  ${profile.donorPreferences.organs.map(org => `<span class="donor-pref-tag">${org}</span>`).join('')}
+                  ${profile.donorPreferences.organs.map(org => `<span class="donor-pref-tag">${escapeHtml(org)}</span>`).join('')}
                 </div>
               </div>
             ` : ''}
@@ -811,14 +824,14 @@ class PDFGeneratorService {
               <div class="donor-pref-item">
                 <div class="donor-pref-label">Tejidos</div>
                 <div class="donor-pref-list">
-                  ${profile.donorPreferences.tissues.map(tis => `<span class="donor-pref-tag">${tis}</span>`).join('')}
+                  ${profile.donorPreferences.tissues.map(tis => `<span class="donor-pref-tag">${escapeHtml(tis)}</span>`).join('')}
                 </div>
               </div>
             ` : ''}
           </div>
           ${profile.donorPreferences.restrictions ? `
             <div style="margin-top: 10px; background: #fef3c7; padding: 8px; border-radius: 6px; font-size: 9px;">
-              <strong>Restricciones:</strong> ${profile.donorPreferences.restrictions}
+              <strong>Restricciones:</strong> ${escapeHtml(profile.donorPreferences.restrictions)}
             </div>
           ` : ''}
         ` : ''}
@@ -835,16 +848,16 @@ class PDFGeneratorService {
         ${representatives && representatives.length > 0
           ? representatives.map(rep => `
             <div class="contact-card">
-              <div class="contact-avatar">${rep.name.charAt(0).toUpperCase()}</div>
+              <div class="contact-avatar">${escapeHtml(rep.name.charAt(0).toUpperCase())}</div>
               <div class="contact-info">
                 <div class="contact-name">
-                  ${rep.name}
+                  ${escapeHtml(rep.name)}
                   ${rep.isPrimary ? '<span class="primary-badge">PRINCIPAL</span>' : ''}
                 </div>
-                <div class="contact-relation">${rep.relationship}</div>
+                <div class="contact-relation">${escapeHtml(rep.relationship)}</div>
                 <div class="contact-details">
-                  📱 ${rep.phone}
-                  ${rep.email ? `<br>✉️ ${rep.email}` : ''}
+                  📱 ${escapeHtml(rep.phone)}
+                  ${rep.email ? `<br>✉️ ${escapeHtml(rep.email)}` : ''}
                 </div>
               </div>
             </div>

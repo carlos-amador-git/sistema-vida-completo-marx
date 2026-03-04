@@ -138,7 +138,7 @@ class AuthService {
         // Blind indexes para búsqueda
         emailBlindIndex: encryptionV2.generateBlindIndex(input.email),
         curpBlindIndex: encryptionV2.generateCurpBlindIndex(input.curp),
-        verificationToken,
+        verificationToken: hashToken(verificationToken),
         verificationExpires,
         // Crear perfil vacío
         profile: {
@@ -234,7 +234,7 @@ class AuthService {
     // Verificar el refresh token
     let payload: TokenPayload;
     try {
-      payload = jwt.verify(refreshToken, config.jwt.secret) as TokenPayload;
+      payload = jwt.verify(refreshToken, config.jwt.refreshSecret) as TokenPayload;
     } catch (error) {
       throw new AuthError('INVALID_TOKEN', 'Token de refresco inválido');
     }
@@ -292,7 +292,7 @@ class AuthService {
   async verifyEmail(token: string): Promise<User> {
     const user = await prisma.user.findFirst({
       where: {
-        verificationToken: token,
+        verificationToken: hashToken(token),
         verificationExpires: { gt: new Date() },
       },
     });
@@ -329,7 +329,7 @@ class AuthService {
     
     await prisma.user.update({
       where: { id: user.id },
-      data: { resetToken, resetExpires },
+      data: { resetToken: hashToken(resetToken), resetExpires },
     });
 
     // Enviar email con link de recuperación
@@ -350,7 +350,7 @@ class AuthService {
 
     const user = await prisma.user.findFirst({
       where: {
-        resetToken: token,
+        resetToken: hashToken(token),
         resetExpires: { gt: new Date() },
       },
     });
@@ -409,7 +409,7 @@ class AuthService {
       expiresIn: config.jwt.accessExpiresIn as jwt.SignOptions['expiresIn'],
     });
 
-    const refreshToken = jwt.sign(refreshPayload, config.jwt.secret, {
+    const refreshToken = jwt.sign(refreshPayload, config.jwt.refreshSecret, {
       expiresIn: config.jwt.refreshExpiresIn as jwt.SignOptions['expiresIn'],
     });
     
@@ -627,7 +627,7 @@ class AuthService {
 
     await prisma.user.update({
       where: { id: userId },
-      data: { verificationToken, verificationExpires },
+      data: { verificationToken: hashToken(verificationToken), verificationExpires },
     });
 
     await this.sendVerificationEmail(user, verificationToken);

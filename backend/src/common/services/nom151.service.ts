@@ -106,20 +106,22 @@ class MockPSC implements IPSC {
 // REAL PSC (Production — requires PSC contract)
 // ═══════════════════════════════════════════════════════════════════════════
 
-class RealPSC implements IPSC {
-  private pscUrl: string;
-  private apiKey: string;
+class MifielPSC implements IPSC {
+  private apiUrl: string;
+  private apiId: string;
+  private apiSecret: string;
   private providerName: string;
 
   constructor() {
-    this.pscUrl = process.env.NOM151_PSC_URL || '';
-    this.apiKey = process.env.NOM151_PSC_API_KEY || '';
-    this.providerName = process.env.NOM151_PSC_NAME || 'PSC Producción';
+    this.apiUrl = process.env.NOM151_PSC_URL || 'https://app.mifiel.com/api/v1';
+    this.apiId = process.env.NOM151_PSC_API_ID || process.env.NOM151_PSC_API_KEY || '';
+    this.apiSecret = process.env.NOM151_PSC_API_SECRET || '';
+    this.providerName = process.env.NOM151_PSC_NAME || 'Mifiel (PSC NOM-151)';
 
-    if (!this.pscUrl || !this.apiKey) {
-      logger.warn('NOM-151 Real PSC not fully configured', {
-        hasUrl: !!this.pscUrl,
-        hasKey: !!this.apiKey,
+    if (!this.apiId || !this.apiSecret) {
+      logger.warn('NOM-151 Mifiel PSC not fully configured', {
+        hasApiId: !!this.apiId,
+        hasApiSecret: !!this.apiSecret,
       });
     }
   }
@@ -129,42 +131,212 @@ class RealPSC implements IPSC {
   }
 
   isAvailable(): boolean {
-    return !!this.pscUrl && !!this.apiKey;
+    return !!this.apiId && !!this.apiSecret;
   }
+
+  /**
+   * Seal a document hash with Mifiel's NOM-151 timestamping API.
+   * Flow: POST document hash → receive RFC 3161 TSA token + Mifiel certificate ID
+   */
+  async seal(request: NOM151SealRequest): Promise<NOM151SealResponse> {
+    if (!this.isAvailable()) {
+      throw new Error('PSC Mifiel no configurado. Configure NOM151_PSC_API_ID y NOM151_PSC_API_SECRET');
+    }
+
+    try {
+      const axios = (await import('axios')).default;
+
+      // Mifiel API: create a document for timestamping
+      const response = await axios.post(
+        `${this.apiUrl}/documents`,
+        {
+          original_hash: request.documentHash,
+          name: `VIDA-Directive-${request.documentId}`,
+          callback_url: process.env.NOM151_CALLBACK_URL,
+        },
+        {
+          auth: { username: this.apiId, password: this.apiSecret },
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 30000,
+        }
+      );
+
+      const { id: certificateId, created_at } = response.data;
+
+      // Request timestamping (Constancia de Conservación)
+      const tsResponse = await axios.post(
+        `${this.apiUrl}/documents/${certificateId}/request_timestamp`,
+        {},
+        {
+          auth: { username: this.apiId, password: this.apiSecret },
+          timeout: 30000,
+        }
+      );
+
+      const certificate = tsResponse.data.timestamp_token || `MIFIEL-${certificateId}`;
+
+      logger.info('NOM-151 Mifiel seal generated', {
+        documentId: request.documentId,
+        mifielDocId: certificateId,
+        timestamp: created_at,
+      });
+
+      return {
+        sealed: true,
+        certificate,
+        timestamp: new Date(created_at),
+        provider: this.getName(),
+        hashAlgorithm: 'SHA-256',
+        documentHash: request.documentHash,
+      };
+    } catch (error: any) {
+      logger.error('NOM-151 Mifiel seal failed', {
+        documentId: request.documentId,
+        error: error.message,
+        status: error.response?.status,
+      });
+      throw new Error(`Error al sellar con PSC Mifiel: ${error.message}`);
+    }
+  }
+
+  /**
+   * Verify a certificate against Mifiel's API.
+   */
+  async verify(request: NOM151VerifyRequest): Promise<NOM151VerifyResponse> {
+    if (!this.isAvailable()) {
+      throw new Error('PSC Mifiel no configurado');
+    }
+
+    try {
+      const axios = (await import('axios')).default;
+
+      // Extract Mifiel document ID from certificate
+      const mifielId = request.certificate.startsWith('MIFIEL-')
+        ? request.certificate.replace('MIFIEL-', '')
+        : request.certificate;
+
+      const response = await axios.get(
+        `${this.apiUrl}/documents/${mifielId}`,
+        {
+          auth: { username: this.apiId, password: this.apiSecret },
+          timeout: 15000,
+        }
+      );
+
+      const { original_hash, created_at, signed } = response.data;
+      const hashMatches = original_hash === request.documentHash;
+
+      return {
+        valid: hashMatches && signed,
+        timestamp: created_at ? new Date(created_at) : null,
+        provider: this.getName(),
+        reason: !hashMatches ? 'Hash del documento no coincide' : (!signed ? 'Documento no firmado' : undefined),
+      };
+    } catch (error: any) {
+      logger.error('NOM-151 Mifiel verify failed', {
+        error: error.message,
+      });
+      return {
+        valid: false,
+        timestamp: null,
+        provider: this.getName(),
+        reason: `Error de verificación: ${error.message}`,
+      };
+    }
+  }
+}
+
+/**
+ * Generic RFC 3161 PSC — For providers like Edicom, Advantage Security, or SAT.
+ * Implements standard TSA (Time-Stamp Authority) protocol.
+ */
+class GenericTSAPSC implements IPSC {
+  private tsaUrl: string;
+  private apiKey: string;
+  private providerName: string;
+
+  constructor() {
+    this.tsaUrl = process.env.NOM151_PSC_URL || '';
+    this.apiKey = process.env.NOM151_PSC_API_KEY || '';
+    this.providerName = process.env.NOM151_PSC_NAME || 'PSC Genérico (RFC 3161)';
+  }
+
+  getName(): string { return this.providerName; }
+  isAvailable(): boolean { return !!this.tsaUrl && !!this.apiKey; }
 
   async seal(request: NOM151SealRequest): Promise<NOM151SealResponse> {
     if (!this.isAvailable()) {
-      throw new Error('PSC real no configurado. Configure NOM151_PSC_URL y NOM151_PSC_API_KEY');
+      throw new Error('PSC genérico no configurado. Configure NOM151_PSC_URL y NOM151_PSC_API_KEY');
     }
 
-    // TODO: Implement actual PSC API call when contract is in place
-    // The interface is ready for integration with any NOM-151 certified PSC:
-    // - Advantage Security
-    // - Cecoban (PSC Santander)
-    // - SAT (as PSC)
-    //
-    // Typical API flow:
-    // 1. POST /api/timestamp with document hash
-    // 2. Receive timestamped certificate (TSA token per RFC 3161)
-    // 3. Store certificate for future verification
+    try {
+      const axios = (await import('axios')).default;
 
-    logger.error('PSC real no implementado. Use NOM151_PROVIDER=mock para desarrollo', {
-      documentId: request.documentId,
-    });
+      // Standard RFC 3161 timestamp request
+      const response = await axios.post(
+        this.tsaUrl,
+        {
+          hash: request.documentHash,
+          hashAlgorithm: 'SHA-256',
+          documentId: request.documentId,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`,
+          },
+          timeout: 30000,
+        }
+      );
 
-    throw new Error(
-      'La integración con el PSC real está pendiente de contrato. ' +
-      'Configure NOM151_PROVIDER=mock para desarrollo.'
-    );
+      return {
+        sealed: true,
+        certificate: response.data.token || response.data.certificate,
+        timestamp: new Date(response.data.timestamp || Date.now()),
+        provider: this.getName(),
+        hashAlgorithm: 'SHA-256',
+        documentHash: request.documentHash,
+      };
+    } catch (error: any) {
+      logger.error('NOM-151 Generic TSA seal failed', { error: error.message });
+      throw new Error(`Error al sellar con PSC: ${error.message}`);
+    }
   }
 
   async verify(request: NOM151VerifyRequest): Promise<NOM151VerifyResponse> {
     if (!this.isAvailable()) {
-      throw new Error('PSC real no configurado');
+      throw new Error('PSC genérico no configurado');
     }
 
-    // TODO: Implement actual PSC verification
-    throw new Error('Verificación con PSC real pendiente de implementación');
+    try {
+      const axios = (await import('axios')).default;
+
+      const response = await axios.post(
+        `${this.tsaUrl}/verify`,
+        {
+          certificate: request.certificate,
+          hash: request.documentHash,
+        },
+        {
+          headers: { 'Authorization': `Bearer ${this.apiKey}` },
+          timeout: 15000,
+        }
+      );
+
+      return {
+        valid: response.data.valid,
+        timestamp: response.data.timestamp ? new Date(response.data.timestamp) : null,
+        provider: this.getName(),
+        reason: response.data.reason,
+      };
+    } catch (error: any) {
+      return {
+        valid: false,
+        timestamp: null,
+        provider: this.getName(),
+        reason: `Error de verificación: ${error.message}`,
+      };
+    }
   }
 }
 
@@ -174,15 +346,25 @@ class RealPSC implements IPSC {
 
 const NOM151_PROVIDER = process.env.NOM151_PROVIDER || 'mock';
 
+function createPSCProvider(provider: string): IPSC {
+  switch (provider) {
+    case 'mifiel':
+      return new MifielPSC();
+    case 'generic':
+    case 'edicom':
+    case 'advantage':
+      return new GenericTSAPSC();
+    case 'mock':
+    default:
+      return new MockPSC();
+  }
+}
+
 class NOM151Service {
   private psc: IPSC;
 
   constructor() {
-    if (NOM151_PROVIDER === 'real') {
-      this.psc = new RealPSC();
-    } else {
-      this.psc = new MockPSC();
-    }
+    this.psc = createPSCProvider(NOM151_PROVIDER);
 
     logger.info('NOM-151 service initialized', {
       provider: NOM151_PROVIDER,

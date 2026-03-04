@@ -28,18 +28,6 @@ const api: AxiosInstance = axios.create({
   withCredentials: true, // Send httpOnly cookies with requests
 });
 
-// Interceptor para añadir token a las peticiones
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('accessToken');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
 // Interceptor para manejar errores y refresh token
 api.interceptors.response.use(
   (response) => response,
@@ -52,19 +40,12 @@ api.interceptors.response.use(
 
       try {
         // Refresh token is sent automatically via httpOnly cookie (withCredentials)
-        const response = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
-        const { tokens } = response.data.data;
-
-        localStorage.setItem('accessToken', tokens.accessToken);
-
-        if (originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${tokens.accessToken}`;
-        }
+        // New access token is set as httpOnly cookie by the server
+        await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
 
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh falló, limpiar y redirigir a login
-        localStorage.removeItem('accessToken');
+        // Refresh falló, redirigir a login
         window.location.href = '/login';
       }
     }
@@ -115,6 +96,33 @@ export const authApi = {
   
   async resetPassword(token: string, password: string): Promise<ApiResponse<void>> {
     const response = await api.post('/auth/reset-password', { token, password });
+    return response.data;
+  },
+};
+
+// ==================== MFA API ====================
+export const mfaApi = {
+  async setup(): Promise<ApiResponse<{ qrCode: string; secret: string; otpauthUri: string }>> {
+    const response = await api.post('/auth/mfa/setup');
+    return response.data;
+  },
+
+  async verifySetup(token: string): Promise<ApiResponse<void>> {
+    const response = await api.post('/auth/mfa/verify-setup', { token });
+    return response.data;
+  },
+
+  async verify(token: string, mfaToken: string): Promise<ApiResponse<{ user: User; tokens: AuthTokens }>> {
+    const response = await api.post(
+      '/auth/mfa/verify',
+      { token },
+      { headers: { Authorization: `Bearer ${mfaToken}` } }
+    );
+    return response.data;
+  },
+
+  async disable(token: string): Promise<ApiResponse<void>> {
+    const response = await api.post('/auth/mfa/disable', { token });
     return response.data;
   },
 };

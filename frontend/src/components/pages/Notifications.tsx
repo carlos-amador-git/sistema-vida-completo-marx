@@ -126,11 +126,11 @@ export default function Notifications() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <section className="space-y-6 animate-fade-in" aria-labelledby="notifications-title">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+          <h1 id="notifications-title" className="text-2xl font-bold text-gray-900">{t('title')}</h1>
           <p className="text-gray-600 mt-1">
             {unreadCount > 0
               ? t('unreadCount', { count: unreadCount })
@@ -183,8 +183,8 @@ export default function Notifications() {
       )}
 
       {/* Filtros */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2">
-        <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
+      <div className="flex items-center gap-2 overflow-x-auto pb-2" role="group" aria-label={t('filters.label', { defaultValue: 'Filtrar notificaciones' })}>
+        <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden="true" />
         {[
           { key: 'all', label: t('filters.all') },
           { key: 'unread', label: t('filters.unread') },
@@ -195,6 +195,7 @@ export default function Notifications() {
           <button
             key={key}
             onClick={() => setFilter(key as FilterType)}
+            aria-pressed={filter === key}
             className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               filter === key
                 ? 'bg-vida-600 text-white'
@@ -203,7 +204,7 @@ export default function Notifications() {
           >
             {label}
             {key === 'unread' && unreadCount > 0 && (
-              <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+              <span className="ml-1 bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full" aria-label={`${unreadCount} sin leer`}>
                 {unreadCount}
               </span>
             )}
@@ -212,6 +213,11 @@ export default function Notifications() {
       </div>
 
       {/* Lista de notificaciones */}
+      <div aria-live="polite" aria-atomic="false" className="sr-only">
+        {filteredNotifications.length === 0
+          ? t('empty.all')
+          : t('resultsCount', { count: filteredNotifications.length })}
+      </div>
       {filteredNotifications.length === 0 ? (
         <div className="text-center py-12">
           <Bell className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -238,8 +244,9 @@ export default function Notifications() {
                   const Icon = config.icon;
 
                   return (
-                    <div
+                    <article
                       key={notification.id}
+                      aria-label={notification.title}
                       className={`bg-white rounded-xl border p-4 transition-all ${
                         notification.read
                           ? 'border-gray-100'
@@ -247,7 +254,7 @@ export default function Notifications() {
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        <div className={`p-2.5 rounded-xl ${config.bgColor}`}>
+                        <div className={`p-2.5 rounded-xl ${config.bgColor}`} aria-hidden="true">
                           <Icon className={`w-5 h-5 ${config.color}`} />
                         </div>
 
@@ -301,7 +308,7 @@ export default function Notifications() {
                           </div>
                         </div>
                       </div>
-                    </div>
+                    </article>
                   );
                 })}
               </div>
@@ -312,7 +319,7 @@ export default function Notifications() {
           {notifications.length > 0 && (
             <div className="text-center pt-4">
               {showConfirmClear ? (
-                <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+                <div className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-2" role="alert" aria-live="assertive">
                   <span className="text-sm text-red-700">{t('confirmClear.question')}</span>
                   <button
                     onClick={() => {
@@ -343,6 +350,6 @@ export default function Notifications() {
           )}
         </div>
       )}
-    </div>
+    </section>
   );
 }

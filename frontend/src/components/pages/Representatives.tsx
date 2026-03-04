@@ -121,14 +121,14 @@ export default function Representatives() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center" role="status" aria-label={t('loading', { defaultValue: 'Cargando representantes' })}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" aria-hidden="true"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <section className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -151,9 +151,9 @@ export default function Representatives() {
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert" aria-live="polite">
             {error}
-            <button onClick={() => setError('')} className="float-right">&times;</button>
+            <button onClick={() => setError('')} className="float-right" aria-label={t('errors.dismiss', { defaultValue: 'Cerrar error' })}>&times;</button>
           </div>
         )}
 
@@ -245,26 +245,29 @@ export default function Representatives() {
                       <button
                         onClick={() => handleSetDonorSpokesperson(rep.id)}
                         title={t('tooltips.setDonorSpokesperson')}
+                        aria-label={t('tooltips.setDonorSpokesperson')}
                         className="p-2 text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                         </svg>
                       </button>
                     )}
                     <button
                       onClick={() => handleOpenEdit(rep)}
+                      aria-label={t('tooltips.edit', { name: rep.name, defaultValue: `Editar representante ${rep.name}` })}
                       className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
                     <button
                       onClick={() => handleDelete(rep.id)}
+                      aria-label={t('tooltips.delete', { name: rep.name, defaultValue: `Eliminar representante ${rep.name}` })}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
@@ -287,18 +290,24 @@ export default function Representatives() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="rep-modal-title"
+        >
           <div className="bg-white rounded-2xl max-w-lg w-full">
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 id="rep-modal-title" className="text-xl font-semibold text-gray-900">
                   {editingId ? t('modal.titleEdit') : t('modal.titleCreate')}
                 </h2>
                 <button
                   onClick={() => setShowModal(false)}
                   className="text-gray-400 hover:text-gray-600"
+                  aria-label={t('modal.buttons.close', { defaultValue: 'Cerrar modal' })}
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -307,12 +316,14 @@ export default function Representatives() {
 
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="rep-name" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('modal.fields.name')}
                 </label>
                 <input
+                  id="rep-name"
                   type="text"
                   required
+                  aria-required="true"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -320,12 +331,14 @@ export default function Representatives() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="rep-phone" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('modal.fields.phone')}
                 </label>
                 <input
+                  id="rep-phone"
                   type="tel"
                   required
+                  aria-required="true"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder={t('modal.phonePlaceholder')}
@@ -334,10 +347,11 @@ export default function Representatives() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="rep-email" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('modal.fields.email')}
                 </label>
                 <input
+                  id="rep-email"
                   type="email"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
@@ -346,11 +360,13 @@ export default function Representatives() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="rep-relation" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('modal.fields.relation')}
                 </label>
                 <select
+                  id="rep-relation"
                   required
+                  aria-required="true"
                   value={form.relation}
                   onChange={(e) => setForm({ ...form, relation: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -419,6 +435,6 @@ export default function Representatives() {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

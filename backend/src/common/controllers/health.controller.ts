@@ -120,7 +120,7 @@ router.get('/metrics', adminAuthMiddleware, async (req: Request, res: Response) 
     const [systemMetrics, appMetrics, securitySummary] = await Promise.all([
       systemMetricsService.getSystemMetrics(),
       systemMetricsService.getApplicationMetrics(),
-      Promise.resolve(securityMetrics.getMetricsSummary()),
+      securityMetrics.getMetricsSummary(),
     ]);
 
     res.json({
@@ -150,7 +150,7 @@ router.get('/metrics', adminAuthMiddleware, async (req: Request, res: Response) 
 router.get('/dashboard', adminAuthMiddleware, async (req: Request, res: Response) => {
   try {
     const summary = await systemMetricsService.getDashboardSummary();
-    const recentAlerts = securityMetrics.getRecentAlerts(10);
+    const recentAlerts = await securityMetrics.getRecentAlerts(10);
     const logStats = await logArchiverService.getStats();
 
     res.json({
@@ -180,7 +180,7 @@ router.get('/dashboard', adminAuthMiddleware, async (req: Request, res: Response
 router.get('/alerts', adminAuthMiddleware, async (req: Request, res: Response) => {
   try {
     const limit = parseInt(req.query.limit as string) || 50;
-    const alerts = securityMetrics.getRecentAlerts(limit);
+    const alerts = await securityMetrics.getRecentAlerts(limit);
 
     res.json({
       success: true,

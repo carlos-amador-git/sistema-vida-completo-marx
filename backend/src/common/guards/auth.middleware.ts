@@ -19,31 +19,37 @@ declare global {
  */
 export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
+    // Check cookie first, then fall back to Authorization header
+    let token = req.cookies?.accessToken;
 
-    if (!authHeader) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          code: 'NO_TOKEN',
-          message: (req as any).t?.('api:generic.tokenNotProvided') || i18next.t('api:generic.tokenNotProvided'),
-        },
-      });
+    if (!token) {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader) {
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: 'NO_TOKEN',
+            message: (req as any).t?.('api:generic.tokenNotProvided') || i18next.t('api:generic.tokenNotProvided'),
+          },
+        });
+      }
+
+      // Formato esperado: "Bearer <token>"
+      const parts = authHeader.split(' ');
+      if (parts.length !== 2 || parts[0] !== 'Bearer') {
+        return res.status(401).json({
+          success: false,
+          error: {
+            code: 'INVALID_TOKEN_FORMAT',
+            message: (req as any).t?.('api:generic.invalidTokenFormat') || i18next.t('api:generic.invalidTokenFormat'),
+          },
+        });
+      }
+
+      token = parts[1];
     }
 
-    // Formato esperado: "Bearer <token>"
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      return res.status(401).json({
-        success: false,
-        error: {
-          code: 'INVALID_TOKEN_FORMAT',
-          message: (req as any).t?.('api:generic.invalidTokenFormat') || i18next.t('api:generic.invalidTokenFormat'),
-        },
-      });
-    }
-
-    const token = parts[1];
     const payload = authService.verifyAccessToken(token);
 
     req.userId = payload.userId;
@@ -77,18 +83,24 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
  */
 export const optionalAuthMiddleware = (req: Request, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
+    // Check cookie first, then fall back to Authorization header
+    let token = req.cookies?.accessToken;
 
-    if (!authHeader) {
-      return next();
+    if (!token) {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader) {
+        return next();
+      }
+
+      const parts = authHeader.split(' ');
+      if (parts.length !== 2 || parts[0] !== 'Bearer') {
+        return next();
+      }
+
+      token = parts[1];
     }
 
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      return next();
-    }
-
-    const token = parts[1];
     const payload = authService.verifyAccessToken(token);
 
     req.userId = payload.userId;

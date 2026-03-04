@@ -128,14 +128,19 @@ export default function NotificationSettings() {
   const ToggleSwitch = ({
     enabled,
     onChange,
-    disabled = false
+    disabled = false,
+    label
   }: {
     enabled: boolean;
     onChange: (value: boolean) => void;
     disabled?: boolean;
+    label?: string;
   }) => (
     <button
       type="button"
+      role="switch"
+      aria-checked={enabled}
+      aria-label={label}
       onClick={() => !disabled && onChange(!enabled)}
       disabled={disabled}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -147,6 +152,7 @@ export default function NotificationSettings() {
       }`}
     >
       <span
+        aria-hidden="true"
         className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
           enabled ? 'translate-x-6' : 'translate-x-1'
         }`}
@@ -155,17 +161,18 @@ export default function NotificationSettings() {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <section className="space-y-6 animate-fade-in" aria-labelledby="notification-settings-title">
       {/* Header */}
       <div className="flex items-center gap-4">
         <Link
           to="/notifications"
           className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          aria-label={t('settings.backLabel', { defaultValue: 'Volver a notificaciones' })}
         >
-          <ArrowLeft className="w-5 h-5 text-gray-600" />
+          <ArrowLeft className="w-5 h-5 text-gray-600" aria-hidden="true" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('settings.title')}</h1>
+          <h1 id="notification-settings-title" className="text-2xl font-bold text-gray-900">{t('settings.title')}</h1>
           <p className="text-gray-600 mt-1">{t('settings.subtitle')}</p>
         </div>
       </div>
@@ -218,8 +225,8 @@ export default function NotificationSettings() {
           {/* Alertas de panico */}
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-red-600" />
+              <div className="p-2 bg-red-100 rounded-lg" aria-hidden="true">
+                <AlertTriangle className="w-5 h-5 text-red-600" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">{t('settings.types.panicAlerts.title')}</h3>
@@ -229,14 +236,15 @@ export default function NotificationSettings() {
             <ToggleSwitch
               enabled={preferences.panicAlerts}
               onChange={(v) => updatePreference('panicAlerts', v)}
+              label={t('settings.types.panicAlerts.title')}
             />
           </div>
 
           {/* Accesos QR */}
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <QrCode className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-blue-100 rounded-lg" aria-hidden="true">
+                <QrCode className="w-5 h-5 text-blue-600" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">{t('settings.types.qrAccess.title')}</h3>
@@ -246,14 +254,15 @@ export default function NotificationSettings() {
             <ToggleSwitch
               enabled={preferences.qrAccess}
               onChange={(v) => updatePreference('qrAccess', v)}
+              label={t('settings.types.qrAccess.title')}
             />
           </div>
 
           {/* Representantes */}
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <Users className="w-5 h-5 text-purple-600" />
+              <div className="p-2 bg-purple-100 rounded-lg" aria-hidden="true">
+                <Users className="w-5 h-5 text-purple-600" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">{t('settings.types.representatives.title')}</h3>
@@ -263,14 +272,15 @@ export default function NotificationSettings() {
             <ToggleSwitch
               enabled={preferences.representativeUpdates}
               onChange={(v) => updatePreference('representativeUpdates', v)}
+              label={t('settings.types.representatives.title')}
             />
           </div>
 
           {/* Documentos */}
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-amber-100 rounded-lg">
-                <FileText className="w-5 h-5 text-amber-600" />
+              <div className="p-2 bg-amber-100 rounded-lg" aria-hidden="true">
+                <FileText className="w-5 h-5 text-amber-600" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">{t('settings.types.documents.title')}</h3>
@@ -280,14 +290,15 @@ export default function NotificationSettings() {
             <ToggleSwitch
               enabled={preferences.documentUpdates}
               onChange={(v) => updatePreference('documentUpdates', v)}
+              label={t('settings.types.documents.title')}
             />
           </div>
 
           {/* Sistema */}
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-gray-100 rounded-lg">
-                <Bell className="w-5 h-5 text-gray-600" />
+              <div className="p-2 bg-gray-100 rounded-lg" aria-hidden="true">
+                <Bell className="w-5 h-5 text-gray-600" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">{t('settings.types.system.title')}</h3>
@@ -297,6 +308,7 @@ export default function NotificationSettings() {
             <ToggleSwitch
               enabled={preferences.systemNotifications}
               onChange={(v) => updatePreference('systemNotifications', v)}
+              label={t('settings.types.system.title')}
             />
           </div>
         </div>
@@ -313,8 +325,8 @@ export default function NotificationSettings() {
           {/* Push */}
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-vida-100 rounded-lg">
-                <Smartphone className="w-5 h-5 text-vida-600" />
+              <div className="p-2 bg-vida-100 rounded-lg" aria-hidden="true">
+                <Smartphone className="w-5 h-5 text-vida-600" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">{t('settings.channels.push.title')}</h3>
@@ -325,14 +337,15 @@ export default function NotificationSettings() {
               enabled={preferences.pushEnabled && permission === 'granted'}
               onChange={(v) => updatePreference('pushEnabled', v)}
               disabled={permission !== 'granted'}
+              label={t('settings.channels.push.title')}
             />
           </div>
 
           {/* Email */}
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Mail className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-blue-100 rounded-lg" aria-hidden="true">
+                <Mail className="w-5 h-5 text-blue-600" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">{t('settings.channels.email.title')}</h3>
@@ -342,20 +355,21 @@ export default function NotificationSettings() {
             <ToggleSwitch
               enabled={preferences.emailEnabled}
               onChange={(v) => updatePreference('emailEnabled', v)}
+              label={t('settings.channels.email.title')}
             />
           </div>
 
           {/* SMS */}
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <MessageSquare className="w-5 h-5 text-green-600" />
+              <div className="p-2 bg-green-100 rounded-lg" aria-hidden="true">
+                <MessageSquare className="w-5 h-5 text-green-600" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">{t('settings.channels.sms.title')}</h3>
                 <p className="text-sm text-gray-500">{t('settings.channels.sms.description')}</p>
                 <span className="inline-flex items-center gap-1 mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                  <Info className="w-3 h-3" />
+                  <Info className="w-3 h-3" aria-hidden="true" />
                   {t('settings.channels.sms.premiumBadge')}
                 </span>
               </div>
@@ -363,6 +377,7 @@ export default function NotificationSettings() {
             <ToggleSwitch
               enabled={preferences.smsEnabled}
               onChange={(v) => updatePreference('smsEnabled', v)}
+              label={t('settings.channels.sms.title')}
             />
           </div>
         </div>
@@ -379,6 +394,7 @@ export default function NotificationSettings() {
             <ToggleSwitch
               enabled={preferences.doNotDisturbEnabled}
               onChange={(v) => updatePreference('doNotDisturbEnabled', v)}
+              label={t('settings.dnd.title')}
             />
           </div>
         </div>
@@ -386,21 +402,23 @@ export default function NotificationSettings() {
         {preferences.doNotDisturbEnabled && (
           <div className="px-6 py-4">
             <div className="flex items-center gap-4">
-              <Moon className="w-5 h-5 text-indigo-500" />
+              <Moon className="w-5 h-5 text-indigo-500" aria-hidden="true" />
               <div className="flex items-center gap-3">
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">{t('settings.dnd.from')}</label>
+                  <label htmlFor="dnd-start" className="block text-xs text-gray-500 mb-1">{t('settings.dnd.from')}</label>
                   <input
+                    id="dnd-start"
                     type="time"
                     value={preferences.doNotDisturbStart}
                     onChange={(e) => updatePreference('doNotDisturbStart', e.target.value)}
                     className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
-                <span className="text-gray-400 mt-5">-</span>
+                <span className="text-gray-400 mt-5" aria-hidden="true">-</span>
                 <div>
-                  <label className="block text-xs text-gray-500 mb-1">{t('settings.dnd.to')}</label>
+                  <label htmlFor="dnd-end" className="block text-xs text-gray-500 mb-1">{t('settings.dnd.to')}</label>
                   <input
+                    id="dnd-end"
                     type="time"
                     value={preferences.doNotDisturbEnd}
                     onChange={(e) => updatePreference('doNotDisturbEnd', e.target.value)}
@@ -420,11 +438,11 @@ export default function NotificationSettings() {
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="p-2 bg-gray-100 rounded-lg">
+            <div className="p-2 bg-gray-100 rounded-lg" aria-hidden="true">
               {preferences.soundEnabled ? (
-                <Volume2 className="w-5 h-5 text-gray-600" />
+                <Volume2 className="w-5 h-5 text-gray-600" aria-hidden="true" />
               ) : (
-                <VolumeX className="w-5 h-5 text-gray-400" />
+                <VolumeX className="w-5 h-5 text-gray-400" aria-hidden="true" />
               )}
             </div>
             <div>
@@ -435,6 +453,7 @@ export default function NotificationSettings() {
           <ToggleSwitch
             enabled={preferences.soundEnabled}
             onChange={(v) => updatePreference('soundEnabled', v)}
+            label={t('settings.sound.title')}
           />
         </div>
       </div>
@@ -445,22 +464,40 @@ export default function NotificationSettings() {
           <button
             onClick={handleSave}
             disabled={saving}
+            aria-busy={saving}
             className="bg-vida-600 text-white px-6 py-3 rounded-xl font-medium shadow-lg hover:bg-vida-700 transition-colors disabled:opacity-50 flex items-center gap-2"
           >
             {saving ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
                 {t('settings.saving')}
               </>
             ) : (
               <>
-                <Check className="w-5 h-5" />
+                <Check className="w-5 h-5" aria-hidden="true" />
                 {t('settings.save')}
               </>
             )}
           </button>
         </div>
       )}
-    </div>
+
+      {/* Enlace al Aviso de Privacidad */}
+      <aside className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-700">Aviso de Privacidad (LFPDPPP)</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Conozca cómo tratamos sus datos personales conforme a la ley mexicana.
+          </p>
+        </div>
+        <Link
+          to="/aviso-privacidad"
+          className="flex items-center gap-1.5 text-sm text-vida-600 hover:text-vida-800 font-medium transition-colors"
+        >
+          Ver aviso
+          <ArrowLeft className="w-4 h-4 rotate-180" aria-hidden="true" />
+        </Link>
+      </aside>
+    </section>
   );
 }

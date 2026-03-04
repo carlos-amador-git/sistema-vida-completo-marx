@@ -49,8 +49,8 @@ export default function SubscriptionPlans() {
 
   if (loadingPlans) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center" role="status" aria-label="Cargando planes">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" aria-hidden="true"></div>
       </div>
     );
   }
@@ -63,7 +63,7 @@ export default function SubscriptionPlans() {
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+          <h1 id="plans-title" className="text-4xl font-bold text-gray-900 mb-4">
             {t('plans.page_title')}
           </h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -73,9 +73,10 @@ export default function SubscriptionPlans() {
 
         {/* Toggle Mensual/Anual */}
         <div className="flex justify-center mb-10">
-          <div className="bg-white rounded-xl p-1 shadow-sm border border-gray-200">
+          <div className="bg-white rounded-xl p-1 shadow-sm border border-gray-200" role="group" aria-label={t('plans.billingCycleLabel', { defaultValue: 'Ciclo de facturación' })}>
             <button
               onClick={() => setBillingCycle('MONTHLY')}
+              aria-pressed={billingCycle === 'MONTHLY'}
               className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
                 billingCycle === 'MONTHLY'
                   ? 'bg-purple-600 text-white shadow-md'
@@ -86,6 +87,7 @@ export default function SubscriptionPlans() {
             </button>
             <button
               onClick={() => setBillingCycle('ANNUAL')}
+              aria-pressed={billingCycle === 'ANNUAL'}
               className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
                 billingCycle === 'ANNUAL'
                   ? 'bg-purple-600 text-white shadow-md'
@@ -389,7 +391,7 @@ export default function SubscriptionPlans() {
 
 function CheckIcon({ className = "text-green-500" }: { className?: string }) {
   return (
-    <svg className={`w-5 h-5 mx-auto ${className}`} fill="currentColor" viewBox="0 0 20 20">
+    <svg className={`w-5 h-5 mx-auto ${className}`} aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
     </svg>
   );
@@ -397,7 +399,7 @@ function CheckIcon({ className = "text-green-500" }: { className?: string }) {
 
 function XIcon() {
   return (
-    <svg className="w-5 h-5 mx-auto text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+    <svg className="w-5 h-5 mx-auto text-gray-300" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
       <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
     </svg>
   );

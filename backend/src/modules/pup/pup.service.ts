@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { encrypt, decrypt, encryptJSON, decryptJSON } from '../../common/utils/encryption';
 import { encryptionV2 } from '../../common/services/encryption-v2.service';
 import { generateEmergencyQR } from '../../common/utils/qr-generator';
+import { qrTokenService } from '../../common/services/qr-token.service';
 import { pdfGeneratorService } from '../../common/services/pdf-generator.service';
 import { s3Service } from '../../common/services/s3.service';
 import { logger } from '../../common/services/logger.service';
@@ -199,10 +200,12 @@ class PupService {
       logger.info('Perfil básico creado automáticamente para QR', { userId });
     }
 
-    const qrResult = await generateEmergencyQR(profile.qrToken);
+    // Generate signed token for the QR code (contains HMAC, no PHI)
+    const signedToken = qrTokenService.generateToken(profile.qrToken, 'emergency');
+    const qrResult = await generateEmergencyQR(signedToken);
 
     return {
-      qrToken: profile.qrToken,
+      qrToken: signedToken,
       qrDataUrl: qrResult.qrDataUrl,
       generatedAt: profile.qrGeneratedAt,
     };

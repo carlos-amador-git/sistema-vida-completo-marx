@@ -88,9 +88,20 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Skip to main content */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-vida-800 focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:font-medium"
+      >
+        {t('skipToContent')}
+      </a>
+
       {/* Sidebar móvil */}
       <div
         className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('nav.sidebar_label')}
       >
         <div className="fixed inset-0 bg-gray-900/50" onClick={() => setSidebarOpen(false)} />
         <div className="fixed inset-y-0 left-0 w-72 bg-white shadow-xl flex flex-col">
@@ -99,11 +110,11 @@ export default function MainLayout() {
               <Heart className="w-8 h-8 text-vida-600" />
               <span className="text-xl font-bold text-vida-800">VIDA</span>
             </Link>
-            <button onClick={() => setSidebarOpen(false)} className="p-2">
-              <X className="w-6 h-6 text-gray-500" />
+            <button onClick={() => setSidebarOpen(false)} className="p-2" aria-label={t('nav.close_menu')}>
+              <X className="w-6 h-6 text-gray-500" aria-hidden="true" />
             </button>
           </div>
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto" aria-label={t('nav.mobile_nav_label')}>
             {navigation.map((item) => {
               const isActive = location.pathname === item.href;
               const isNotifications = item.href === '/notifications';
@@ -112,13 +123,14 @@ export default function MainLayout() {
                   key={item.href}
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
                       ? 'bg-vida-50 text-vida-700 font-medium'
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  <div className="relative">
+                  <div className="relative" aria-hidden="true">
                     <item.icon className="w-5 h-5" />
                     {isNotifications && unreadCount > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
@@ -127,6 +139,9 @@ export default function MainLayout() {
                     )}
                   </div>
                   {item.name}
+                  {isNotifications && unreadCount > 0 && (
+                    <span className="sr-only">({unreadCount} {t('nav.unread_notifications')})</span>
+                  )}
                 </Link>
               );
             })}
@@ -150,8 +165,9 @@ export default function MainLayout() {
                 onClick={() => { handleLogout(); setSidebarOpen(false); }}
                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 title={t('logoutTitle')}
+                aria-label={t('logoutTitle')}
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -170,7 +186,7 @@ export default function MainLayout() {
           </div>
 
           {/* Navegación */}
-          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto" aria-label={t('nav.desktop_nav_label')}>
             {navigation.map((item) => {
               const isActive = location.pathname === item.href ||
                               (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
@@ -179,13 +195,14 @@ export default function MainLayout() {
                 <Link
                   key={item.href}
                   to={item.href}
+                  aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
                       ? 'bg-vida-50 text-vida-700 font-medium'
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
                 >
-                  <div className="relative">
+                  <div className="relative" aria-hidden="true">
                     <item.icon className="w-5 h-5" />
                     {isNotifications && unreadCount > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
@@ -194,6 +211,9 @@ export default function MainLayout() {
                     )}
                   </div>
                   {item.name}
+                  {isNotifications && unreadCount > 0 && (
+                    <span className="sr-only">({unreadCount} {t('nav.unread_notifications')})</span>
+                  )}
                 </Link>
               );
             })}
@@ -218,8 +238,9 @@ export default function MainLayout() {
                 onClick={handleLogout}
                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                 title={t('logoutTitle')}
+                aria-label={t('logoutTitle')}
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -233,8 +254,11 @@ export default function MainLayout() {
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 -ml-2 text-gray-500"
+            aria-label={t('nav.open_menu')}
+            aria-expanded={sidebarOpen}
+            aria-controls="mobile-sidebar"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-6 h-6" aria-hidden="true" />
           </button>
           <div className="flex items-center gap-2 ml-4">
             <Heart className="w-6 h-6 text-vida-600" />
@@ -246,7 +270,7 @@ export default function MainLayout() {
         </header>
 
         {/* Contenido de la página */}
-        <main className="p-4 md:p-6 lg:p-8 pb-24 md:pb-6">
+        <main id="main-content" className="p-4 md:p-6 lg:p-8 pb-24 md:pb-6">
           <Outlet />
         </main>
 
@@ -282,25 +306,28 @@ export default function MainLayout() {
       )}
 
       {/* Error Toast */}
-      {panicError && (
-        <div className="fixed bottom-6 left-6 z-50 bg-red-600 text-white px-6 py-4 rounded-xl shadow-lg max-w-sm">
-          <div className="flex items-start gap-3">
-            <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <div>
-              <p className="font-medium">{t('panicAlert.title')}</p>
-              <p className="text-sm text-red-100">{panicError}</p>
+      <div aria-live="assertive" aria-atomic="true" className="pointer-events-none fixed inset-0 z-50">
+        {panicError && (
+          <div className="pointer-events-auto absolute bottom-6 left-6 bg-red-600 text-white px-6 py-4 rounded-xl shadow-lg max-w-sm" role="alert">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <p className="font-medium">{t('panicAlert.title')}</p>
+                <p className="text-sm text-red-100">{panicError}</p>
+              </div>
+              <button
+                onClick={() => setPanicError(null)}
+                className="flex-shrink-0 hover:bg-red-700 p-1 rounded"
+                aria-label={t('panicAlert.dismiss')}
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </button>
             </div>
-            <button
-              onClick={() => setPanicError(null)}
-              className="flex-shrink-0 hover:bg-red-700 p-1 rounded"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

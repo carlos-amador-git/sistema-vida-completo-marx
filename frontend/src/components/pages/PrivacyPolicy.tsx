@@ -18,8 +18,8 @@ export default function PrivacyPolicy() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-vida-600 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" role="status" aria-label="Cargando aviso de privacidad">
+        <div className="w-8 h-8 border-2 border-vida-600 border-t-transparent rounded-full animate-spin" aria-hidden="true" />
       </div>
     );
   }
@@ -28,11 +28,11 @@ export default function PrivacyPolicy() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Link to="/" className="text-gray-500 hover:text-gray-700">
-            <ArrowLeft className="w-5 h-5" />
+          <Link to="/" className="text-gray-500 hover:text-gray-700" aria-label="Volver al inicio">
+            <ArrowLeft className="w-5 h-5" aria-hidden="true" />
           </Link>
           <div className="flex items-center gap-2">
-            <Shield className="w-6 h-6 text-vida-600" />
+            <Shield className="w-6 h-6 text-vida-600" aria-hidden="true" />
             <h1 className="text-lg font-semibold text-gray-900">Aviso de Privacidad</h1>
           </div>
           {policy && (

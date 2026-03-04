@@ -12,6 +12,19 @@
 import config from '../../config';
 
 // ═══════════════════════════════════════════════════════════════════════════
+// HTML ESCAPING
+// ═══════════════════════════════════════════════════════════════════════════
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // ESTILOS BASE
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -208,7 +221,8 @@ export function emailVerificationTemplate(params: {
   expiresIn: string;
   locale?: string;
 }): { subject: string; html: string } {
-  const { name, verificationUrl, expiresIn, locale = 'es' } = params;
+  const { name: rawName, verificationUrl, expiresIn, locale = 'es' } = params;
+  const name = escapeHtml(rawName);
   const isEn = locale === 'en';
 
   const heading = isEn ? `Welcome to VIDA System, ${name}!` : `¡Bienvenido a Sistema VIDA, ${name}!`;
@@ -272,7 +286,9 @@ export function passwordResetTemplate(params: {
   ipAddress?: string;
   locale?: string;
 }): { subject: string; html: string } {
-  const { name, resetUrl, expiresIn, ipAddress, locale = 'es' } = params;
+  const { name: rawName, resetUrl, expiresIn, ipAddress: rawIp, locale = 'es' } = params;
+  const name = escapeHtml(rawName);
+  const ipAddress = rawIp ? escapeHtml(rawIp) : undefined;
   const isEn = locale === 'en';
 
   const heading = isEn ? 'Password Recovery' : 'Recuperación de contraseña';
@@ -347,7 +363,9 @@ export function passwordChangedTemplate(params: {
   ipAddress?: string;
   locale?: string;
 }): { subject: string; html: string } {
-  const { name, changedAt, ipAddress, locale = 'es' } = params;
+  const { name: rawName, changedAt, ipAddress: rawIp, locale = 'es' } = params;
+  const name = escapeHtml(rawName);
+  const ipAddress = rawIp ? escapeHtml(rawIp) : undefined;
   const isEn = locale === 'en';
 
   const dateLocale = isEn ? 'en-US' : 'es-MX';
@@ -416,7 +434,8 @@ export function welcomeTemplate(params: {
   name: string;
   locale?: string;
 }): { subject: string; html: string } {
-  const { name, locale = 'es' } = params;
+  const { name: rawName, locale = 'es' } = params;
+  const name = escapeHtml(rawName);
   const isEn = locale === 'en';
 
   const heading = isEn ? 'Your account is verified!' : '¡Tu cuenta está verificada!';
@@ -498,7 +517,9 @@ export function subscriptionCreatedTemplate(params: {
   nextBillingDate?: Date;
   locale?: string;
 }): { subject: string; html: string } {
-  const { name, planName, price, features, nextBillingDate, locale = 'es' } = params;
+  const { name: rawName, planName: rawPlan, price, features, nextBillingDate, locale = 'es' } = params;
+  const name = escapeHtml(rawName);
+  const planName = escapeHtml(rawPlan);
   const isEn = locale === 'en';
 
   const heading = isEn ? 'Subscription activated!' : '¡Suscripción activada!';
@@ -572,7 +593,9 @@ export function subscriptionCancelledTemplate(params: {
   endDate: Date;
   locale?: string;
 }): { subject: string; html: string } {
-  const { name, planName, endDate, locale = 'es' } = params;
+  const { name: rawName, planName: rawPlan, endDate, locale = 'es' } = params;
+  const name = escapeHtml(rawName);
+  const planName = escapeHtml(rawPlan);
   const isEn = locale === 'en';
 
   const dateLocale = isEn ? 'en-US' : 'es-MX';
@@ -649,7 +672,14 @@ export function securityAlertTemplate(params: {
   };
   locale?: string;
 }): { subject: string; html: string } {
-  const { name, alertType, details, locale = 'es' } = params;
+  const { name: rawName, alertType, details: rawDetails, locale = 'es' } = params;
+  const name = escapeHtml(rawName);
+  const details = {
+    ...rawDetails,
+    ipAddress: rawDetails.ipAddress ? escapeHtml(rawDetails.ipAddress) : undefined,
+    userAgent: rawDetails.userAgent ? escapeHtml(rawDetails.userAgent) : undefined,
+    location: rawDetails.location ? escapeHtml(rawDetails.location) : undefined,
+  };
   const isEn = locale === 'en';
 
   const alertMessages = {
@@ -752,7 +782,10 @@ export function paymentFailedTemplate(params: {
   retryUrl: string;
   locale?: string;
 }): { subject: string; html: string } {
-  const { name, planName, amount, failureReason, retryUrl, locale = 'es' } = params;
+  const { name: rawName, planName: rawPlan, amount, failureReason: rawReason, retryUrl, locale = 'es' } = params;
+  const name = escapeHtml(rawName);
+  const planName = escapeHtml(rawPlan);
+  const failureReason = rawReason ? escapeHtml(rawReason) : undefined;
   const isEn = locale === 'en';
 
   const heading = isEn ? '⚠️ Problem with your payment' : '⚠️ Problema con tu pago';
@@ -839,7 +872,14 @@ export function emergencyAccessNotificationTemplate(params: {
   viewHistoryUrl: string;
   locale?: string;
 }): { subject: string; html: string } {
-  const { name, accessTime, accessorInfo, documentsAccessed, viewHistoryUrl, locale = 'es' } = params;
+  const { name: rawName, accessTime, accessorInfo: rawAccessor, documentsAccessed, viewHistoryUrl, locale = 'es' } = params;
+  const name = escapeHtml(rawName);
+  const accessorInfo = {
+    ...rawAccessor,
+    ip: rawAccessor.ip ? escapeHtml(rawAccessor.ip) : undefined,
+    location: rawAccessor.location ? escapeHtml(rawAccessor.location) : undefined,
+    userAgent: rawAccessor.userAgent ? escapeHtml(rawAccessor.userAgent) : undefined,
+  };
   const isEn = locale === 'en';
 
   const dateLocale = isEn ? 'en-US' : 'es-MX';

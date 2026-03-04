@@ -10,12 +10,21 @@ interface AuthTokens {
   refreshToken: string;
 }
 
+// Returned when the user has MFA enabled — a short-lived token to complete MFA
+export interface MFAChallenge {
+  requiresMFA: true;
+  mfaToken: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (data: LoginForm) => Promise<void>;
+  pendingMFA: MFAChallenge | null;
+  login: (data: LoginForm) => Promise<void | MFAChallenge>;
   loginWithTokens: (user: User, tokens: AuthTokens) => void;
+  completeMFA: (challenge: MFAChallenge, verifiedUser: User) => void;
+  clearMFA: () => void;
   register: (data: Omit<RegisterForm, 'confirmPassword' | 'acceptTerms'>) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -43,15 +52,9 @@ const syncLanguageFromUser = (user: User) => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingMFA, setPendingMFA] = useState<MFAChallenge | null>(null);
 
   const refreshUser = useCallback(async () => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) {
-      setUser(null);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const response = await authApi.getMe();
       if (response.success && response.data) {
@@ -59,13 +62,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         syncLanguageFromUser(response.data.user);
       } else {
         setUser(null);
-        localStorage.removeItem('accessToken');
-        // refreshToken now managed via httpOnly cookie
       }
     } catch (error) {
       setUser(null);
-      localStorage.removeItem('accessToken');
-      // refreshToken now managed via httpOnly cookie
     } finally {
       setIsLoading(false);
     }
@@ -75,11 +74,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUser();
   }, [refreshUser]);
 
-  const login = async (data: LoginForm) => {
+  const login = async (data: LoginForm): Promise<void | MFAChallenge> => {
     const response = await authApi.login(data);
     if (response.success && response.data) {
-      localStorage.setItem('accessToken', response.data.tokens.accessToken);
-      // refreshToken set as httpOnly cookie by server
+      // Check if server requires MFA
+      const responseData = response.data as any;
+      if (responseData.requiresMFA && responseData.mfaToken) {
+        const challenge: MFAChallenge = {
+          requiresMFA: true,
+          mfaToken: responseData.mfaToken,
+        };
+        setPendingMFA(challenge);
+        return challenge;
+      }
+      // Normal login — tokens set as httpOnly cookies by server
       setUser(response.data.user);
       syncLanguageFromUser(response.data.user);
     } else {
@@ -87,18 +95,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithTokens = (user: User, tokens: AuthTokens) => {
-    localStorage.setItem('accessToken', tokens.accessToken);
-    // refreshToken set as httpOnly cookie by server
+  const loginWithTokens = (user: User, _tokens: AuthTokens) => {
+    // Tokens are set as httpOnly cookies by the server
     setUser(user);
     syncLanguageFromUser(user);
+  };
+
+  /** Called after successful MFA verification to finalise the auth session. */
+  const completeMFA = (_challenge: MFAChallenge, verifiedUser: User) => {
+    setPendingMFA(null);
+    setUser(verifiedUser);
+    syncLanguageFromUser(verifiedUser);
+  };
+
+  const clearMFA = () => {
+    setPendingMFA(null);
   };
 
   const register = async (data: Omit<RegisterForm, 'confirmPassword' | 'acceptTerms'>) => {
     const response = await authApi.register(data);
     if (response.success && response.data) {
-      localStorage.setItem('accessToken', response.data.tokens.accessToken);
-      // refreshToken set as httpOnly cookie by server
+      // Tokens are set as httpOnly cookies by the server
       setUser(response.data.user);
     } else {
       throw new Error(response.error?.message || t('toast.registerError', { ns: 'auth' }));
@@ -111,9 +128,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       // Ignorar errores de logout
     } finally {
-      localStorage.removeItem('accessToken');
-      // refreshToken now managed via httpOnly cookie
+      // Tokens cleared as httpOnly cookies by the server
       setUser(null);
+      setPendingMFA(null);
     }
   };
 
@@ -123,8 +140,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         isLoading,
         isAuthenticated: !!user,
+        pendingMFA,
         login,
         loginWithTokens,
+        completeMFA,
+        clearMFA,
         register,
         logout,
         refreshUser,
