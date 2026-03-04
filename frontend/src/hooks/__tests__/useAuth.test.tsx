@@ -89,7 +89,7 @@ const mockUser: User = {
   preferredLanguage: 'es',
 };
 
-const mockAuthApi = authApi as {
+const mockAuthApi = authApi as unknown as {
   getMe: ReturnType<typeof vi.fn>;
   login: ReturnType<typeof vi.fn>;
   logout: ReturnType<typeof vi.fn>;

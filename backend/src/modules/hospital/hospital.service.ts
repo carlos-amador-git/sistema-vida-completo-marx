@@ -149,7 +149,8 @@ class HospitalService {
     });
 
     // Calcular distancia para cada institucion y filtrar
-    const hospitalsWithDistance: HospitalWithDistance[] = (institutions as MedicalInstitution[])
+    // Cast is safe: selected fields are sufficient for distance calc + display
+    const hospitalsWithDistance: HospitalWithDistance[] = (institutions as unknown as MedicalInstitution[])
       .map((inst) => ({
         ...inst,
         distance: haversineDistance(
@@ -164,7 +165,7 @@ class HospitalService {
       .slice(0, limit);
 
     // Cache for 5 minutes (hospital data rarely changes)
-    await cacheService.set(cacheKey, hospitalsWithDistance, 300);
+    await cacheService.set(cacheKey, hospitalsWithDistance, { ttl: 300 });
 
     return hospitalsWithDistance;
   }
@@ -217,7 +218,8 @@ class HospitalService {
     });
 
     // Calcular distancia y match score
-    const hospitalsWithScore: HospitalWithDistance[] = institutions
+    // Cast is safe: selected fields are sufficient for scoring + display
+    const hospitalsWithScore = (institutions as unknown as MedicalInstitution[])
       .map((inst) => {
         const distance = haversineDistance(
           latitude,
@@ -258,7 +260,7 @@ class HospitalService {
           matchedSpecialties,
         };
       })
-      .filter((h: HospitalWithDistance) => h.distance <= radiusKm);
+      .filter((h) => h.distance <= radiusKm) as HospitalWithDistance[];
 
     // Ordenar por match score (si prioritizeByCondition) o por distancia
     if (prioritizeByCondition) {
@@ -275,7 +277,7 @@ class HospitalService {
     const result = hospitalsWithScore.slice(0, limit);
 
     // Cache for 5 minutes
-    await cacheService.set(cacheKey, result, 300);
+    await cacheService.set(cacheKey, result, { ttl: 300 });
 
     return result;
   }

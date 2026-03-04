@@ -236,16 +236,33 @@ class CacheService {
   }
 
   /**
-   * Obtiene múltiples valores
+   * Obtiene múltiples valores usando MGET (Redis) o batch en memoria
    */
   async getMany<T>(keys: string[], options?: CacheOptions): Promise<Map<string, T>> {
     const result = new Map<string, T>();
     const prefix = options?.prefix;
+    const fullKeys = keys.map(k => prefix ? `${prefix}:${k}` : k);
 
-    for (const key of keys) {
-      const value = await this.get<T>(key, { prefix });
-      if (value !== null) {
-        result.set(key, value);
+    if (this.isRedisConnected && this.redis) {
+      try {
+        const values = await this.redis.mGet(fullKeys);
+        for (let i = 0; i < keys.length; i++) {
+          if (values[i] !== null) {
+            result.set(keys[i], JSON.parse(values[i]!) as T);
+          }
+        }
+        return result;
+      } catch (error) {
+        logger.error('Error en MGET de Redis, usando memoria', error);
+      }
+    }
+
+    // Fallback a memoria
+    const now = Date.now();
+    for (let i = 0; i < keys.length; i++) {
+      const entry = this.memoryCache.get(fullKeys[i]);
+      if (entry && entry.expiresAt >= now) {
+        result.set(keys[i], entry.value);
       }
     }
 
@@ -253,17 +270,24 @@ class CacheService {
   }
 
   /**
-   * Elimina todas las claves con un prefijo
+   * Elimina todas las claves con un prefijo usando SCAN (no bloquea Redis)
    */
   async deleteByPrefix(prefix: string): Promise<number> {
     let deleted = 0;
 
     if (this.isRedisConnected && this.redis) {
       try {
-        const keys = await this.redis.keys(`${prefix}:*`);
-        if (keys.length > 0) {
-          deleted = await this.redis.del(keys);
-        }
+        let cursor = '0';
+        do {
+          const result = await this.redis.scan(cursor, {
+            MATCH: `${prefix}:*`,
+            COUNT: 100,
+          });
+          cursor = result.cursor;
+          if (result.keys.length > 0) {
+            deleted += await this.redis.del(result.keys);
+          }
+        } while (cursor !== '0');
       } catch (error) {
         logger.error('Error eliminando por prefijo en Redis', error);
       }
@@ -371,8 +395,47 @@ export const CACHE_PREFIXES = {
   EMERGENCY_ACCESS: 'emergency:access',
   CURP_VERIFICATION: 'curp:verify',
   DOWNLOAD_TRACKING: 'download:track',
+  RBAC_PERMISSIONS: 'rbac:perms',
+  RBAC_ROLES: 'rbac:roles',
 } as const;
 
 // Singleton
 export const cacheService = new CacheService();
 export default cacheService;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REDIS STORE PARA EXPRESS-RATE-LIMIT
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Custom Redis store compatible con express-rate-limit v7.
+ * Usa el cacheService singleton — fallback a memoria si Redis no disponible.
+ */
+export class CacheRateLimitStore {
+  prefix: string;
+  private windowMs: number = 0;
+
+  constructor(prefix = 'rl') {
+    this.prefix = prefix;
+  }
+
+  init(options: { windowMs: number }) {
+    this.windowMs = options.windowMs;
+  }
+
+  async increment(key: string): Promise<{ totalHits: number; resetTime: Date | undefined }> {
+    const fullKey = `${this.prefix}:${key}`;
+    const ttlSeconds = Math.ceil(this.windowMs / 1000);
+    const totalHits = await cacheService.increment(fullKey, { ttl: ttlSeconds });
+    const resetTime = new Date(Date.now() + this.windowMs);
+    return { totalHits, resetTime };
+  }
+
+  async decrement(key: string): Promise<void> {
+    // Not needed for basic rate limiting — no-op
+  }
+
+  async resetKey(key: string): Promise<void> {
+    await cacheService.delete(`${this.prefix}:${key}`);
+  }
+}

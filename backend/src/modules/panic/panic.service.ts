@@ -66,7 +66,7 @@ class PanicService {
       try {
         if (user.profile.conditionsEnc) {
           patientConditions = JSON.parse(
-            encryptionV2.decryptText(user.profile.conditionsEnc)
+            encryptionV2.decryptField(user.profile.conditionsEnc)
           );
         }
       } catch {

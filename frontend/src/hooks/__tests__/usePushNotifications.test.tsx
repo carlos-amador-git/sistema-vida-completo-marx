@@ -59,7 +59,7 @@ Object.defineProperty(global.navigator, 'serviceWorker', {
 /** Trigger a message event from the service worker */
 function dispatchSwMessage(data: unknown) {
   const handler = mockSwAddEventListener.mock.calls.find(
-    ([event]: [string]) => event === 'message'
+    ([event]: string[]) => event === 'message'
   )?.[1];
   if (handler) {
     handler({ data } as MessageEvent);

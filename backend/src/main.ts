@@ -4,6 +4,10 @@
 import { validateEnvironment } from './common/utils/env-validation';
 validateEnvironment();
 
+// Bootstrap DI container (composition root)
+import { bootstrapContainer } from './common/di/bootstrap';
+bootstrapContainer();
+
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -12,6 +16,7 @@ import compression from 'compression';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import { prisma } from './common/prisma';
+import { CacheRateLimitStore } from './common/services/cache.service';
 
 // Middleware de seguridad
 import { csrfProtection, securityHeaders } from './common/middleware/csrf.middleware';
@@ -37,7 +42,9 @@ import panicController from './modules/panic/panic.controller';
 import insuranceController from './modules/insurance/insurance.controller';
 import adminAuthController from './modules/admin/admin-auth.controller';
 import adminController from './modules/admin/admin.controller';
+import adminRbacController from './modules/admin/admin-rbac.controller';
 import webauthnController from './modules/auth/webauthn.controller';
+import mfaController from './modules/auth/mfa.controller';
 import paymentsController from './modules/payments/payments.controller';
 import paymentsAdminController from './modules/payments/payments-admin.controller';
 import paymentsWebhookController from './modules/payments/payments-webhook.controller';
@@ -47,6 +54,8 @@ import odooController from './modules/odoo/odoo.controller';
 import walletController from './modules/wallet/wallet.controller';
 import consentController from './modules/consent/consent.controller';
 import arcoController from './modules/arco/arco.controller';
+import legalController from './modules/legal/legal.controller';
+import fhirController from './modules/fhir/fhir.controller';
 
 // Inicializar generador de URLs seguras para S3 local
 import { initSecureUrlGenerator } from './common/services/s3.service';
@@ -72,7 +81,11 @@ const io = new SocketIOServer(httpServer, {
   },
 });
 
-// Exportar io para uso en otros modulos
+// Registrar io en socket-manager (evita dependencia circular)
+import { setSocketServer } from './common/services/socket-manager';
+setSocketServer(io);
+
+// Exportar io para compatibilidad (preferir socket-manager)
 export { io };
 
 // ==================== MIDDLEWARE GLOBAL ====================
@@ -162,10 +175,11 @@ if (config.env === 'development') {
   console.log('🔒 Archivos locales servidos vía /api/v1/secure-download (autenticado)');
 }
 
-// Rate limiting global
+// Rate limiting global (Redis-backed via cacheService)
 const globalLimiter = rateLimit({
   windowMs: config.rateLimit.windowMs,
   max: config.rateLimit.max,
+  store: new CacheRateLimitStore('rl:global'),
   message: {
     success: false,
     error: {
@@ -196,6 +210,7 @@ app.use(globalLimiter);
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: config.env === 'development' ? 100 : 50, // 50 intentos en producción
+  store: new CacheRateLimitStore('rl:auth'),
   message: {
     success: false,
     error: {
@@ -246,6 +261,9 @@ app.use('/api/v1/auth', authLimiter, authController);
 // WebAuthn / Biometría (con rate limiting)
 app.use('/api/v1/auth/webauthn', authLimiter, webauthnController);
 
+// TOTP Multi-Factor Authentication
+app.use('/api/v1/auth/mfa', authLimiter, mfaController);
+
 // Perfil del paciente
 app.use('/api/v1/profile', pupController);
 
@@ -287,6 +305,12 @@ app.use('/api/v1/consent', consentController);
 // ARCO Rights (LFPDPPP)
 app.use('/api/v1/arco', arcoController);
 
+// Aviso de Privacidad LFPDPPP (público)
+app.use('/api/v1/legal', legalController);
+
+// HL7 FHIR R4 — Interoperabilidad de datos médicos
+app.use('/api/v1/fhir', fhirController);
+
 // ==================== RUTAS DE ADMINISTRACION ====================
 
 // Autenticacion de administradores (con rate limiting)
@@ -294,6 +318,9 @@ app.use('/api/v1/admin/auth', authLimiter, adminAuthController);
 
 // Endpoints de administracion (requieren auth admin)
 app.use('/api/v1/admin', adminController);
+
+// Gestion de RBAC — roles y permisos de usuarios
+app.use('/api/v1/admin/rbac', adminRbacController);
 
 // Administracion de pagos y suscripciones
 app.use('/api/v1/admin/payments', paymentsAdminController);
@@ -343,7 +370,19 @@ const startServer = async () => {
 
     // WebSocket JWT authentication middleware
     io.use(async (socket, next) => {
-      const token = socket.handshake.auth?.token;
+      // Check cookie first (httpOnly cookie from browser), then fall back to auth token
+      let token: string | undefined = socket.handshake.auth?.token;
+
+      if (!token) {
+        const cookieHeader = socket.handshake.headers?.cookie;
+        if (cookieHeader) {
+          const match = cookieHeader.match(/(?:^|;\s*)accessToken=([^;]+)/);
+          if (match) {
+            token = decodeURIComponent(match[1]);
+          }
+        }
+      }
+
       if (!token) {
         return next(new Error('Authentication required'));
       }

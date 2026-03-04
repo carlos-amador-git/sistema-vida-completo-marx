@@ -366,7 +366,7 @@ class EmergencyService {
     if (user.profile?.conditionsEnc) {
       try {
         const { encryptionV2 } = await import('../../common/services/encryption-v2.service');
-        patientConditions = JSON.parse(encryptionV2.decryptText(user.profile.conditionsEnc));
+        patientConditions = JSON.parse(encryptionV2.decryptField(user.profile.conditionsEnc));
       } catch {
         patientConditions = [];
       }
