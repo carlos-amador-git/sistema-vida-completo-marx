@@ -21,43 +21,23 @@ import {
 //const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1';
 const API_BASE = import.meta.env.VITE_API_URL;
 
-// Almacenar tokens en localStorage
-const TOKEN_KEY = 'admin_access_token';
-
-export const getAdminToken = (): string | null => localStorage.getItem(TOKEN_KEY);
-// Admin refresh token now managed via httpOnly cookie
-export const getAdminRefreshToken = (): string | null => null;
-
-export const setAdminTokens = (accessToken: string, _refreshToken?: string) => {
-  localStorage.setItem(TOKEN_KEY, accessToken);
-  // refreshToken now managed via httpOnly cookie
-};
-
-export const clearAdminTokens = () => {
-  localStorage.removeItem(TOKEN_KEY);
-  // refreshToken cookie cleared by server on logout
-};
+// Tokens are managed exclusively via httpOnly cookies set by the server.
+// No localStorage usage for admin tokens.
 
 // Fetch con autenticacion admin
 async function adminFetch<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = getAdminToken();
-
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...((options.headers as Record<string, string>) || {}),
   };
 
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
-    credentials: 'include', // Send httpOnly cookies
+    credentials: 'include', // Send httpOnly cookies (access + refresh)
   });
 
   const data = await response.json();
@@ -86,6 +66,7 @@ export const adminLogin = async (
   const response = await fetch(`${API_BASE}/admin/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', // Allow server to set httpOnly cookies
     body: JSON.stringify({ email, password }),
   });
 
@@ -95,29 +76,25 @@ export const adminLogin = async (
     throw { ...data.error, status: response.status };
   }
 
-  const result = data.data as AdminLoginResponse;
-  setAdminTokens(result.accessToken, result.refreshToken);
-
-  return result;
+  // Server sets access + refresh tokens as httpOnly cookies — no client storage needed
+  return data.data as AdminLoginResponse;
 };
 
 export const adminLogout = async (): Promise<void> => {
   try {
-    // Refresh token sent via httpOnly cookie automatically
+    // Access + refresh tokens sent via httpOnly cookies automatically; server clears them
     await adminFetch('/admin/auth/logout', {
       method: 'POST',
       body: JSON.stringify({}),
     });
   } catch (error) {
     // Ignorar errores de logout
-  } finally {
-    clearAdminTokens();
   }
 };
 
 export const refreshAdminTokens = async (): Promise<boolean> => {
   try {
-    // Refresh token sent via httpOnly cookie automatically
+    // Refresh token sent via httpOnly cookie automatically; server sets new access token cookie
     const response = await fetch(`${API_BASE}/admin/auth/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -125,17 +102,13 @@ export const refreshAdminTokens = async (): Promise<boolean> => {
       body: JSON.stringify({}),
     });
 
-    const data = await response.json();
-
     if (response.ok) {
-      setAdminTokens(data.data.accessToken, data.data.refreshToken);
       return true;
     }
   } catch (error) {
     // Ignorar errores
   }
 
-  clearAdminTokens();
   return false;
 };
 
@@ -317,9 +290,8 @@ export const exportAuditLogs = async (
   if (startDate) searchParams.set('startDate', startDate);
   if (endDate) searchParams.set('endDate', endDate);
 
-  const token = getAdminToken();
   const response = await fetch(`${API_BASE}/admin/audit/export?${searchParams.toString()}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include', // Access token sent via httpOnly cookie
   });
 
   if (!response.ok) {
@@ -703,9 +675,8 @@ export const exportPayments = async (
   if (startDate) searchParams.set('startDate', startDate);
   if (endDate) searchParams.set('endDate', endDate);
 
-  const token = getAdminToken();
   const response = await fetch(`${API_BASE}/admin/payments/export?${searchParams.toString()}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    credentials: 'include', // Access token sent via httpOnly cookie
   });
 
   if (!response.ok) {

@@ -20,6 +20,9 @@ import {
   Eye
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { DashboardSkeleton } from '../ui/Skeleton';
+import { EmptyState } from '../ui/EmptyState';
+import { ErrorBoundary } from '../ui/ErrorBoundary';
 
 export default function Dashboard() {
   const { t } = useTranslation('dashboard');
@@ -74,20 +77,12 @@ export default function Dashboard() {
   const isLoading = loadingProfile || loadingDirectives || loadingReps;
 
   if (isLoading) {
-    return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-32 bg-gray-200 rounded-xl"></div>
-        <div className="grid md:grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-40 bg-gray-200 rounded-xl"></div>
-          ))}
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <ErrorBoundary>
+    <section className="space-y-6 animate-fade-in" aria-label={t('sectionLabel', { defaultValue: 'Panel de control' })}>
       {/* Header de bienvenida */}
       <div className="card bg-gradient-to-r from-vida-600 to-vida-700 text-white">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -164,7 +159,14 @@ export default function Dashboard() {
               </>
             )}
           </div>
-          <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
+          <div
+            className="mt-3 w-full bg-gray-200 rounded-full h-2"
+            role="progressbar"
+            aria-valuenow={profileCompleteness}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={t('cards.profileCompleteness', { defaultValue: 'Completitud del perfil' })}
+          >
             <div
               className="bg-vida-500 h-2 rounded-full transition-all"
               style={{ width: `${profileCompleteness}%` }}
@@ -346,10 +348,11 @@ export default function Dashboard() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-6 text-gray-500">
-              <Shield className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">{t('recentAccesses.noAccesses')}</p>
-            </div>
+            <EmptyState
+              icon={<Shield />}
+              title={t('recentAccesses.noAccesses')}
+              className="py-6"
+            />
           )}
         </div>
 
@@ -398,16 +401,15 @@ export default function Dashboard() {
               })}
             </div>
           ) : (
-            <div className="text-center py-6 text-gray-500">
-              <FolderOpen className="w-10 h-10 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">{t('recentDocuments.noDocuments')}</p>
-              <Link to="/documents" className="text-sm text-amber-600 hover:underline mt-2 inline-block">
-                {t('recentDocuments.uploadFirst')}
-              </Link>
-            </div>
+            <EmptyState
+              icon={<FolderOpen />}
+              title={t('recentDocuments.noDocuments')}
+              className="py-6"
+            />
           )}
         </div>
       </div>
-    </div>
+    </section>
+    </ErrorBoundary>
   );
 }

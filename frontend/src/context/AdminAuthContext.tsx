@@ -6,7 +6,6 @@ import {
   adminLogin,
   adminLogout,
   getAdminMe,
-  getAdminToken,
   refreshAdminTokens,
 } from '../services/adminApi';
 
@@ -40,28 +39,25 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Verificar si hay una sesion activa al cargar
+  // Verificar si hay una sesion activa al cargar — usa cookie httpOnly, sin localStorage
   useEffect(() => {
     const checkAuth = async () => {
-      const token = getAdminToken();
-
-      if (token) {
-        try {
-          const adminData = await getAdminMe();
-          setAdmin(adminData);
-        } catch (error) {
-          // Si falla, intentar refresh
-          const refreshed = await refreshAdminTokens();
-          if (refreshed) {
-            try {
-              const adminData = await getAdminMe();
-              setAdmin(adminData);
-            } catch {
-              setAdmin(null);
-            }
-          } else {
+      try {
+        // Attempt to load admin data using the httpOnly access token cookie
+        const adminData = await getAdminMe();
+        setAdmin(adminData);
+      } catch (error) {
+        // Access token missing or expired — attempt silent refresh via refresh cookie
+        const refreshed = await refreshAdminTokens();
+        if (refreshed) {
+          try {
+            const adminData = await getAdminMe();
+            setAdmin(adminData);
+          } catch {
             setAdmin(null);
           }
+        } else {
+          setAdmin(null);
         }
       }
 

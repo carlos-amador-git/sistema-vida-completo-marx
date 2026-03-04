@@ -1,9 +1,13 @@
 // src/components/pages/AccessHistory.tsx
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Shield } from 'lucide-react';
 import { useLocale } from '../../hooks/useLocale';
 import { emergencyApi } from '../../services/api';
 import type { EmergencyAccess } from '../../types';
+import { TableRowSkeleton } from '../ui/Skeleton';
+import { EmptyState } from '../ui/EmptyState';
+import { ErrorBoundary, ErrorFallback } from '../ui/ErrorBoundary';
 
 export default function AccessHistory() {
   const { t } = useTranslation('emergency');
@@ -11,23 +15,34 @@ export default function AccessHistory() {
   const [accesses, setAccesses] = useState<EmergencyAccess[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchHistory = async () => {
+      setLoading(true);
+      setError('');
       try {
         const res = await emergencyApi.getHistory();
-        if (res.success && res.data) {
+        if (!cancelled && res.success && res.data) {
           setAccesses(res.data.accesses);
         }
       } catch (err: any) {
-        setError(err.response?.data?.error?.message || t('accessHistory.errors.loading'));
+        if (!cancelled) {
+          setError(err.response?.data?.error?.message || t('accessHistory.errors.loading'));
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchHistory();
-  }, [t]);
+
+    return () => { cancelled = true; };
+  }, [t, retryCount]);
+
+  const handleRetry = () => setRetryCount((c) => c + 1);
 
   const getRoleLabel = (role: string) => {
     return t(`accessHistory.roles.${role}`, { defaultValue: role });
@@ -35,10 +50,27 @@ export default function AccessHistory() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-vida-200 border-t-vida-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('accessHistory.loading')}</p>
+      <div className="max-w-4xl mx-auto space-y-6" role="status" aria-label={t('accessHistory.loading')}>
+        {/* Header skeleton */}
+        <div className="space-y-2">
+          <div className="animate-pulse h-8 w-64 bg-gray-200 rounded-md" aria-hidden="true" />
+          <div className="animate-pulse h-4 w-80 bg-gray-200 rounded-md" aria-hidden="true" />
+        </div>
+        {/* Stats card skeleton */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="flex items-center gap-4">
+            <div className="animate-pulse w-12 h-12 rounded-full bg-gray-200" aria-hidden="true" />
+            <div className="space-y-2">
+              <div className="animate-pulse h-8 w-10 bg-gray-200 rounded-md" aria-hidden="true" />
+              <div className="animate-pulse h-4 w-32 bg-gray-200 rounded-md" aria-hidden="true" />
+            </div>
+          </div>
+        </div>
+        {/* Table rows skeleton */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <TableRowSkeleton key={i} />
+          ))}
         </div>
       </div>
     );
@@ -47,18 +79,22 @@ export default function AccessHistory() {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
-          <p className="text-red-600">{error}</p>
-        </div>
+        <ErrorFallback
+          error={new Error(error)}
+          onRetry={handleRetry}
+          title="Error al cargar historial"
+          description={error}
+        />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <ErrorBoundary>
+    <section className="max-w-4xl mx-auto space-y-6" aria-labelledby="access-history-title">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('accessHistory.title')}</h1>
+        <h1 id="access-history-title" className="text-2xl font-bold text-gray-900">{t('accessHistory.title')}</h1>
         <p className="text-gray-600 mt-1">
           {t('accessHistory.subtitle')}
         </p>
@@ -67,8 +103,8 @@ export default function AccessHistory() {
       {/* Stats */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-vida-100 rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-vida-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-12 h-12 bg-vida-100 rounded-full flex items-center justify-center" aria-hidden="true">
+            <svg className="w-6 h-6 text-vida-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
             </svg>
           </div>
@@ -81,16 +117,12 @@ export default function AccessHistory() {
 
       {/* Access List */}
       {accesses.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">{t('accessHistory.emptyState.title')}</h3>
-          <p className="text-gray-500">
-            {t('accessHistory.emptyState.description')}
-          </p>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+          <EmptyState
+            icon={<Shield />}
+            title={t('accessHistory.emptyState.title')}
+            description={t('accessHistory.emptyState.description')}
+          />
         </div>
       ) : (
         <div className="space-y-4">
@@ -102,8 +134,8 @@ export default function AccessHistory() {
               <div className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0" aria-hidden="true">
+                      <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                       </svg>
                     </div>
@@ -128,7 +160,7 @@ export default function AccessHistory() {
                 {/* Location */}
                 {access.locationName && (
                   <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
@@ -159,9 +191,9 @@ export default function AccessHistory() {
       )}
 
       {/* Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+      <aside className="bg-blue-50 border border-blue-200 rounded-xl p-6">
         <h3 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           {t('accessHistory.infoBox.title')}
@@ -169,7 +201,8 @@ export default function AccessHistory() {
         <p className="text-blue-700 text-sm">
           {t('accessHistory.infoBox.description')}
         </p>
-      </div>
-    </div>
+      </aside>
+    </section>
+    </ErrorBoundary>
   );
 }

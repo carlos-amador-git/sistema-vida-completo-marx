@@ -63,10 +63,10 @@ export default function EmergencyQR() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[400px]" role="status" aria-label={t('qr.loading')}>
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-vida-200 border-t-vida-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">{t('qr.loading')}</p>
+          <div className="w-12 h-12 border-4 border-vida-200 border-t-vida-600 rounded-full animate-spin mx-auto mb-4" aria-hidden="true"></div>
+          <p className="text-gray-600" aria-hidden="true">{t('qr.loading')}</p>
         </div>
       </div>
     );
@@ -89,10 +89,10 @@ export default function EmergencyQR() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <section className="max-w-2xl mx-auto space-y-6" aria-labelledby="qr-title">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('qr.title')}</h1>
+        <h1 id="qr-title" className="text-2xl font-bold text-gray-900">{t('qr.title')}</h1>
         <p className="text-gray-600 mt-1">
           {t('qr.subtitle')}
         </p>
@@ -109,13 +109,17 @@ export default function EmergencyQR() {
           {qrData && (
             <>
               {/* QR Code */}
-              <div className="bg-white p-4 rounded-xl shadow-lg border-4 border-vida-100 mb-6">
+              <div
+                className="bg-white p-4 rounded-xl shadow-lg border-4 border-vida-100 mb-6"
+                role="img"
+                aria-label={t('qr.card.qrAlt', { defaultValue: 'Código QR de emergencia médica VIDA' })}
+              >
                 <QRCodeSVG
                   value={emergencyUrl}
                   size={250}
                   level="H"
                   includeMargin={true}
-                  fgColor="#1E40AF"
+                  fgColor="#0d6ecd"
                 />
               </div>
 
@@ -136,16 +140,17 @@ export default function EmergencyQR() {
             <button
               onClick={handleRegenerate}
               disabled={regenerating}
+              aria-busy={regenerating}
               className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 flex items-center gap-2"
             >
               {regenerating ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                  <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" aria-hidden="true"></div>
                   {t('qr.buttons.regenerating')}
                 </>
               ) : (
                 <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                   </svg>
                   {t('qr.buttons.regenerate')}
@@ -164,7 +169,7 @@ export default function EmergencyQR() {
               }}
               className="px-4 py-2 bg-vida-600 text-white rounded-lg hover:bg-vida-700 flex items-center gap-2"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
               </svg>
               {t('qr.buttons.download')}
@@ -174,9 +179,9 @@ export default function EmergencyQR() {
       </div>
 
       {/* Instructions */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+      <aside className="bg-amber-50 border border-amber-200 rounded-xl p-6">
         <h3 className="font-semibold text-amber-800 mb-3 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           {t('qr.instructions.title')}
@@ -199,12 +204,12 @@ export default function EmergencyQR() {
             {t('qr.instructions.step_4')}
           </li>
         </ul>
-      </div>
+      </aside>
 
       {/* Security note */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
+      <aside className="bg-gray-50 border border-gray-200 rounded-xl p-6">
         <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
           {t('qr.security.title')}
@@ -212,7 +217,7 @@ export default function EmergencyQR() {
         <p className="text-gray-600 text-sm">
           {t('qr.security.text')}
         </p>
-      </div>
+      </aside>
 
       {/* NFC Option */}
       <Link
@@ -220,8 +225,8 @@ export default function EmergencyQR() {
         className="block bg-gradient-to-r from-sky-50 to-vida-50 border border-sky-200 rounded-xl p-6 hover:shadow-md transition"
       >
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center">
-            <svg className="w-8 h-8 text-vida-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center" aria-hidden="true">
+            <svg className="w-8 h-8 text-vida-600" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
             </svg>
           </div>
@@ -234,11 +239,11 @@ export default function EmergencyQR() {
               {t('qr.nfc.description')}
             </p>
           </div>
-          <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-gray-400" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </div>
       </Link>
-    </div>
+    </section>
   );
 }

@@ -14,6 +14,7 @@ import {
   ROLES_REQUIRING_LICENSE,
   normalizeLicense,
 } from '../../common/utils/credential-validation';
+import { qrTokenService } from '../../common/services/qr-token.service';
 
 const router = Router();
 
@@ -107,7 +108,7 @@ function trackFailedAttempt(ip: string, qrToken: string): void {
  */
 router.post('/access',
   emergencyAccessLimiter, // Rate limiting aplicado
-  body('qrToken').isUUID().withMessage('Token QR inválido'),
+  body('qrToken').isString().notEmpty().withMessage('Token QR inválido'),
   body('accessorName').trim().notEmpty().withMessage('Nombre del profesional requerido').isLength({ max: 100 }),
   body('accessorRole').trim().notEmpty().withMessage('Rol del profesional requerido').isLength({ max: 50 }),
   body('accessorLicense').optional().isString().isLength({ max: 50 }),
@@ -126,7 +127,7 @@ router.post('/access',
       }
 
       const {
-        qrToken,
+        qrToken: rawToken,
         accessorName,
         accessorRole,
         accessorLicense,
@@ -136,6 +137,24 @@ router.post('/access',
         longitude,
         locationName,
       } = req.body;
+
+      // ═══════════════════════════════════════════════════════════════════════
+      // RESOLVE QR TOKEN (supports legacy UUID and new signed tokens)
+      // ═══════════════════════════════════════════════════════════════════════
+
+      const resolved = qrTokenService.resolveToken(rawToken);
+      if (!resolved) {
+        trackFailedAttempt(req.ip || 'unknown', rawToken?.substring(0, 8));
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: 'INVALID_QR_TOKEN',
+            message: 'Token QR inválido o expirado',
+          },
+        });
+      }
+
+      const qrToken = resolved.id;
 
       // ═══════════════════════════════════════════════════════════════════════
       // VALIDACIÓN Y VERIFICACIÓN DE CREDENCIALES PROFESIONALES CON SEP

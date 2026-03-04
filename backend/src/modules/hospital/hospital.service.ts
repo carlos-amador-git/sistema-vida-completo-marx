@@ -1,6 +1,7 @@
 // src/modules/hospital/hospital.service.ts
 import { MedicalInstitution, InstitutionType, AttentionLevel } from '@prisma/client';
 import { haversineDistance } from '../../common/utils/geolocation';
+import { cacheService } from '../../common/services/cache.service';
 
 import { prisma } from '../../common/prisma';
 
@@ -56,10 +57,58 @@ interface FindNearbyForConditionsParams {
   prioritizeByCondition?: boolean; // Si true, ordena por match score primero
 }
 
+// Select only fields needed for distance calculation and display (reduces data transfer)
+const HOSPITAL_SELECT_FIELDS = {
+  id: true,
+  name: true,
+  type: true,
+  attentionLevel: true,
+  latitude: true,
+  longitude: true,
+  address: true,
+  city: true,
+  state: true,
+  phone: true,
+  emergencyPhone: true,
+  hasEmergency: true,
+  has24Hours: true,
+  hasICU: true,
+  hasTrauma: true,
+  specialties: true,
+  isActive: true,
+  isVerified: true,
+  cluesCode: true,
+} as const;
+
 class HospitalService {
   /**
+   * Generate a cache key from rounded coordinates (nearby locations share cache)
+   * Rounds to ~1km precision for cache hits
+   */
+  private getCacheKey(lat: number, lon: number, radiusKm: number, suffix?: string): string {
+    const roundedLat = Math.round(lat * 100) / 100; // ~1.1km precision
+    const roundedLon = Math.round(lon * 100) / 100;
+    return `hospitals:${roundedLat}:${roundedLon}:${radiusKm}${suffix ? `:${suffix}` : ''}`;
+  }
+
+  /**
+   * Calcula bounding box para pre-filtrar en SQL antes de Haversine
+   * 1 grado lat ~ 111 km, 1 grado lon ~ 111 * cos(lat) km
+   */
+  private getBoundingBox(lat: number, lon: number, radiusKm: number) {
+    const latDelta = radiusKm / 111;
+    const lonDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
+    return {
+      minLat: lat - latDelta,
+      maxLat: lat + latDelta,
+      minLon: lon - lonDelta,
+      maxLon: lon + lonDelta,
+    };
+  }
+
+  /**
    * Busca hospitales cercanos a una ubicacion
-   * Usa la formula Haversine para calcular distancias
+   * Usa bounding box SQL + Haversine para calcular distancias
    */
   async findNearbyHospitals(params: FindNearbyParams): Promise<HospitalWithDistance[]> {
     const {
@@ -75,12 +124,20 @@ class HospitalService {
       requireTrauma,
     } = params;
 
-    // Obtener instituciones activas con coordenadas
+    // Bounding box pre-filter (SQL-level)
+    const bbox = this.getBoundingBox(latitude, longitude, radiusKm);
+
+    // Check cache first (nearby locations within ~1km share cache)
+    const cacheKey = this.getCacheKey(latitude, longitude, radiusKm);
+    const cached = await cacheService.get<HospitalWithDistance[]>(cacheKey);
+    if (cached) return cached.slice(0, limit);
+
+    // Obtener instituciones activas dentro del bounding box (exclude null coordinates)
     const institutions = await prisma.medicalInstitution.findMany({
       where: {
         isActive: true,
-        latitude: { not: null },
-        longitude: { not: null },
+        latitude: { not: null, gte: bbox.minLat, lte: bbox.maxLat },
+        longitude: { not: null, gte: bbox.minLon, lte: bbox.maxLon },
         ...(type && { type }),
         ...(attentionLevel && { attentionLevel }),
         ...(requireEmergency && { hasEmergency: true }),
@@ -88,22 +145,26 @@ class HospitalService {
         ...(requireICU && { hasICU: true }),
         ...(requireTrauma && { hasTrauma: true }),
       },
+      select: HOSPITAL_SELECT_FIELDS,
     });
 
     // Calcular distancia para cada institucion y filtrar
-    const hospitalsWithDistance: HospitalWithDistance[] = institutions
+    const hospitalsWithDistance: HospitalWithDistance[] = (institutions as MedicalInstitution[])
       .map((inst) => ({
         ...inst,
         distance: haversineDistance(
           latitude,
           longitude,
-          inst.latitude!,
-          inst.longitude!
+          inst.latitude as number,
+          inst.longitude as number
         ),
       }))
       .filter((h) => h.distance <= radiusKm)
       .sort((a, b) => a.distance - b.distance)
       .slice(0, limit);
+
+    // Cache for 5 minutes (hospital data rarely changes)
+    await cacheService.set(cacheKey, hospitalsWithDistance, 300);
 
     return hospitalsWithDistance;
   }
@@ -136,14 +197,23 @@ class HospitalService {
 
     const requiredSpecialtiesArray = Array.from(requiredSpecialties);
 
-    // Obtener hospitales con urgencias
+    // Bounding box pre-filter (SQL-level)
+    const bbox = this.getBoundingBox(latitude, longitude, radiusKm);
+
+    // Check cache
+    const cacheKey = this.getCacheKey(latitude, longitude, radiusKm, 'conditions');
+    const cached = await cacheService.get<HospitalWithDistance[]>(cacheKey);
+    if (cached) return cached.slice(0, limit);
+
+    // Obtener hospitales con urgencias dentro del bounding box (exclude null coordinates)
     const institutions = await prisma.medicalInstitution.findMany({
       where: {
         isActive: true,
-        latitude: { not: null },
-        longitude: { not: null },
+        latitude: { not: null, gte: bbox.minLat, lte: bbox.maxLat },
+        longitude: { not: null, gte: bbox.minLon, lte: bbox.maxLon },
         hasEmergency: true,
       },
+      select: HOSPITAL_SELECT_FIELDS,
     });
 
     // Calcular distancia y match score
@@ -152,8 +222,8 @@ class HospitalService {
         const distance = haversineDistance(
           latitude,
           longitude,
-          inst.latitude!,
-          inst.longitude!
+          inst.latitude as number,
+          inst.longitude as number
         );
 
         // Calcular match score basado en especialidades
@@ -188,7 +258,7 @@ class HospitalService {
           matchedSpecialties,
         };
       })
-      .filter((h) => h.distance <= radiusKm);
+      .filter((h: HospitalWithDistance) => h.distance <= radiusKm);
 
     // Ordenar por match score (si prioritizeByCondition) o por distancia
     if (prioritizeByCondition) {
@@ -202,7 +272,12 @@ class HospitalService {
       hospitalsWithScore.sort((a, b) => a.distance - b.distance);
     }
 
-    return hospitalsWithScore.slice(0, limit);
+    const result = hospitalsWithScore.slice(0, limit);
+
+    // Cache for 5 minutes
+    await cacheService.set(cacheKey, result, 300);
+
+    return result;
   }
 
   /**

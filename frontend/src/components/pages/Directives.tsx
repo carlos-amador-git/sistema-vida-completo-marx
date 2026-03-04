@@ -176,14 +176,14 @@ export default function Directives() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center" role="status" aria-label={t('loading', { defaultValue: 'Cargando directivas' })}>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" aria-hidden="true"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <section className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -205,9 +205,9 @@ export default function Directives() {
         </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg" role="alert" aria-live="polite">
             {error}
-            <button onClick={() => setError('')} className="float-right">&times;</button>
+            <button onClick={() => setError('')} className="float-right" aria-label={t('errors.dismiss', { defaultValue: 'Cerrar error' })}>&times;</button>
           </div>
         )}
 
@@ -353,18 +353,24 @@ export default function Directives() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-directive-title"
+        >
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 id="create-directive-title" className="text-xl font-semibold text-gray-900">
                   {t('modal.title')}
                 </h2>
                 <button
                   onClick={() => setShowCreateModal(false)}
                   className="text-gray-400 hover:text-gray-600"
+                  aria-label={t('modal.close', { defaultValue: 'Cerrar modal' })}
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -421,10 +427,11 @@ export default function Directives() {
               </div>
 
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="originState" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('modal.stateLabel')}
                 </label>
                 <select
+                  id="originState"
                   value={draftForm.originState}
                   onChange={(e) => setDraftForm({ ...draftForm, originState: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -449,10 +456,11 @@ export default function Directives() {
               </div>
 
               <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="additionalNotes" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('modal.notesLabel')}
                 </label>
                 <textarea
+                  id="additionalNotes"
                   value={draftForm.additionalNotes}
                   onChange={(e) => setDraftForm({ ...draftForm, additionalNotes: e.target.value })}
                   rows={4}
@@ -482,6 +490,6 @@ export default function Directives() {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

@@ -2,17 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── VIDA Color System — HSL Custom Properties ─────────────────────────── */
+:root {
+  /* Paleta principal azul médica (60-30-10: base neutral) */
+  --vida-50:  210 100% 97%;
+  --vida-100: 210 96% 93%;
+  --vida-200: 210 93% 85%;
+  --vida-300: 210 90% 72%;
+  --vida-400: 210 87% 58%;
+  --vida-500: 210 85% 48%;
+  --vida-600: 210 87% 40%;
+  --vida-700: 210 90% 32%;
+  --vida-800: 210 85% 25%;
+  --vida-900: 210 80% 18%;
+  --vida-950: 210 75% 10%;
+
+  /* Acento — verde esmeralda médico (10% accent) */
+  --accent:       160 84% 39%;
+  --accent-light: 160 70% 50%;
+
+  /* Semánticos */
+  --danger:  0   84% 60%;
+  --warning: 38  92% 50%;
+  --success: 142 71% 45%;
+}
+
 @layer base {
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
-  
+
   body {
     @apply bg-gray-50 text-gray-900 antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Poppins', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  code, kbd, samp, pre {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* WCAG 2.1 AA — Focus visible for keyboard navigation */
+  :focus-visible {
+    outline: 2px solid hsl(var(--vida-600));
+    outline-offset: 2px;
+  }
+
+  /* Remove outline for mouse/touch users */
+  :focus:not(:focus-visible) {
+    outline: none;
   }
 }
 
@@ -125,7 +167,7 @@
 
   /* Sombras personalizadas */
   .shadow-vida {
-    box-shadow: 0 4px 14px 0 rgba(30, 64, 175, 0.15);
+    box-shadow: 0 4px 14px 0 hsl(var(--vida-800) / 0.15);
   }
 }
 

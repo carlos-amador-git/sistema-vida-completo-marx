@@ -58,12 +58,16 @@ export function normalizeLicense(license: string): string {
 }
 
 /**
- * Valida las credenciales de un profesional de salud
+ * Validates health professional credentials (synchronous — format check only).
+ *
+ * IMPORTANT: This function ALWAYS returns isVerified=false because it only
+ * validates the license format, NOT the actual registration with SEP.
+ * For real SEP verification, use verifyProfessionalCredentialsAsync() instead.
  *
  * @param role - Rol del profesional (DOCTOR, NURSE, PARAMEDIC, etc.)
  * @param license - Número de cédula profesional (opcional)
  * @param institutionName - Nombre de la institución (opcional)
- * @returns Resultado de la validación
+ * @returns Resultado — isVerified is ALWAYS false in this sync path
  */
 export function validateProfessionalCredentials(
   role: string,
@@ -259,7 +263,7 @@ export async function verifyProfessionalCredentialsAsync(
         );
       }
     } else {
-      result.isVerified = true; // Verificamos pero no encontramos
+      result.isVerified = false;
       result.isValid = false;
       result.errors.push('Cédula no encontrada en el registro oficial de la SEP');
     }

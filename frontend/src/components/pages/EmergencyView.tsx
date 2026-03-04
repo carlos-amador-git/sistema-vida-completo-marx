@@ -170,11 +170,11 @@ export default function EmergencyView() {
   // Vista de formulario de acceso
   if (step === 'form') {
     return (
-      <div className="min-h-screen bg-red-600 flex items-center justify-center p-4">
+      <main className="min-h-screen bg-red-600 flex items-center justify-center p-4" id="main-content">
         <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
           <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4" aria-hidden="true">
+              <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
             </div>
@@ -182,23 +182,26 @@ export default function EmergencyView() {
             <p className="text-gray-600 mt-2">{t('view.subtitle')}</p>
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6" role="note">
             <p className="text-sm text-yellow-800 mb-2">
-              <strong>⚠️ {t('view.warning.label')}</strong> {t('view.warning.text')}
+              <strong><span aria-hidden="true">⚠️</span> {t('view.warning.label')}</strong> {t('view.warning.text')}
             </p>
             <p className="text-xs text-yellow-700">
               <strong>{t('view.warning.note_label')}</strong> {t('view.warning.note_text')}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" aria-label={t('view.form.label', { defaultValue: 'Formulario de acceso de emergencia' })}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('view.form.full_name')} *
+              <label htmlFor="accessorName" className="block text-sm font-medium text-gray-700 mb-1">
+                {t('view.form.full_name')} <span aria-hidden="true">*</span>
+                <span className="sr-only"> ({t('required', { defaultValue: 'requerido' })})</span>
               </label>
               <input
+                id="accessorName"
                 type="text"
                 required
+                aria-required="true"
                 value={accessorForm.accessorName}
                 onChange={(e) => setAccessorForm({ ...accessorForm, accessorName: e.target.value })}
                 placeholder={t('view.form.placeholders.full_name')}
@@ -207,11 +210,14 @@ export default function EmergencyView() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('view.form.role')} *
+              <label htmlFor="accessorRole" className="block text-sm font-medium text-gray-700 mb-1">
+                {t('view.form.role')} <span aria-hidden="true">*</span>
+                <span className="sr-only"> ({t('required', { defaultValue: 'requerido' })})</span>
               </label>
               <select
+                id="accessorRole"
                 required
+                aria-required="true"
                 value={accessorForm.accessorRole}
                 onChange={(e) => setAccessorForm({ ...accessorForm, accessorRole: e.target.value })}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent"
@@ -225,15 +231,20 @@ export default function EmergencyView() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('view.form.license')} {licenseRequired && <span className="text-red-500">*</span>}
+              <label htmlFor="accessorLicense" className="block text-sm font-medium text-gray-700 mb-1">
+                {t('view.form.license')} {licenseRequired && <span aria-hidden="true" className="text-red-500">*</span>}
+                {licenseRequired && <span className="sr-only"> ({t('required', { defaultValue: 'requerido' })})</span>}
                 {licenseRecommended && !licenseRequired && (
                   <span className="text-yellow-600 text-xs ml-1">{t('view.form.license_recommended')}</span>
                 )}
               </label>
               <input
+                id="accessorLicense"
                 type="text"
                 required={licenseRequired}
+                aria-required={licenseRequired}
+                aria-describedby={licenseError ? 'license-error' : undefined}
+                aria-invalid={licenseError && accessorForm.accessorLicense ? true : undefined}
                 value={accessorForm.accessorLicense}
                 onChange={(e) => setAccessorForm({ ...accessorForm, accessorLicense: e.target.value })}
                 placeholder={t('view.form.placeholders.license')}
@@ -246,10 +257,10 @@ export default function EmergencyView() {
                 }`}
               />
               {licenseError && (
-                <p className="text-red-500 text-xs mt-1">{licenseError}</p>
+                <p id="license-error" className="text-red-500 text-xs mt-1" role="alert" aria-live="polite">{licenseError}</p>
               )}
               {accessorForm.accessorLicense && !licenseError && (
-                <p className="text-green-600 text-xs mt-1">{t('view.form.license_validation.valid')}</p>
+                <p className="text-green-600 text-xs mt-1" aria-live="polite">{t('view.form.license_validation.valid')}</p>
               )}
               {licenseRecommended && !accessorForm.accessorLicense && (
                 <p className="text-yellow-600 text-xs mt-1">
@@ -259,10 +270,11 @@ export default function EmergencyView() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="institutionName" className="block text-sm font-medium text-gray-700 mb-1">
                 {t('view.form.institution')}
               </label>
               <input
+                id="institutionName"
                 type="text"
                 value={accessorForm.institutionName}
                 onChange={(e) => setAccessorForm({ ...accessorForm, institutionName: e.target.value })}
@@ -292,16 +304,16 @@ export default function EmergencyView() {
             </button>
           </form>
         </div>
-      </div>
+      </main>
     );
   }
 
   // Vista de carga
   if (step === 'loading') {
     return (
-      <div className="min-h-screen bg-red-600 flex items-center justify-center">
+      <div className="min-h-screen bg-red-600 flex items-center justify-center" role="status" aria-live="polite" aria-label={t('view.loading')}>
         <div className="text-center text-white">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-white border-t-transparent mx-auto mb-4" aria-hidden="true"></div>
           <p className="text-xl">{t('view.loading')}</p>
         </div>
       </div>
@@ -311,10 +323,10 @@ export default function EmergencyView() {
   // Vista de error
   if (step === 'error') {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <main className="min-h-screen bg-gray-100 flex items-center justify-center p-4" id="main-content">
+        <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-8 text-center" role="alert" aria-live="assertive">
+          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4" aria-hidden="true">
+            <svg className="w-10 h-10 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
@@ -330,7 +342,7 @@ export default function EmergencyView() {
             {t('view.error.retry')}
           </button>
         </div>
-      </div>
+      </main>
     );
   }
 
@@ -351,30 +363,35 @@ export default function EmergencyView() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <main className="min-h-screen bg-gray-100" id="main-content">
       {/* Header fijo con timer */}
-      <div className="sticky top-0 z-50 bg-red-600 text-white shadow-lg">
+      <header className="sticky top-0 z-50 bg-red-600 text-white shadow-lg" role="banner">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
             <span className="font-bold text-lg">{t('view.header.title')}</span>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm">{t('view.header.session_expires')}</span>
-            <span className="bg-white text-red-600 px-3 py-1 rounded-full font-mono font-bold">
+            <span
+              className="bg-white text-red-600 px-3 py-1 rounded-full font-mono font-bold"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-label={`${t('view.header.session_expires')} ${timeRemaining}`}
+            >
               {timeRemaining}
             </span>
           </div>
         </div>
-      </div>
+      </header>
 
       <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {/* Información del paciente */}
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <section aria-labelledby="patient-section-title" className="bg-white rounded-xl shadow-sm overflow-hidden">
           <div className="bg-blue-600 text-white px-6 py-4">
-            <h2 className="text-xl font-bold">{t('view.patient.section_title')}</h2>
+            <h2 id="patient-section-title" className="text-xl font-bold">{t('view.patient.section_title')}</h2>
           </div>
           <div className="p-6">
             <div className="flex items-start gap-6">
@@ -414,7 +431,7 @@ export default function EmergencyView() {
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Información médica crítica */}
         <div className="grid md:grid-cols-3 gap-4">
@@ -770,6 +787,6 @@ export default function EmergencyView() {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

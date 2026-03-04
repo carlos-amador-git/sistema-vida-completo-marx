@@ -27,6 +27,18 @@ export default defineConfig(({ mode }) => ({
   build: {
     outDir: 'dist',
     sourcemap: false,
+    chunkSizeWarningLimit: 500,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-i18n': ['i18next', 'react-i18next'],
+          'vendor-ui': ['lucide-react'],
+
+          'vendor-maps': ['leaflet', 'react-leaflet'],
+        },
+      },
+    },
   },
   esbuild: mode === 'production' ? {
     drop: ['console', 'debugger'],

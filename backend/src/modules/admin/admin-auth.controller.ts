@@ -8,7 +8,13 @@ import { adminAuthMiddleware } from '../../common/guards/admin-auth.middleware';
 import { requireSuperAdmin } from '../../common/guards/admin-roles.guard';
 import { securityMetrics } from '../../common/services/security-metrics.service';
 import { logger } from '../../common/services/logger.service';
-import { setAdminRefreshTokenCookie, clearAdminRefreshTokenCookie, getAdminRefreshToken } from '../../common/utils/auth-cookies';
+import {
+  setAdminAccessTokenCookie,
+  clearAdminAccessTokenCookie,
+  setAdminRefreshTokenCookie,
+  clearAdminRefreshTokenCookie,
+  getAdminRefreshToken,
+} from '../../common/utils/auth-cookies';
 import {
   zodValidate,
   adminLoginSchema,
@@ -148,7 +154,8 @@ router.post('/login', adminLoginLimiter, zodValidate(adminLoginSchema), async (r
     securityMetrics.recordSuccessfulLogin(ip, `admin:${result.admin.id}`);
     logger.info('Admin login exitoso', { adminId: result.admin.id, email, ip });
 
-    // Set admin refresh token as httpOnly cookie
+    // Set admin access and refresh tokens as httpOnly cookies
+    setAdminAccessTokenCookie(res, result.accessToken);
     setAdminRefreshTokenCookie(res, result.refreshToken);
 
     res.json({
@@ -245,7 +252,8 @@ router.post('/login/mfa', mfaLimiter, zodValidate(adminMFAVerifySchema), async (
     securityMetrics.recordSuccessfulLogin(ip, `admin:${pendingMFA.adminId}`);
     logger.info('Admin MFA login exitoso', { adminId: pendingMFA.adminId, email: pendingMFA.email, ip });
 
-    // Set admin refresh token as httpOnly cookie
+    // Set admin access and refresh tokens as httpOnly cookies
+    setAdminAccessTokenCookie(res, accessToken);
     setAdminRefreshTokenCookie(res, refreshToken);
 
     res.json({
@@ -286,7 +294,8 @@ router.post('/logout', adminAuthMiddleware, async (req: Request, res: Response) 
       await adminAuthService.logout(refreshToken, req.adminId!);
     }
 
-    // Clear admin refresh token cookie
+    // Clear admin access and refresh token cookies
+    clearAdminAccessTokenCookie(res);
     clearAdminRefreshTokenCookie(res);
 
     res.json({
@@ -328,7 +337,8 @@ router.post('/refresh', async (req: Request, res: Response) => {
 
     const result = await adminAuthService.refreshTokens(refreshToken, ipAddress, userAgent);
 
-    // Set new admin refresh token as httpOnly cookie
+    // Set new admin access and refresh token cookies
+    setAdminAccessTokenCookie(res, result.accessToken);
     setAdminRefreshTokenCookie(res, result.refreshToken);
 
     res.json({

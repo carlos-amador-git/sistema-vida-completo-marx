@@ -28,22 +28,23 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <AuthProvider>
             <PremiumProvider>
               <App />
-              <Toaster 
+              <Toaster
               position="top-right"
               toastOptions={{
                 duration: 4000,
                 style: {
-                  background: '#1e40af',
+                  background: 'hsl(210 87% 40%)',
                   color: '#fff',
+                  fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
                 },
                 success: {
                   style: {
-                    background: '#059669',
+                    background: 'hsl(142 71% 45%)',
                   },
                 },
                 error: {
                   style: {
-                    background: '#dc2626',
+                    background: 'hsl(0 84% 60%)',
                   },
                 },
               }}

@@ -71,11 +71,6 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
     vibrate([200, 100, 200, 100, 200]); // Emergency pattern
 
     try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error(t('panic.button.errors.no_session'));
-      }
-
       // Get current location (optional — alert still sent without GPS)
       let latitude: number | null = null;
       let longitude: number | null = null;
@@ -88,8 +83,8 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
             reject,
             {
               enableHighAccuracy: true,
-              timeout: 10000,
-              maximumAge: 0,
+              timeout: 3000,
+              maximumAge: 30000, // Accept cached position up to 30s old
             }
           );
         });
@@ -101,14 +96,14 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
         console.warn('Geolocation unavailable, sending alert without coordinates');
       }
 
-      // Call API - use environment variable for API base URL
+      // Call API - access token sent automatically via httpOnly cookie
       const apiBaseUrl = import.meta.env.VITE_API_URL || '';
       const response = await fetch(`${apiBaseUrl}/emergency/panic`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({
           latitude,
           longitude,
@@ -178,12 +173,27 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
     setIsHolding(false);
   }, []);
 
+  // Keyboard activation: treat Space/Enter as a hold start/end pair
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      startHold();
+    }
+  }, [startHold]);
+
+  const handleKeyUp = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      endHold();
+    }
+  }, [endHold]);
+
   // Loading state
   if (isActivating) {
     return (
-      <div className="fixed bottom-24 md:bottom-8 right-4 md:right-6 z-50">
+      <div className="fixed bottom-24 md:bottom-8 right-4 md:right-6 z-50" role="status" aria-live="assertive" aria-label={t('panic.button.activating')}>
         <div className="w-20 h-20 md:w-24 md:h-24 bg-red-600 rounded-full flex items-center justify-center shadow-2xl animate-pulse">
-          <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
         </div>
       </div>
     );
@@ -192,17 +202,28 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
   // Confirmation modal
   if (isConfirming) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="panic-confirming-title"
+        aria-describedby="panic-confirming-desc"
+      >
+        {/* aria-live region for the countdown */}
+        <div aria-live="assertive" aria-atomic="true" className="sr-only">
+          {t('panic.modal.confirming.countdown_announcement', { count: countdown })}
+        </div>
+
         <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl animate-scale-in">
           {/* Countdown circle */}
-          <div className="relative w-32 h-32 mx-auto mb-6">
+          <div className="relative w-32 h-32 mx-auto mb-6" aria-hidden="true">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
               <circle
                 cx="50"
                 cy="50"
                 r="45"
                 fill="none"
-                stroke="#fee2e2"
+                stroke="#ffe0e0"
                 strokeWidth="6"
               />
               <circle
@@ -210,7 +231,7 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
                 cy="50"
                 r="45"
                 fill="none"
-                stroke="#dc2626"
+                stroke="#f45050"
                 strokeWidth="6"
                 strokeLinecap="round"
                 strokeDasharray="283"
@@ -223,13 +244,14 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
             </div>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('panic.modal.confirming.title')}</h2>
-          <p className="text-gray-600 mb-8">
+          <h2 id="panic-confirming-title" className="text-2xl font-bold text-gray-900 mb-2">{t('panic.modal.confirming.title')}</h2>
+          <p id="panic-confirming-desc" className="text-gray-600 mb-8">
             {t('panic.modal.confirming.description')}
           </p>
 
           <button
             onClick={cancelPanic}
+            aria-label={t('panic.modal.confirming.cancel_aria_label')}
             className="w-full py-4 bg-gray-100 text-gray-800 rounded-2xl font-semibold text-lg active:bg-gray-200 transition touch-manipulation"
             style={{ minHeight: '56px' }}
           >
@@ -258,20 +280,20 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
 
         {/* Expanded mode - Large button for emergencies */}
         {isExpanded ? (
-          <div className="bg-white rounded-3xl p-4 shadow-2xl">
-            <p className="text-center text-gray-600 text-sm mb-3">
+          <div className="bg-white rounded-3xl p-4 shadow-2xl" role="dialog" aria-modal="true" aria-label={t('panic.button.expanded_dialog_label')}>
+            <p id="panic-hold-instruction" className="text-center text-gray-600 text-sm mb-3">
               {t('panic.button.hold_to_activate')}
             </p>
 
             <div className="relative flex justify-center">
               {/* Progress ring */}
-              <svg className="w-40 h-40 -rotate-90" viewBox="0 0 100 100">
+              <svg className="w-40 h-40 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
                 <circle
                   cx="50"
                   cy="50"
                   r="45"
                   fill="none"
-                  stroke="#fecaca"
+                  stroke="#ffc8c8"
                   strokeWidth="6"
                 />
                 <circle
@@ -279,7 +301,7 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
                   cy="50"
                   r="45"
                   fill="none"
-                  stroke="#dc2626"
+                  stroke="#f45050"
                   strokeWidth="6"
                   strokeLinecap="round"
                   strokeDasharray={`${holdProgress * 2.83} 283`}
@@ -289,27 +311,34 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
 
               {/* Button */}
               <button
+                role="button"
+                aria-label={t('panic.button.sos_aria_label')}
+                aria-pressed={isHolding}
+                aria-describedby="panic-hold-instruction"
                 onTouchStart={startHold}
                 onTouchEnd={endHold}
                 onTouchCancel={endHold}
                 onMouseDown={startHold}
                 onMouseUp={endHold}
                 onMouseLeave={endHold}
+                onKeyDown={handleKeyDown}
+                onKeyUp={handleKeyUp}
                 className={`absolute inset-3 bg-red-600 rounded-full flex items-center justify-center shadow-lg transition-all touch-manipulation ${isHolding ? 'scale-95 bg-red-700' : 'active:scale-95'
                   }`}
                 style={{ touchAction: 'none' }}
               >
                 <div className="text-center text-white">
-                  <svg className="w-12 h-12 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-12 h-12 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
-                  <span className="text-lg font-bold">SOS</span>
+                  <span className="text-lg font-bold" aria-hidden="true">SOS</span>
                 </div>
               </button>
             </div>
 
             <button
               onClick={() => setIsExpanded(false)}
+              aria-label={t('panic.button.close_aria_label')}
               className="w-full mt-4 py-3 text-gray-500 font-medium"
             >
               {t('panic.button.close')}
@@ -320,19 +349,19 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
           <div className="relative">
             {/* Hold instruction tooltip */}
             {isHolding && (
-              <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black/90 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap animate-fade-in">
+              <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black/90 text-white text-sm px-4 py-2 rounded-xl whitespace-nowrap animate-fade-in" aria-hidden="true">
                 {t('panic.button.holding')}
               </div>
             )}
 
             {/* Progress ring */}
-            <svg className="w-20 h-20 md:w-24 md:h-24 -rotate-90" viewBox="0 0 100 100">
+            <svg className="w-20 h-20 md:w-24 md:h-24 -rotate-90" viewBox="0 0 100 100" aria-hidden="true">
               <circle
                 cx="50"
                 cy="50"
                 r="45"
                 fill="none"
-                stroke="#fecaca"
+                stroke="#ffc8c8"
                 strokeWidth="8"
               />
               <circle
@@ -340,7 +369,7 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
                 cy="50"
                 r="45"
                 fill="none"
-                stroke="#dc2626"
+                stroke="#f45050"
                 strokeWidth="8"
                 strokeLinecap="round"
                 strokeDasharray={`${holdProgress * 2.83} 283`}
@@ -350,22 +379,27 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
 
             {/* Button */}
             <button
+              role="button"
+              aria-label={t('panic.button.sos_compact_aria_label')}
+              aria-pressed={isHolding}
               onTouchStart={startHold}
               onTouchEnd={endHold}
               onTouchCancel={endHold}
               onMouseDown={startHold}
               onMouseUp={endHold}
               onMouseLeave={endHold}
+              onKeyDown={handleKeyDown}
+              onKeyUp={handleKeyUp}
               onClick={() => !isHolding && setIsExpanded(true)}
               className={`absolute inset-2 bg-red-600 rounded-full flex items-center justify-center shadow-xl transition-all touch-manipulation ${isHolding ? 'scale-95 bg-red-700' : 'active:scale-95 hover:shadow-2xl'
                 }`}
               style={{ touchAction: 'none', minWidth: '64px', minHeight: '64px' }}
             >
               <div className="text-center text-white">
-                <svg className="w-7 h-7 md:w-8 md:h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-7 h-7 md:w-8 md:h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <span className="text-[10px] md:text-xs font-bold">SOS</span>
+                <span className="text-[10px] md:text-xs font-bold" aria-hidden="true">SOS</span>
               </div>
             </button>
           </div>

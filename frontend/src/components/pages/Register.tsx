@@ -103,8 +103,8 @@ export default function Register() {
             {t('register.name')}
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <User className="h-5 w-5 text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+              <User className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </div>
             <input
               id="name"
@@ -115,8 +115,8 @@ export default function Register() {
             />
           </div>
           {errors.name && (
-            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1" role="alert">
+              <AlertCircle className="w-4 h-4" aria-hidden="true" />
               {errors.name.message}
             </p>
           )}
@@ -128,8 +128,8 @@ export default function Register() {
             {t('register.email')}
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Mail className="h-5 w-5 text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+              <Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </div>
             <input
               id="email"
@@ -140,8 +140,8 @@ export default function Register() {
             />
           </div>
           {errors.email && (
-            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1" role="alert">
+              <AlertCircle className="w-4 h-4" aria-hidden="true" />
               {errors.email.message}
             </p>
           )}
@@ -161,8 +161,8 @@ export default function Register() {
             placeholder={t('register.curpPlaceholder')}
           />
           {errors.curp && (
-            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1" role="alert">
+              <AlertCircle className="w-4 h-4" aria-hidden="true" />
               {errors.curp.message}
             </p>
           )}
@@ -174,8 +174,8 @@ export default function Register() {
             {t('register.phone')} <span className="text-gray-400">{t('register.phoneOptional')}</span>
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Phone className="h-5 w-5 text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+              <Phone className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </div>
             <input
               id="phone"
@@ -193,8 +193,8 @@ export default function Register() {
             {t('register.password')}
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+              <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </div>
             <input
               id="password"
@@ -207,24 +207,27 @@ export default function Register() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              aria-label={showPassword ? t('register.hidePassword', { defaultValue: 'Ocultar contraseña' }) : t('register.showPassword', { defaultValue: 'Mostrar contraseña' })}
             >
               {showPassword ? (
-                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" aria-hidden="true" />
               ) : (
-                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" aria-hidden="true" />
               )}
             </button>
           </div>
           {/* Password requirements */}
-          <div className="mt-2 grid grid-cols-2 gap-1">
+          <div className="mt-2 grid grid-cols-2 gap-1" role="list" aria-label={t('passwordStrength.label', { defaultValue: 'Requisitos de contraseña' })}>
             {passwordRequirements.map((req, index) => (
               <div
                 key={index}
+                role="listitem"
+                aria-label={`${req.text}: ${req.regex.test(password) ? t('passwordStrength.met', { defaultValue: 'cumplido' }) : t('passwordStrength.pending', { defaultValue: 'pendiente' })}`}
                 className={`flex items-center gap-1 text-xs ${
                   req.regex.test(password) ? 'text-salud-600' : 'text-gray-400'
                 }`}
               >
-                <CheckCircle className="w-3 h-3" />
+                <CheckCircle className="w-3 h-3" aria-hidden="true" />
                 {req.text}
               </div>
             ))}
@@ -237,8 +240,8 @@ export default function Register() {
             {t('register.confirmPassword')}
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+              <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </div>
             <input
               id="confirmPassword"
@@ -249,8 +252,8 @@ export default function Register() {
             />
           </div>
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1" role="alert">
+              <AlertCircle className="w-4 h-4" aria-hidden="true" />
               {errors.confirmPassword.message}
             </p>
           )}
@@ -266,18 +269,18 @@ export default function Register() {
           />
           <label htmlFor="acceptTerms" className="text-sm text-gray-600">
             {t('register.termsAccept')}{' '}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-vida-600 hover:underline">
+            <a href="/aviso-privacidad" target="_blank" rel="noopener noreferrer" className="text-vida-600 hover:underline">
               {t('register.termsLink')}
             </a>{' '}
             {t('register.termsAnd')}{' '}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-vida-600 hover:underline">
+            <a href="/aviso-privacidad" target="_blank" rel="noopener noreferrer" className="text-vida-600 hover:underline">
               {t('register.privacyLink')}
             </a>
           </label>
         </div>
         {errors.acceptTerms && (
-          <p className="text-sm text-red-600 flex items-center gap-1">
-            <AlertCircle className="w-4 h-4" />
+          <p className="text-sm text-red-600 flex items-center gap-1" role="alert">
+            <AlertCircle className="w-4 h-4" aria-hidden="true" />
             {errors.acceptTerms.message}
           </p>
         )}
@@ -290,7 +293,7 @@ export default function Register() {
         >
           {isLoading ? (
             <div className="flex items-center justify-center gap-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
               {t('register.submitting')}
             </div>
           ) : (

@@ -7,33 +7,43 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Paleta de colores VIDA
+        // Paleta de colores VIDA — referencia variables CSS HSL
         vida: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',  // Azul principal
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          50: 'hsl(var(--vida-50) / <alpha-value>)',
+          100: 'hsl(var(--vida-100) / <alpha-value>)',
+          200: 'hsl(var(--vida-200) / <alpha-value>)',
+          300: 'hsl(var(--vida-300) / <alpha-value>)',
+          400: 'hsl(var(--vida-400) / <alpha-value>)',
+          500: 'hsl(var(--vida-500) / <alpha-value>)',
+          600: 'hsl(var(--vida-600) / <alpha-value>)',
+          700: 'hsl(var(--vida-700) / <alpha-value>)',
+          800: 'hsl(var(--vida-800) / <alpha-value>)',
+          900: 'hsl(var(--vida-900) / <alpha-value>)',
+          950: 'hsl(var(--vida-950) / <alpha-value>)',
         },
-        // Colores secundarios
+        // Acento (verde esmeralda médico)
+        accent: {
+          DEFAULT: 'hsl(var(--accent) / <alpha-value>)',
+          light: 'hsl(var(--accent-light) / <alpha-value>)',
+        },
+        // Semánticos
+        danger: 'hsl(var(--danger) / <alpha-value>)',
+        warning: 'hsl(var(--warning) / <alpha-value>)',
+        success: 'hsl(var(--success) / <alpha-value>)',
+        // Paleta coral — referencia semántica peligro
         coral: {
           50: '#fff1f2',
           100: '#ffe4e6',
           200: '#fecdd3',
           300: '#fda4af',
           400: '#fb7185',
-          500: '#f43f5e',  // Coral/Rosa para alertas
+          500: '#f43f5e',
           600: '#e11d48',
           700: '#be123c',
           800: '#9f1239',
           900: '#881337',
         },
-        // Verde para éxito
+        // Verde salud
         salud: {
           50: '#ecfdf5',
           100: '#d1fae5',
@@ -48,8 +58,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Poppins', 'system-ui', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       animation: {
         'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',

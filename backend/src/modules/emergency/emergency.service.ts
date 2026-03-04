@@ -8,7 +8,7 @@ import { hospitalService } from '../hospital/hospital.service';
 import { documentsService } from '../documents/documents.service';
 import { s3Service } from '../../common/services/s3.service';
 import { logger } from '../../common/services/logger.service';
-import { io } from '../../main';
+import { getSocketServer } from '../../common/services/socket-manager';
 import { getAlertMessageForTrustLevel } from '../../common/utils/credential-validation';
 
 import { prisma } from '../../common/prisma';
@@ -118,19 +118,25 @@ class EmergencyService {
 
     // Obtener documentos visibles para emergencias
     const visibleDocs = await documentsService.getVisibleDocuments(profileData.userId);
+
+    // Batch-fetch s3Keys for all visible docs in ONE query (eliminates N+1)
+    const docIds = visibleDocs.map(d => d.id);
+    const dbDocs = docIds.length > 0
+      ? await prisma.medicalDocument.findMany({
+          where: { id: { in: docIds } },
+          select: { id: true, s3Key: true },
+        })
+      : [];
+    const s3KeyMap = new Map(dbDocs.map(d => [d.id, d.s3Key]));
+
+    // Generate signed URLs in parallel
     const documents: EmergencyDocument[] = await Promise.all(
       visibleDocs.map(async (doc) => {
-        // Generar URL firmada válida por 1 hora
-        const s3Key = `documents/${profileData.userId}/${doc.fileName}`;
         let downloadUrl = doc.fileUrl;
         try {
-          // Obtener el documento para obtener el s3Key real
-          const dbDoc = await prisma.medicalDocument.findUnique({
-            where: { id: doc.id },
-            select: { s3Key: true },
-          });
-          if (dbDoc?.s3Key) {
-            downloadUrl = await s3Service.getSignedUrl(dbDoc.s3Key, 3600) || doc.fileUrl;
+          const s3Key = s3KeyMap.get(doc.id);
+          if (s3Key) {
+            downloadUrl = await s3Service.getSignedUrl(s3Key, 3600) || doc.fileUrl;
           }
         } catch (error) {
           logger.error('Error getting signed URL for document', { docId: doc.id, error });
@@ -147,9 +153,15 @@ class EmergencyService {
       })
     );
 
-    // Crear token de acceso temporal (60 minutos)
+    // Break-the-glass: temporal access capped at 4 hours (P2-03)
+    // Default 1 hour for regular access, extendable up to 4h max
+    const MAX_SESSION_HOURS = 4;
+    const DEFAULT_SESSION_HOURS = 1;
     const accessToken = uuidv4();
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + DEFAULT_SESSION_HOURS * 60 * 60 * 1000);
+    const maxExpiresAt = new Date(Date.now() + MAX_SESSION_HOURS * 60 * 60 * 1000);
+    // Schedule 24-hour review requirement flag
+    const reviewDueAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     
     // Registrar el acceso con datos de verificación SEP
     const emergencyAccess = await prisma.emergencyAccess.create({
@@ -349,9 +361,16 @@ class EmergencyService {
       return;
     }
 
-    // Obtener condiciones del paciente (descifradas)
-    const patientProfile = await pupService.getProfile(userId);
-    const patientConditions = patientProfile?.conditions || [];
+    // Decrypt patient conditions from already-loaded profile (avoids redundant DB call)
+    let patientConditions: string[] = [];
+    if (user.profile?.conditionsEnc) {
+      try {
+        const { encryptionV2 } = await import('../../common/services/encryption-v2.service');
+        patientConditions = JSON.parse(encryptionV2.decryptText(user.profile.conditionsEnc));
+      } catch {
+        patientConditions = [];
+      }
+    }
 
     // Buscar hospitales cercanos usando filtro inteligente
     let nearestHospital: string | undefined;
@@ -398,10 +417,9 @@ class EmergencyService {
       patientName: user.name,
       type: 'QR_ACCESS',
       locale: (user as any).preferredLanguage || 'es',
-      location: {
-        lat: location?.lat || 0,
-        lng: location?.lng || 0,
-      },
+      location: location?.lat && location?.lng
+        ? { lat: location.lat, lng: location.lng }
+        : { lat: 19.4326, lng: -99.1332 }, // Default: CDMX (not 0,0 Gulf of Guinea)
       accessorName,
       nearestHospital,
       nearbyHospitals,
@@ -434,8 +452,8 @@ class EmergencyService {
       timestamp: new Date(),
     };
 
-    io.to(`representative-${userId}`).emit('qr-access-alert', alertData);
-    io.to(`user-${userId}`).emit('qr-access-notification', alertData);
+    getSocketServer().to(`representative-${userId}`).emit('qr-access-alert', alertData);
+    getSocketServer().to(`user-${userId}`).emit('qr-access-notification', alertData);
 
     // Log estructurado del acceso de emergencia
     logger.info('Notificación de acceso QR enviada', {

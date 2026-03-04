@@ -175,44 +175,44 @@ class NotificationService {
       return [];
     }
 
-    const results: NotificationResult[] = [];
+    // Notify ALL representatives in parallel (not sequentially)
+    const results = await Promise.all(
+      representatives.map(async (rep): Promise<NotificationResult> => {
+        const notifParams: NotificationParams = {
+          to: rep.phone,
+          patientName,
+          location,
+          type,
+          accessorName,
+          nearestHospital,
+          nearbyHospitals,
+          locale,
+        };
 
-    for (const rep of representatives) {
-      const notifParams: NotificationParams = {
-        to: rep.phone,
-        patientName,
-        location,
-        type,
-        accessorName,
-        nearestHospital,
-        nearbyHospitals,
-        locale,
-      };
+        // Send SMS + WhatsApp + Email all in parallel for this rep
+        const channels = [
+          this.sendEmergencySMS(notifParams),
+          this.sendEmergencyWhatsApp(notifParams),
+          rep.email
+            ? this.sendEmergencyEmail({ ...notifParams, to: rep.email })
+            : Promise.resolve({ success: false, error: 'no email', provider: 'none' } as SendResult),
+        ];
 
-      // Enviar SMS + WhatsApp en paralelo
-      const [smsResult, whatsappResult] = await Promise.all([
-        this.sendEmergencySMS(notifParams),
-        this.sendEmergencyWhatsApp(notifParams),
-      ]);
+        const [smsResult, whatsappResult, emailResult] = await Promise.all(channels);
 
-      // Enviar Email si tiene email configurado
-      let emailResult: SendResult = { success: false, error: 'no email', provider: 'none' };
-      if (rep.email) {
-        emailResult = await this.sendEmergencyEmail({ ...notifParams, to: rep.email });
-      }
-
-      results.push({
-        representativeId: rep.id,
-        name: rep.name,
-        phone: rep.phone,
-        email: rep.email || undefined,
-        smsStatus: smsResult.success ? 'sent' : 'failed',
-        whatsappStatus: whatsappResult.success ? 'sent' : 'failed',
-        emailStatus: rep.email ? (emailResult.success ? 'sent' : 'failed') : 'skipped',
-        messageId: smsResult.messageId || whatsappResult.messageId,
-        error: smsResult.error || whatsappResult.error || emailResult.error,
-      });
-    }
+        return {
+          representativeId: rep.id,
+          name: rep.name,
+          phone: rep.phone,
+          email: rep.email || undefined,
+          smsStatus: smsResult.success ? 'sent' : 'failed',
+          whatsappStatus: whatsappResult.success ? 'sent' : 'failed',
+          emailStatus: rep.email ? (emailResult.success ? 'sent' : 'failed') : 'skipped',
+          messageId: smsResult.messageId || whatsappResult.messageId,
+          error: smsResult.error || whatsappResult.error || emailResult.error,
+        };
+      })
+    );
 
     return results;
   }

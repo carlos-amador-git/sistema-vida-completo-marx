@@ -13,13 +13,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom icons
+// Custom icons — colors match VIDA palette CSS variables
+// --danger: hsl(0 84% 60%) → #f45050 approx; --vida-600: hsl(210 87% 40%) → #0d6ecd approx
 const userIcon = new L.Icon({
   iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#dc2626" width="32" height="32">
-      <circle cx="12" cy="12" r="10" fill="#dc2626"/>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32">
+      <circle cx="12" cy="12" r="10" fill="#f45050"/>
       <circle cx="12" cy="12" r="6" fill="white"/>
-      <circle cx="12" cy="12" r="3" fill="#dc2626"/>
+      <circle cx="12" cy="12" r="3" fill="#f45050"/>
     </svg>
   `),
   iconSize: [32, 32],
@@ -27,10 +28,10 @@ const userIcon = new L.Icon({
   popupAnchor: [0, -32],
 });
 
-// Hospital icon - standard
+// Hospital icon - standard (--vida-600 hsl(210 87% 40%) → #0d6ecd approx)
 const hospitalIcon = new L.Icon({
   iconUrl: 'data:image/svg+xml;base64,' + btoa(`
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0284c7" width="28" height="28">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#0d6ecd" width="28" height="28">
       <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 11h-4v4h-4v-4H6v-4h4V6h4v4h4v4z"/>
     </svg>
   `),
@@ -39,11 +40,11 @@ const hospitalIcon = new L.Icon({
   popupAnchor: [0, -28],
 });
 
-// Hospital icon - recommended (high match score)
+// Hospital icon - recommended (--success hsl(142 71% 45%) → #22a85a approx)
 const hospitalRecommendedIcon = new L.Icon({
   iconUrl: 'data:image/svg+xml;base64,' + btoa(`
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="36" height="36">
-      <circle cx="16" cy="16" r="14" fill="#16a34a" stroke="#fff" stroke-width="2"/>
+      <circle cx="16" cy="16" r="14" fill="#22a85a" stroke="#fff" stroke-width="2"/>
       <path d="M23 13h-4v-4h-6v4H9v6h4v4h6v-4h4v-6z" fill="white"/>
     </svg>
   `),
@@ -176,9 +177,9 @@ export default function EmergencyMap({
                 center={[userLocation.lat, userLocation.lng]}
                 radius={radiusKm * 1000}
                 pathOptions={{
-                  color: '#dc2626',
-                  fillColor: '#dc2626',
-                  fillOpacity: 0.1,
+                  color: '#f45050',
+                  fillColor: '#f45050',
+                  fillOpacity: 0.08,
                   weight: 2,
                   dashArray: '5, 5',
                 }}

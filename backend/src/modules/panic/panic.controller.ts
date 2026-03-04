@@ -19,18 +19,10 @@ router.post('/', async (req: Request, res: Response) => {
     const userId = req.userId!;
     const { latitude, longitude, accuracy, message } = req.body;
 
-    // Validar coordenadas
-    if (latitude === undefined || longitude === undefined) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'MISSING_LOCATION',
-          message: req.t('api:panic.locationRequired'),
-        },
-      });
-    }
+    // Validar coordenadas (null y undefined son GPS no disponible)
+    const hasCoordinates = latitude != null && longitude != null;
 
-    if (!isValidCoordinates(latitude, longitude)) {
+    if (hasCoordinates && !isValidCoordinates(latitude, longitude)) {
       return res.status(400).json({
         success: false,
         error: {
@@ -40,12 +32,12 @@ router.post('/', async (req: Request, res: Response) => {
       });
     }
 
-    // Activar alerta de panico
+    // Activar alerta de panico (funciona con o sin coordenadas)
     const result = await panicService.activatePanic({
       userId,
-      latitude,
-      longitude,
-      accuracy,
+      latitude: hasCoordinates ? latitude : undefined,
+      longitude: hasCoordinates ? longitude : undefined,
+      accuracy: hasCoordinates ? accuracy : undefined,
       message,
     });
 

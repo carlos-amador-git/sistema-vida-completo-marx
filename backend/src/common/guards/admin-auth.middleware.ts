@@ -3,6 +3,7 @@ import { logger } from '../services/logger.service';
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import config from '../../config';
+import { getAdminAccessToken } from '../utils/auth-cookies';
 
 import { prisma } from '../prisma';
 
@@ -38,9 +39,16 @@ export const adminAuthMiddleware = async (
   next: NextFunction
 ) => {
   try {
+    // Read access token from httpOnly cookie; fall back to Authorization header for backward compatibility
+    const cookieToken = getAdminAccessToken(req);
     const authHeader = req.headers.authorization;
+    let token: string | undefined = cookieToken;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    }
+
+    if (!token) {
       return res.status(401).json({
         success: false,
         error: {
@@ -49,8 +57,6 @@ export const adminAuthMiddleware = async (
         },
       });
     }
-
-    const token = authHeader.split(' ')[1];
 
     // Verificar token con secret de admin
     const adminSecret = config.jwt.adminSecret || config.jwt.secret;

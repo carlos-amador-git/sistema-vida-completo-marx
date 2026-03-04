@@ -5,7 +5,7 @@ import { PanicStatus } from '@prisma/client';
 import { hospitalService, HospitalWithDistance } from '../hospital/hospital.service';
 import { notificationService } from '../notification/notification.service';
 import { pupService } from '../pup/pup.service';
-import { io } from '../../main';
+import { getSocketServer } from '../../common/services/socket-manager';
 
 import { prisma } from '../../common/prisma';
 
@@ -42,7 +42,8 @@ class PanicService {
   async activatePanic(params: CreatePanicParams): Promise<PanicAlertResponse> {
     const { userId, latitude, longitude, accuracy, message } = params;
 
-    // 1. Obtener usuario y sus datos
+    // 1. Fetch user with profile and representatives in a single query
+    //    (removed redundant pupService.getProfile call — profile included via relation)
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
@@ -58,131 +59,124 @@ class PanicService {
       throw new Error('Usuario no encontrado');
     }
 
-    // 2. Obtener condiciones del paciente para filtrado inteligente
-    const patientProfile = await pupService.getProfile(userId);
-    const patientConditions = patientProfile?.conditions || [];
-
-    // 3. Buscar hospitales cercanos (inteligente si hay condiciones)
-    let nearbyHospitals: HospitalWithDistance[];
-
-    if (patientConditions.length > 0) {
-      // Búsqueda inteligente basada en condiciones del paciente
-      nearbyHospitals = await hospitalService.findNearbyHospitalsForConditions({
-        latitude,
-        longitude,
-        patientConditions,
-        radiusKm: 20,
-        limit: 5,
-        prioritizeByCondition: true,
-      });
-    } else {
-      // Búsqueda normal
-      nearbyHospitals = await hospitalService.findNearbyHospitals({
-        latitude,
-        longitude,
-        radiusKm: 20,
-        limit: 5,
-      });
-    }
-
-    // Si no se encuentran hospitales en 20km, intentar con radio extendido (100km)
-    if (nearbyHospitals.length === 0) {
-      logger.info('⚠️ No se encontraron hospitales en 20km, ampliando búsqueda a 100km...');
-      if (patientConditions.length > 0) {
-        nearbyHospitals = await hospitalService.findNearbyHospitalsForConditions({
-          latitude,
-          longitude,
-          patientConditions,
-          radiusKm: 100,
-          limit: 3,
-          prioritizeByCondition: true,
-        });
-      } else {
-        nearbyHospitals = await hospitalService.findNearbyHospitals({
-          latitude,
-          longitude,
-          radiusKm: 100,
-          limit: 3,
-        });
+    // 2. Get patient conditions from the already-loaded profile
+    //    For encrypted conditions, decrypt inline (avoids second DB round-trip)
+    let patientConditions: string[] = [];
+    if (user.profile) {
+      try {
+        if (user.profile.conditionsEnc) {
+          patientConditions = JSON.parse(
+            encryptionV2.decryptText(user.profile.conditionsEnc)
+          );
+        }
+      } catch {
+        patientConditions = [];
       }
     }
 
+    // 3. Search hospitals — single call with 50km radius (avoids sequential 20km + 100km fallback)
+    const hospitalSearchPromise = patientConditions.length > 0
+      ? hospitalService.findNearbyHospitalsForConditions({
+          latitude,
+          longitude,
+          patientConditions,
+          radiusKm: 50,
+          limit: 5,
+          prioritizeByCondition: true,
+        })
+      : hospitalService.findNearbyHospitals({
+          latitude,
+          longitude,
+          radiusKm: 50,
+          limit: 5,
+        });
+
+    // 4. Run hospital search + DB create in parallel (both are independent)
+    const [nearbyHospitals, panicAlert] = await Promise.all([
+      hospitalSearchPromise,
+      prisma.panicAlert.create({
+        data: {
+          userId,
+          latitude,
+          longitude,
+          accuracy,
+          message,
+          status: PanicStatus.ACTIVE,
+          nearbyHospitals: [] as any, // Updated async below
+          locationEnc: encryptionV2.encryptJSON({ lat: latitude, lon: longitude, accuracy }),
+        },
+      }),
+    ]);
+
     const nearestHospital = nearbyHospitals[0]?.name || null;
 
-    // 4. Crear alerta en BD (con coordenadas cifradas V2)
-    const panicAlert = await prisma.panicAlert.create({
-      data: {
-        userId,
-        latitude,
-        longitude,
-        accuracy,
-        message,
-        status: PanicStatus.ACTIVE,
-        nearbyHospitals: nearbyHospitals as any,
-        locationEnc: encryptionV2.encryptJSON({ lat: latitude, lon: longitude, accuracy }),
-      },
+    // 5. Fire-and-forget: update hospitals on alert + notify + WebSocket
+    const alertId = panicAlert.id;
+    const createdAt = panicAlert.createdAt;
+
+    Promise.resolve().then(async () => {
+      try {
+        // Update alert with hospital data (non-blocking)
+        prisma.panicAlert.update({
+          where: { id: alertId },
+          data: { nearbyHospitals: nearbyHospitals as any },
+        }).catch(err => logger.error('Error updating hospitals on alert', { alertId, err }));
+
+        // Notificar a representantes (SMS + Email + WhatsApp)
+        const notificationResults = await notificationService.notifyAllRepresentatives({
+          userId,
+          patientName: user.name,
+          type: 'PANIC',
+          locale: (user as any).preferredLanguage || 'es',
+          location: { lat: latitude, lng: longitude },
+          nearestHospital: nearestHospital || undefined,
+          nearbyHospitals: nearbyHospitals.map(h => ({
+            name: h.name,
+            distance: h.distance,
+            phone: h.emergencyPhone || h.phone || undefined,
+          })),
+        });
+
+        // Actualizar alerta con resultados de notificacion
+        await prisma.panicAlert.update({
+          where: { id: alertId },
+          data: { notificationsSent: notificationResults as any },
+        });
+      } catch (err) {
+        logger.error(`Error enviando notificaciones para alerta ${alertId}:`, err);
+      }
+
+      try {
+        // Emitir evento WebSocket a representantes
+        const alertData = {
+          type: 'PANIC_ALERT',
+          alertId,
+          patientName: user.name,
+          patientId: userId,
+          patientConditions,
+          location: { latitude, longitude, accuracy },
+          nearbyHospitals,
+          message,
+          timestamp: createdAt,
+        };
+
+        getSocketServer().to(`representative-${userId}`).emit('panic-alert', alertData);
+        getSocketServer().to(`user-${userId}`).emit('panic-alert-sent', alertData);
+      } catch (err) {
+        logger.error(`Error emitiendo WebSocket para alerta ${alertId}:`, err);
+      }
     });
 
-    // 5. Notificar a representantes (SMS + Email)
-    const notificationResults = await notificationService.notifyAllRepresentatives({
-      userId,
-      patientName: user.name,
-      type: 'PANIC',
-      locale: (user as any).preferredLanguage || 'es',
-      location: { lat: latitude, lng: longitude },
-      nearestHospital: nearestHospital || undefined,
-      nearbyHospitals: nearbyHospitals.map(h => ({
-        name: h.name,
-        distance: h.distance,
-        phone: h.emergencyPhone || h.phone || undefined,
-      })),
-    });
-
-    // 6. Actualizar alerta con resultados de notificacion
-    await prisma.panicAlert.update({
-      where: { id: panicAlert.id },
-      data: {
-        notificationsSent: notificationResults as any,
-      },
-    });
-
-    // 7. Emitir evento WebSocket a representantes
-    const alertData = {
-      type: 'PANIC_ALERT',
-      alertId: panicAlert.id,
-      patientName: user.name,
-      patientId: userId,
-      patientConditions,
-      location: {
-        latitude,
-        longitude,
-        accuracy,
-      },
-      nearbyHospitals,
-      message,
-      timestamp: panicAlert.createdAt,
-    };
-
-    // Emitir a la sala del usuario (representantes conectados)
-    io.to(`representative-${userId}`).emit('panic-alert', alertData);
-    io.to(`user-${userId}`).emit('panic-alert-sent', alertData);
-
-    logger.info(`🚨 ALERTA DE PANICO activada para ${user.name} (${panicAlert.id})`);
+    logger.info(`🚨 ALERTA DE PANICO activada para ${user.name} (${alertId})`);
     logger.info(`   Condiciones: ${patientConditions.join(', ') || 'Ninguna'}`);
     logger.info(`   Hospital recomendado: ${nearestHospital || 'N/A'}`);
 
     return {
-      alertId: panicAlert.id,
+      alertId,
       status: panicAlert.status,
       nearbyHospitals,
-      representativesNotified: notificationResults.map((r) => ({
-        name: r.name,
-        phone: r.phone,
-        smsStatus: r.smsStatus,
-        whatsappStatus: r.whatsappStatus,
-        emailStatus: r.emailStatus,
-      })),
-      createdAt: panicAlert.createdAt,
+      representativesNotified: [], // Notificaciones en progreso (fire-and-forget)
+      createdAt,
     };
   }
 
@@ -211,7 +205,7 @@ class PanicService {
     });
 
     // Notificar via WebSocket
-    io.to(`representative-${userId}`).emit('panic-cancelled', {
+    getSocketServer().to(`representative-${userId}`).emit('panic-cancelled', {
       alertId,
       timestamp: new Date(),
     });

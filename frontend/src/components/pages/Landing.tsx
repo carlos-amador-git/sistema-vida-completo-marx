@@ -67,8 +67,7 @@ export default function Landing() {
       if (type === 'user') {
         const response = await authApi.login({ email: account.email, password: account.password });
         if (response.success && response.data) {
-          localStorage.setItem('accessToken', response.data.tokens.accessToken);
-          // refreshToken set as httpOnly cookie by server
+          // Tokens set as httpOnly cookies by server
           toast.success(t('toast.welcome', { name: account.name }));
           navigate(account.redirect);
         }
@@ -91,8 +90,8 @@ export default function Landing() {
       <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b">
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center gap-2">
-              <Heart className="w-8 h-8 text-vida-600" />
+            <Link to="/" className="flex items-center gap-2" aria-label="VIDA — inicio">
+              <Heart className="w-8 h-8 text-vida-600" aria-hidden="true" />
               <span className="text-xl font-bold text-vida-800">VIDA</span>
             </Link>
             <div className="flex items-center gap-4">
@@ -123,9 +122,9 @@ export default function Landing() {
                 className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-xl hover:opacity-90 transition-all disabled:opacity-50"
               >
                 {isLoading === 'user' ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
                 ) : (
-                  <User className="w-5 h-5" />
+                  <User className="w-5 h-5" aria-hidden="true" />
                 )}
                 <div className="flex-1 text-left">
                   <div className="font-medium text-sm">{t('demo.userButton')}</div>
@@ -138,9 +137,9 @@ export default function Landing() {
                 className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-slate-600 to-slate-800 text-white rounded-xl hover:opacity-90 transition-all disabled:opacity-50"
               >
                 {isLoading === 'admin' ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true" />
                 ) : (
-                  <Settings className="w-5 h-5" />
+                  <Settings className="w-5 h-5" aria-hidden="true" />
                 )}
                 <div className="flex-1 text-left">
                   <div className="font-medium text-sm">{t('demo.adminButton')}</div>
@@ -158,7 +157,7 @@ export default function Landing() {
           <div className="grid lg:grid-cols-2 gap-12 items-center py-12">
             <div className="space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-vida-100 rounded-full text-vida-700 text-sm font-medium">
-                <Shield className="w-4 h-4" />
+                <Shield className="w-4 h-4" aria-hidden="true" />
                 {t('hero.badge')}
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
@@ -171,7 +170,7 @@ export default function Landing() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link to="/register" className="btn-primary text-lg px-8 py-3">
                   {t('hero.ctaPrimary')}
-                  <ArrowRight className="w-5 h-5 ml-2" />
+                  <ArrowRight className="w-5 h-5 ml-2" aria-hidden="true" />
                 </Link>
                 <Link to="#features" className="btn-outline text-lg px-8 py-3">
                   {t('hero.ctaSecondary')}
@@ -195,7 +194,7 @@ export default function Landing() {
               <div className="relative bg-white rounded-3xl shadow-xl p-8 space-y-6">
                 <div className="flex items-center gap-4 p-4 bg-salud-50 rounded-xl">
                   <div className="w-12 h-12 bg-salud-100 rounded-full flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-salud-600" />
+                    <Clock className="w-6 h-6 text-salud-600" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">{t('hero.accessTitle')}</p>
@@ -204,7 +203,7 @@ export default function Landing() {
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-vida-50 rounded-xl">
                   <div className="w-12 h-12 bg-vida-100 rounded-full flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-vida-600" />
+                    <FileText className="w-6 h-6 text-vida-600" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">{t('hero.legalTitle')}</p>
@@ -213,7 +212,7 @@ export default function Landing() {
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-coral-50 rounded-xl">
                   <div className="w-12 h-12 bg-coral-100 rounded-full flex items-center justify-center">
-                    <Phone className="w-6 h-6 text-coral-600" />
+                    <Phone className="w-6 h-6 text-coral-600" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">{t('hero.notificationTitle')}</p>
@@ -240,7 +239,7 @@ export default function Landing() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
               <div key={index} className="card-hover text-center">
-                <div className="w-14 h-14 bg-vida-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                <div className="w-14 h-14 bg-vida-100 rounded-xl flex items-center justify-center mx-auto mb-4" aria-hidden="true">
                   <feature.icon className="w-7 h-7 text-vida-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
@@ -298,7 +297,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
-              <Heart className="w-8 h-8 text-vida-400" />
+              <Heart className="w-8 h-8 text-vida-400" aria-hidden="true" />
               <span className="text-xl font-bold text-white">VIDA</span>
             </div>
             <div className="flex items-center gap-6 text-gray-400 text-sm">

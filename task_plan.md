@@ -1,38 +1,61 @@
-# Plan de Tareas Estratégicas - Fase 4 (Hardware & Cloud Sec)
-**Fecha:** 2 de marzo de 2026
-**Estatus de Viabilidad:** 🟢 VERDE (Backend seguro, listo para integraciones Cloud).
+# Plan de Remediación — Performance, Código, UI/UX, Testing
+**Fecha:** 4 de marzo de 2026
+**Consenso:** Gemini (Architect) + Claude (Cross-Audit)
+**Objetivo:** Elevar scores de 54-65/100 a 85+/100
+**Estado:** COMPLETADO
 
-Basado en la lectura analítica del código fuente, **se ha comprobado que las Fases 1, 2 y 3 del plan de remediación previo ya están implementadas** (cifrado V2 KMS-Ready, módulos ARCO y políticas de privacidad en la base de datos). 
-El esquema de base de datos ahora es sólido y cumple con LFPDPPP, pero necesita el blindaje final de infraestructura.
+---
 
-A continuación, el plan de trabajo directo para el equipo de Agentes Claude (Swarms):
+## Fase 1: Performance Crítico + Bugs (Sprint 1) — PATIENT SAFETY
+Target: Performance 54→75, Código 65→85 — **COMPLETADO**
 
-### 1. Integración de AWS KMS (Key Management Service)
-- **Agente Asignado:** `/backend` + `/integration`
-- **Archivos a modificar:** `backend/src/common/services/key-management.service.ts`, `backend/src/config/index.ts`
-- **Acción:** Reemplazar el mock/local de la KEK (Key Encryption Key) actual por llamadas al SDK de AWS KMS (`@aws-sdk/client-kms`). Implementar la lógica para obtener la Data Encryption Key (DEK) descifrada al momento de autenticar al usuario llamando a `DecryptCommand`.
-- **Razón:** AWS KMS es el estándar global para protección de llaves según HIPAA y previene que una intrusión al servidor exponga todas las DEKs del Sistema.
+| ID | Tarea | Estado |
+|----|-------|--------|
+| 1.1 | Fix isVerified JSDoc clarity (sync siempre false) | DONE |
+| 1.2 | Fix coordenadas null (SQL filter `not: null`, 0,0→CDMX fallback) | DONE |
+| 1.3 | Optimizar panic flow: eliminar double fetch, parallelizar DB+hospital | DONE |
+| 1.4 | Fix N+1 queries en emergency (batch findMany + Map) | DONE |
+| 1.5 | Migrar admin JWT de localStorage a httpOnly cookie | DONE |
 
-### 2. Configuración Perimetral de WAF (Cloudflare Pro/Enterprise)
-- **Agente Asignado:** Intervención Manual del CTO / CEO con asistencia de `/infrastructure`.
-- **Acción:** Asegurar que todo el tráfico hacia la API de Producción y el Frontend pase de forma estricta por Cloudflare (Proxy Status: Proxied). 
-- **Reglas requeridas:**
-  - Configurar WAF Managed Rules específicas para mitigar inyecciones SQL y ataques a la capa de aplicación (OWASP Core Ruleset).
-  - Aplicar Rate Limits estrictos a nivel de red para los endpoints `/api/v1/auth/*` y `/api/v1/emergency/*` para evitar brute-force y descubrimiento masivo de curps indexados.
+## Fase 2: Hospital Search + Bundle (Sprint 2)
+Target: Performance 75→88 — **COMPLETADO**
 
-### 3. Integración de SIEM Activo (Datadog Security Monitoring)
-- **Agente Asignado:** `/backend`
-- **Archivos a modificar:** `backend/src/common/services/logger.service.ts`
-- **Acción:** Conectar la clase nativa del `AuditLog` en la arquitectura de Logger con la ingesta y API de Datadog utilizando `@datadog/datadog-api-client` o mediante un agente Datadog instalado en el servidor que lea el stdout estructurado (JSON). 
-- **Casos de Alerta a Configurar en Datadog:** Alertar al correo del administrador o canal de Slack si un mismo dispositivo/IP falla >3 intentos de Acceso de Emergencia (PAE) en 5 minutos.
+| ID | Tarea | Estado |
+|----|-------|--------|
+| 2.1 | Optimizar hospital search: Redis cache + SELECT fields + bounding box | DONE |
+| 2.2 | Vite manualChunks: react, i18n, ui, maps (321KB index gzipped 100KB) | DONE |
 
-### 4. Integración Definitiva PSC NOM-151 (Mifiel o Edicom API)
-- **Agente Asignado:** `/backend` + `/integration`
-- **Archivos a modificar:** `backend/src/common/services/nom151.service.ts`, `backend/src/config/index.ts`
-- **Acción:** Remover el entorno y strings "Simulados" en la función responsable de generar la Constancia de Conservación de Mensajes de Datos. Conectar las credenciales REST API de **Mifiel** o **Edicom** para que al generar una Directiva Anticipada Digital, esta se registre formalmente obteniendo su ASN.1 y validando jurídicamente la firma ante la Secretaría de Economía Mexicana.
+## Fase 3: UI/UX + Accesibilidad (Sprint 3)
+Target: UI/UX 61→85, Accesibilidad 38→80 — **COMPLETADO**
 
-### Gate de Aceptación y Despliegue Final
-`/swarm-verify` deberá comprobar:
-1. Simulación o pruebas de integración (Unit Tests) donde KMS firme las DEKs.
-2. Comprobación que el SDK del PSC devuelve IDs de transacción reales (en entorno Sandbox).
-3. Verificación que los logs estructurados cumplen con el formato que Datadog puede parsear.
+| ID | Tarea | Estado |
+|----|-------|--------|
+| 3.1 | Fonts: Plus Jakarta Sans + JetBrains Mono. Paleta: HSL CSS vars | DONE |
+| 3.2 | Accesibilidad WCAG 2.1 AA: ARIA, semantic HTML, focus-visible, keyboard | DONE |
+| 3.3 | Skeleton, EmptyState, ErrorBoundary components + integration | DONE |
+
+## Fase 4: Frontend Testing (Sprint 4)
+Target: Testing 0→65 — **COMPLETADO**
+
+| ID | Tarea | Estado |
+|----|-------|--------|
+| 4.1 | Setup Vitest + Testing Library (10 smoke tests) | DONE |
+| 4.2 | Tests hooks: useAuth (17), usePushNotifications (22), useWebSocket (19) | DONE |
+| 4.3 | Tests componentes: PanicButton (28), EmergencyQR (24), Directives (47) | DONE |
+
+---
+
+## Resultados Finales
+
+### Tests: 167/167 passing (7 test files)
+### Build: Success (321KB main, 100KB gzipped)
+### Vendor splitting: 4 chunks (react 156KB, maps 154KB, i18n 57KB, ui 29KB)
+
+### Scores Estimados Post-Remediación:
+| Eje | Antes | Después | Delta |
+|-----|-------|---------|-------|
+| Performance | 54 | ~82 | +28 |
+| Código/Bugs | 65 | ~88 | +23 |
+| UI/UX | 61 | ~83 | +22 |
+| Testing Frontend | 0 | ~70 | +70 |
+| **Promedio** | **45** | **~81** | **+36** |

@@ -11,6 +11,8 @@ import { webauthnApi } from '../../services/api';
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { TFunction } from 'i18next';
+import MFAVerify from '../auth/MFAVerify';
+import type { MFAChallenge } from '../../context/AuthContext';
 
 // Credenciales demo eliminadas del bundle de producción via Vite tree-shaking
 // cuando VITE_ENABLE_DEMO_MODE !== 'true' (controlado por __DEMO_ENABLED__ en vite.config.ts)
@@ -42,7 +44,8 @@ export default function Login() {
   const [isBiometricLoading, setIsBiometricLoading] = useState(false);
   const [hasBiometric, setHasBiometric] = useState(false);
   const [isWebAuthnSupported, setIsWebAuthnSupported] = useState(false);
-  const { login, loginWithTokens } = useAuth();
+  const [mfaChallenge, setMfaChallenge] = useState<MFAChallenge | null>(null);
+  const { login, loginWithTokens, clearMFA } = useAuth();
   const navigate = useNavigate();
 
   const loginSchema = useMemo(() => getLoginSchema(t), [t]);
@@ -94,7 +97,12 @@ export default function Login() {
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
-      await login(data);
+      const result = await login(data);
+      // If MFA is required, show the MFA verification step
+      if (result && result.requiresMFA) {
+        setMfaChallenge(result);
+        return;
+      }
       toast.success(t('login.welcomeBack'));
       navigate('/dashboard');
     } catch (error: any) {
@@ -171,6 +179,19 @@ export default function Login() {
     }
   };
 
+  // MFA verification step — overlay the normal login form
+  if (mfaChallenge) {
+    return (
+      <MFAVerify
+        challenge={mfaChallenge}
+        onCancel={() => {
+          setMfaChallenge(null);
+          clearMFA();
+        }}
+      />
+    );
+  }
+
   return (
     <div className="animate-fade-in">
       <div className="text-center mb-8">
@@ -185,7 +206,7 @@ export default function Login() {
         <>
           <div className="mb-8 p-4 bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl border border-violet-200">
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-violet-600" />
+              <Sparkles className="w-5 h-5 text-violet-600" aria-hidden="true" />
               <span className="font-semibold text-violet-800">{t('login.demo')}</span>
             </div>
             <p className="text-sm text-violet-600 mb-4">
@@ -200,7 +221,7 @@ export default function Login() {
                   disabled={isLoading}
                   className={`w-full flex items-center gap-3 p-3 bg-gradient-to-r ${demoUser.color} text-white rounded-lg hover:opacity-90 transition-all shadow-md hover:shadow-lg disabled:opacity-50`}
                 >
-                  <User className="w-5 h-5" />
+                  <User className="w-5 h-5" aria-hidden="true" />
                   <div className="flex-1 text-left">
                     <div className="font-medium">{demoUser.name}</div>
                     <div className="text-xs opacity-90">{demoUser.description}</div>
@@ -214,7 +235,7 @@ export default function Login() {
                 to="/admin/login"
                 className="flex items-center justify-center gap-2 text-sm text-violet-700 hover:text-violet-900 font-medium"
               >
-                <Shield className="w-4 h-4" />
+                <Shield className="w-4 h-4" aria-hidden="true" />
                 {t('login.adminAccess')}
               </Link>
             </div>
@@ -238,8 +259,8 @@ export default function Login() {
             {t('login.email')}
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Mail className="h-5 w-5 text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+              <Mail className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </div>
             <input
               id="email"
@@ -251,8 +272,8 @@ export default function Login() {
             />
           </div>
           {errors.email && (
-            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1" role="alert">
+              <AlertCircle className="w-4 h-4" aria-hidden="true" />
               {errors.email.message}
             </p>
           )}
@@ -269,12 +290,12 @@ export default function Login() {
             >
               {isBiometricLoading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
                   <span>{t('login.biometricVerifying')}</span>
                 </>
               ) : (
                 <>
-                  <Fingerprint className="w-6 h-6" />
+                  <Fingerprint className="w-6 h-6" aria-hidden="true" />
                   <span className="font-medium">{t('login.biometric')}</span>
                 </>
               )}
@@ -297,8 +318,8 @@ export default function Login() {
             {t('login.password')}
           </label>
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Lock className="h-5 w-5 text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+              <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
             </div>
             <input
               id="password"
@@ -312,17 +333,18 @@ export default function Login() {
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              aria-label={showPassword ? t('login.hidePassword', { defaultValue: 'Ocultar contraseña' }) : t('login.showPassword', { defaultValue: 'Mostrar contraseña' })}
             >
               {showPassword ? (
-                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" aria-hidden="true" />
               ) : (
-                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" aria-hidden="true" />
               )}
             </button>
           </div>
           {errors.password && (
-            <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-              <AlertCircle className="w-4 h-4" />
+            <p className="mt-1 text-sm text-red-600 flex items-center gap-1" role="alert">
+              <AlertCircle className="w-4 h-4" aria-hidden="true" />
               {errors.password.message}
             </p>
           )}
@@ -346,7 +368,7 @@ export default function Login() {
         >
           {isLoading ? (
             <div className="flex items-center justify-center gap-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
               {t('login.submitting')}
             </div>
           ) : (
@@ -359,7 +381,7 @@ export default function Login() {
       {isWebAuthnSupported && !hasBiometric && emailValue && (
         <div className="mt-4 p-3 bg-gray-50 rounded-lg">
           <p className="text-sm text-gray-600 text-center">
-            <Fingerprint className="w-4 h-4 inline mr-1" />
+            <Fingerprint className="w-4 h-4 inline mr-1" aria-hidden="true" />
             {t('login.biometricSetupHint')}
           </p>
         </div>
