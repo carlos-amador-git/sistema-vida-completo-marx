@@ -153,6 +153,16 @@ export const profileApi = {
     const response = await api.post('/profile/qr/regenerate');
     return response.data;
   },
+
+  async generateDocument(): Promise<ApiResponse<{ documentId: string; title: string }>> {
+    const response = await api.post('/profile/generate-document');
+    return response.data;
+  },
+
+  async getShareInfo(): Promise<ApiResponse<{ emergencyUrl: string; qrToken: string; qrDataUrl: string; documentId: string | null }>> {
+    const response = await api.get('/profile/share-info');
+    return response.data;
+  },
 };
 
 // ==================== Directives API ====================

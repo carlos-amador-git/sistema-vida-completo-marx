@@ -1,7 +1,7 @@
 // src/common/services/pdf-generator.service.ts
 import * as puppeteer from 'puppeteer';
 import * as QRCode from 'qrcode';
-import { config } from '../../config';
+import config from '../../config';
 import { logger } from './logger.service';
 
 interface MedicalProfileData {
@@ -57,9 +57,10 @@ interface MedicalProfileData {
   }>;
 }
 
-function escapeHtml(str: string): string {
+function escapeHtml(str: unknown): string {
   if (!str) return '';
-  return str
+  const s = String(str);
+  return s
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')

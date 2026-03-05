@@ -149,6 +149,27 @@ router.post('/photo',
 );
 
 /**
+ * GET /api/v1/profile/share-info
+ * Obtiene info para compartir el perfil médico (URL de emergencia + QR + documento)
+ */
+router.get('/share-info', async (req: Request, res: Response) => {
+  try {
+    const shareInfo = await pupService.getShareInfo(req.userId!);
+
+    res.json({
+      success: true,
+      data: shareInfo,
+    });
+  } catch (error) {
+    logger.error('Error obteniendo share info:', error);
+    res.status(500).json({
+      success: false,
+      error: { code: 'SERVER_ERROR', message: req.t('api:generic.serverError') },
+    });
+  }
+});
+
+/**
  * GET /api/v1/profile/qr
  * Obtiene el código QR del usuario
  */

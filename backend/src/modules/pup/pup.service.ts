@@ -5,6 +5,7 @@ import { encrypt, decrypt, encryptJSON, decryptJSON } from '../../common/utils/e
 import { encryptionV2 } from '../../common/services/encryption-v2.service';
 import { generateEmergencyQR } from '../../common/utils/qr-generator';
 import { qrTokenService } from '../../common/services/qr-token.service';
+import config from '../../config';
 import { pdfGeneratorService } from '../../common/services/pdf-generator.service';
 import { s3Service } from '../../common/services/s3.service';
 import { logger } from '../../common/services/logger.service';
@@ -293,6 +294,36 @@ class PupService {
       donorPreferences: safeDecryptJSON<DonorPreferences | null>(profile.donorPreferencesEnc, null),
       photoUrl: profile.photoUrl,
       qrToken: profile.qrToken,
+    };
+  }
+
+  /**
+   * Obtiene información para compartir el perfil médico
+   */
+  async getShareInfo(userId: string): Promise<{
+    emergencyUrl: string;
+    qrToken: string;
+    qrDataUrl: string;
+    documentId: string | null;
+  }> {
+    const qrData = await this.getQR(userId);
+
+    // Buscar documento EMERGENCY_PROFILE existente
+    const doc = await prisma.medicalDocument.findFirst({
+      where: {
+        userId,
+        category: 'EMERGENCY_PROFILE' as DocumentCategory,
+      },
+      select: { id: true },
+    });
+
+    const emergencyUrl = `${config.frontendUrl}/emergency/${qrData.qrToken}`;
+
+    return {
+      emergencyUrl,
+      qrToken: qrData.qrToken,
+      qrDataUrl: qrData.qrDataUrl,
+      documentId: doc?.id || null,
     };
   }
 

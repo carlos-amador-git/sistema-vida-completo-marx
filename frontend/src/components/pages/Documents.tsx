@@ -24,8 +24,11 @@ import {
   ChevronDown,
   AlertCircle,
   HardDrive,
+  Share2,
+  ShieldCheck,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import ShareDocument from '../documents/ShareDocument';
 
 interface DocumentStats {
   total: number;
@@ -35,8 +38,8 @@ interface DocumentStats {
 
 const CATEGORY_COLORS: Record<string, string> = {
   EMERGENCY_PROFILE: 'bg-blue-100 text-blue-700',
-  LAB_RESULTS: 'bg-purple-100 text-purple-700',
-  IMAGING: 'bg-indigo-100 text-indigo-700',
+  LAB_RESULTS: 'bg-vida-100 text-vida-700',
+  IMAGING: 'bg-vida-100 text-vida-700',
   PRESCRIPTIONS: 'bg-green-100 text-green-700',
   DISCHARGE_SUMMARY: 'bg-orange-100 text-orange-700',
   SURGICAL_REPORT: 'bg-red-100 text-red-700',
@@ -84,6 +87,7 @@ export default function Documents() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Form state for upload/edit
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -453,6 +457,53 @@ export default function Documents() {
           </div>
         </div>
       </div>
+
+      {/* Emergency Profile Hero Card */}
+      {(() => {
+        const emergencyDoc = documents.find(d => d.category === 'EMERGENCY_PROFILE');
+        if (!emergencyDoc) return null;
+        return (
+          <div className="card bg-gradient-to-r from-vida-50 via-blue-50 to-vida-50 border border-vida-200">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-vida-100 rounded-xl">
+                <ShieldCheck className="w-8 h-8 text-vida-600" aria-hidden="true" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-lg font-bold text-gray-900">{emergencyDoc.title}</h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  {emergencyDoc.description || t('heroCard.description', { defaultValue: 'Tu perfil medico de emergencia generado automaticamente.' })}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {t('heroCard.lastUpdated', { defaultValue: 'Actualizado' })}: {formatDate(emergencyDoc.updatedAt)}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3 mt-4">
+              <button
+                onClick={() => openViewModal(emergencyDoc)}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+              >
+                <Eye className="w-4 h-4" aria-hidden="true" />
+                {t('heroCard.view', { defaultValue: 'Ver' })}
+              </button>
+              <button
+                onClick={() => handleDownload(emergencyDoc)}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm"
+              >
+                <Download className="w-4 h-4" aria-hidden="true" />
+                {t('heroCard.download', { defaultValue: 'Descargar' })}
+              </button>
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-vida-600 rounded-lg text-sm font-medium text-white hover:bg-vida-700 transition-colors shadow-sm"
+              >
+                <Share2 className="w-4 h-4" aria-hidden="true" />
+                {t('heroCard.share', { defaultValue: 'Compartir' })}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Documents List */}
       {documents.length === 0 ? (
@@ -1089,6 +1140,9 @@ export default function Documents() {
           </div>
         </div>
       )}
+
+      {/* Share Modal */}
+      <ShareDocument isOpen={showShareModal} onClose={() => setShowShareModal(false)} />
     </section>
   );
 }

@@ -103,9 +103,33 @@ export default function Profile() {
 
   const updateMutation = useMutation({
     mutationFn: (data: ProfileForm) => profileApi.updateProfile(data),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       toast.success(t('toast.saveSuccess'));
+
+      // Generar documento PDF del perfil en background
+      try {
+        await profileApi.generateDocument();
+        queryClient.invalidateQueries({ queryKey: ['documents'] });
+        queryClient.invalidateQueries({ queryKey: ['documents-stats'] });
+        toast.success(
+          (tt) => (
+            <div className="flex items-center gap-2">
+              <span>{t('toast.documentGenerated', { defaultValue: 'Perfil Medico de Emergencia generado' })}</span>
+              <a
+                href="/documents"
+                onClick={() => toast.dismiss(tt.id)}
+                className="text-vida-600 hover:text-vida-700 font-medium underline whitespace-nowrap"
+              >
+                {t('toast.viewDocuments', { defaultValue: 'Ver' })}
+              </a>
+            </div>
+          ),
+          { duration: 5000 }
+        );
+      } catch (err) {
+        console.warn('Error generating profile document:', err);
+      }
     },
     onError: () => {
       toast.error(t('toast.saveError'));
