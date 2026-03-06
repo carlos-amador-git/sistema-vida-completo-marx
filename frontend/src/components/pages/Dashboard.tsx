@@ -61,21 +61,31 @@ export default function Dashboard() {
   const representatives = representativesData?.data?.representatives || [];
   const recentAccesses = historyData?.data?.accesses?.slice(0, 3) || [];
   const documents = documentsData?.data?.documents || [];
-  const visibleDocuments = documents.filter((doc: any) => doc.isVisible);
-  const recentDocuments = documents.slice(0, 3);
+  const visibleDocuments = Array.isArray(documents) 
+    ? documents.filter((doc: any) => doc && doc.isVisible) 
+    : [];
+  const recentDocuments = Array.isArray(documents) 
+    ? documents.slice(0, 3) 
+    : [];
 
   // Calcular estado de completitud del perfil
   const profileCompleteness = (() => {
     if (!profile) return 0;
     let score = 0;
-    if (profile.bloodType) score += 25;
-    if (profile.allergies?.length > 0 || profile.conditions?.length > 0) score += 25;
-    if (profile.medications?.length > 0) score += 25;
-    if (representatives?.length > 0) score += 25;
+    try {
+      if (profile.bloodType) score += 25;
+      if (profile.allergies?.length > 0 || profile.conditions?.length > 0) score += 25;
+      if (profile.medications?.length > 0) score += 25;
+      if (representatives?.length > 0) score += 25;
+    } catch (e) {
+      console.error('Error calculating profile completeness', e);
+    }
     return score;
   })();
 
   const isLoading = loadingProfile || loadingDirectives || loadingReps;
+  
+  const firstName = user?.name ? String(user.name).split(' ')[0] : '';
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -89,7 +99,7 @@ export default function Dashboard() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold mb-1">
-                {t('welcome', { name: user?.name?.split(' ')[0] })}
+                {t('welcome', { name: firstName })}
               </h1>
               <p className="text-vida-100">
                 {t('subtitle')}

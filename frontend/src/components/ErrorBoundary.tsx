@@ -51,6 +51,18 @@ class ErrorBoundary extends Component<Props, State> {
             <p className="text-gray-600 mb-6">
               {t('errorBoundary.description')}
             </p>
+            {this.state.error && (
+              <div className="mb-6 p-4 bg-red-50 rounded-md text-left overflow-auto max-h-48">
+                <p className="text-xs font-mono text-red-600 break-words">
+                  {this.state.error.toString()}
+                </p>
+                {this.state.error.stack && (
+                   <pre className="mt-2 text-[10px] text-red-500 whitespace-pre-wrap">
+                     {this.state.error.stack.split('\n').slice(0, 3).join('\n')}
+                   </pre>
+                )}
+              </div>
+            )}
             <button
               onClick={() => window.location.reload()}
               className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200"
