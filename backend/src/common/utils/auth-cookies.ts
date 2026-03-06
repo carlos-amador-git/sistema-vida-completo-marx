@@ -17,9 +17,9 @@ const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 const isProduction = config.env === 'production';
 const cookieDomainFromConfig = config.cookieDomain || '';
 
-// Use 'none' for cross-origin cookies (required for subdomain communication)
-// But only in production where we have HTTPS
-const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'none' : 'lax';
+// Use 'lax' for better browser compatibility - works for cross-site top-level navigations
+// Combined with domain=.mdconsultoria-ti.org, this should work for subdomains
+const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'lax' : 'lax';
 
 // In production, don't use cookie domain by default (browser handles it automatically)
 // Only use cookie domain if explicitly set AND it's needed for cross-subdomain auth
@@ -56,13 +56,25 @@ if (isProduction) {
 }
 
 // Helper to build cookie options
-const getCookieOptions = (path: string = '/') => ({
-  httpOnly: true,
-  secure: isProduction,
-  sameSite: sameSiteValue,
-  domain: cookieDomain,
-  path,
-});
+const getCookieOptions = (path: string = '/') => {
+  const options = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: sameSiteValue,
+    domain: cookieDomain,
+    path,
+  };
+  
+  // Debug log cookie settings
+  if (isProduction && path === '/api/v1/auth') {
+    console.log('[COOKIE_DEBUG] Setting refresh cookie with options:', {
+      ...options,
+      maxAge: REFRESH_TOKEN_MAX_AGE_MS,
+    });
+  }
+  
+  return options;
+};
 
 // ==================== COMBINED AUTH COOKIES ====================
 
