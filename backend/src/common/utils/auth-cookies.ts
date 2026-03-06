@@ -18,19 +18,26 @@ const isProduction = config.env === 'production';
 const cookieDomainFromConfig = config.cookieDomain || '';
 const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'lax' : 'lax';
 
-// In production, only use cookie domain if explicitly set AND it's different from the frontend domain
-// For same-domain setups (like vida.mdconsultoria-ti.org), don't set domain so browser uses current domain
-const frontendDomain = config.frontendUrl.replace(/^https?:\/\//, '');
-const cookieDomain = cookieDomainFromConfig && cookieDomainFromConfig !== frontendDomain
+// In production, don't use cookie domain by default (browser handles it automatically)
+// Only use cookie domain if explicitly set AND it's a different domain entirely
+const frontendDomain = config.frontendUrl.replace(/^https?:\/\//, '').replace(/^www\./, '');
+const cookieDomainConfigured = cookieDomainFromConfig.replace(/^\./, '').replace(/^www\./, '');
+
+// Check if cookie domain is a parent domain of frontend (e.g., .mdconsultoria-ti.org is parent of vida.mdconsultoria-ti.org)
+const isParentDomain = cookieDomainConfigured && frontendDomain.endsWith('.' + cookieDomainConfigured);
+
+// Only use domain if it's a completely different domain (not a parent/subdomain relationship)
+const cookieDomain = cookieDomainConfigured && !isParentDomain && cookieDomainConfigured !== frontendDomain
   ? cookieDomainFromConfig 
   : undefined;
 
 // Log cookie config in production for debugging
 if (isProduction) {
   console.log('[COOKIE_DEBUG] Production cookie config:', { 
-    cookieDomain: cookieDomain || '(none - same domain)',
+    cookieDomain: cookieDomain || '(none)',
     cookieDomainFromConfig,
     frontendDomain,
+    cookieDomainConfigured,
     isProduction, 
     sameSite: sameSiteValue 
   });
