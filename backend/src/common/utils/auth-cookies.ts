@@ -26,20 +26,10 @@ const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'lax' : 'lax';
 const frontendDomain = config.frontendUrl.replace(/^https?:\/\//, '').replace(/^www\./, '');
 const cookieDomainConfigured = cookieDomainFromConfig.replace(/^\./, '').replace(/^www\./, '');
 
-// Check if cookie domain is a parent domain of frontend (e.g., .mdconsultoria-ti.org is parent of vida.mdconsultoria-ti.org)
-const isParentDomain = cookieDomainConfigured && frontendDomain.endsWith('.' + cookieDomainConfigured);
-
-// Check if both are subdomains of the same parent (e.g., vida.mdconsultoria-ti.org and api.vida.mdconsultoria-ti.org)
-const frontendParts = frontendDomain.split('.');
-const cookieParts = cookieDomainConfigured.split('.');
-const isSameParentDomain = cookieParts.length >= 2 && 
-  frontendDomain !== cookieDomainConfigured && 
-  frontendParts.slice(-cookieParts.length).join('.') === cookieDomainConfigured;
-
-// Use cookie domain if: it's a parent domain OR both are subdomains of the same parent
-const cookieDomain = (isParentDomain || isSameParentDomain) && cookieDomainConfigured
-  ? cookieDomainFromConfig 
-  : undefined;
+// For subdomain setups like vida.mdconsultoria-ti.org + api.vida.mdconsultoria-ti.org,
+// we need to NOT specify domain, so the browser uses the exact domain of the API
+// The cookie will be sent to the exact domain it was set from
+const cookieDomain = undefined;
 
 // Log cookie config in production for debugging
 if (isProduction) {
