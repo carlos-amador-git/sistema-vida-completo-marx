@@ -19,15 +19,22 @@ const cookieDomainFromConfig = config.cookieDomain || '';
 const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'lax' : 'lax';
 
 // In production, don't use cookie domain by default (browser handles it automatically)
-// Only use cookie domain if explicitly set AND it's a different domain entirely
+// Only use cookie domain if explicitly set AND it's needed for cross-subdomain auth
 const frontendDomain = config.frontendUrl.replace(/^https?:\/\//, '').replace(/^www\./, '');
 const cookieDomainConfigured = cookieDomainFromConfig.replace(/^\./, '').replace(/^www\./, '');
 
 // Check if cookie domain is a parent domain of frontend (e.g., .mdconsultoria-ti.org is parent of vida.mdconsultoria-ti.org)
 const isParentDomain = cookieDomainConfigured && frontendDomain.endsWith('.' + cookieDomainConfigured);
 
-// Only use domain if it's a completely different domain (not a parent/subdomain relationship)
-const cookieDomain = cookieDomainConfigured && !isParentDomain && cookieDomainConfigured !== frontendDomain
+// Check if both are subdomains of the same parent (e.g., vida.mdconsultoria-ti.org and api.vida.mdconsultoria-ti.org)
+const frontendParts = frontendDomain.split('.');
+const cookieParts = cookieDomainConfigured.split('.');
+const isSameParentDomain = cookieParts.length >= 2 && 
+  frontendDomain !== cookieDomainConfigured && 
+  frontendParts.slice(-cookieParts.length).join('.') === cookieDomainConfigured;
+
+// Use cookie domain if: it's a parent domain OR both are subdomains of the same parent
+const cookieDomain = (isParentDomain || isSameParentDomain) && cookieDomainConfigured
   ? cookieDomainFromConfig 
   : undefined;
 
@@ -38,6 +45,8 @@ if (isProduction) {
     cookieDomainFromConfig,
     frontendDomain,
     cookieDomainConfigured,
+    isParentDomain,
+    isSameParentDomain,
     isProduction, 
     sameSite: sameSiteValue 
   });
