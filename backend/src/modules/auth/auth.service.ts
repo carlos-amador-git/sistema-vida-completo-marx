@@ -236,6 +236,7 @@ class AuthService {
     try {
       payload = jwt.verify(refreshToken, config.jwt.refreshSecret) as TokenPayload;
     } catch (error) {
+      console.log('[REFRESH_DEBUG] JWT verify failed:', error instanceof Error ? error.message : 'Unknown error');
       throw new AuthError('INVALID_TOKEN', 'Token de refresco inválido');
     }
     
@@ -243,13 +244,24 @@ class AuthService {
       throw new AuthError('INVALID_TOKEN', 'Tipo de token inválido');
     }
     
+    const tokenHash = hashToken(refreshToken);
+    console.log('[REFRESH_DEBUG] Looking for session with token hash:', tokenHash.substring(0, 20) + '...');
+    
     // Buscar la sesión
     const session = await prisma.session.findUnique({
-      where: { refreshToken: hashToken(refreshToken) },
+      where: { refreshToken: tokenHash },
       include: { user: true },
     });
     
-    if (!session || session.expiresAt < new Date()) {
+    console.log('[REFRESH_DEBUG] Session found:', session ? 'yes' : 'no', session ? `expires at ${session.expiresAt}` : '');
+    
+    if (!session) {
+      console.log('[REFRESH_DEBUG] Session not found for user:', payload.userId);
+      throw new AuthError('SESSION_EXPIRED', 'La sesión ha expirado');
+    }
+    
+    if (session.expiresAt < new Date()) {
+      console.log('[REFRESH_DEBUG] Session expired:', session.expiresAt);
       throw new AuthError('SESSION_EXPIRED', 'La sesión ha expirado');
     }
     
