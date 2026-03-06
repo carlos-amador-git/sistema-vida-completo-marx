@@ -25,7 +25,7 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken:
   res.cookie(ACCESS_TOKEN_COOKIE, accessToken, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    sameSite: isProduction ? 'lax' : 'lax', // Use lax for better subdomain support
     maxAge: ACCESS_TOKEN_MAX_AGE_MS,
     path: '/',
   });
@@ -33,7 +33,7 @@ export function setAuthCookies(res: Response, accessToken: string, refreshToken:
   res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    sameSite: isProduction ? 'lax' : 'lax',
     maxAge: REFRESH_TOKEN_MAX_AGE_MS,
     path: '/api/v1/auth',
   });
@@ -46,13 +46,13 @@ export function clearAuthCookies(res: Response): void {
   res.clearCookie(ACCESS_TOKEN_COOKIE, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    sameSite: isProduction ? 'lax' : 'lax',
     path: '/',
   });
   res.clearCookie(REFRESH_TOKEN_COOKIE, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    sameSite: isProduction ? 'lax' : 'lax',
     path: '/api/v1/auth',
   });
 }
@@ -66,7 +66,7 @@ export function setRefreshTokenCookie(res: Response, refreshToken: string): void
   res.cookie(REFRESH_TOKEN_COOKIE, refreshToken, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    sameSite: isProduction ? 'lax' : 'lax',
     maxAge: REFRESH_TOKEN_MAX_AGE_MS,
     path: '/api/v1/auth',
   });
@@ -79,7 +79,7 @@ export function clearRefreshTokenCookie(res: Response): void {
   res.clearCookie(REFRESH_TOKEN_COOKIE, {
     httpOnly: true,
     secure: isProduction,
-    sameSite: isProduction ? 'strict' : 'lax',
+    sameSite: isProduction ? 'lax' : 'lax',
     path: '/api/v1/auth',
   });
 }
