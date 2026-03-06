@@ -16,7 +16,10 @@ const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 const isProduction = config.env === 'production';
 const cookieDomainFromConfig = config.cookieDomain || '';
-const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'lax' : 'lax';
+
+// Use 'none' for cross-origin cookies (required for subdomain communication)
+// But only in production where we have HTTPS
+const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'none' : 'lax';
 
 // In production, don't use cookie domain by default (browser handles it automatically)
 // Only use cookie domain if explicitly set AND it's needed for cross-subdomain auth
