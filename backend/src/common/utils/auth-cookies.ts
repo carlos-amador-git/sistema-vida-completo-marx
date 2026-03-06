@@ -18,6 +18,15 @@ const isProduction = config.env === 'production';
 const cookieDomain = config.cookieDomain || undefined;
 const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'lax' : 'lax';
 
+// Log cookie config in production for debugging
+if (isProduction) {
+  console.log('[COOKIE_DEBUG] Production cookie config:', { 
+    cookieDomain, 
+    isProduction, 
+    sameSite: sameSiteValue 
+  });
+}
+
 // Helper to build cookie options
 const getCookieOptions = (path: string = '/') => ({
   httpOnly: true,
