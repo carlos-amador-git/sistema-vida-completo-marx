@@ -15,13 +15,21 @@ const ACCESS_TOKEN_MAX_AGE_MS = 15 * 60 * 1000; // 15 minutes
 const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 const isProduction = config.env === 'production';
-const cookieDomain = config.cookieDomain || undefined;
+const cookieDomainFromConfig = config.cookieDomain || '';
 const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'lax' : 'lax';
+
+// Only use cookie domain if it's explicitly set AND different from the frontend domain
+// If frontend and backend are on same domain, don't set domain (browser will use current domain)
+const cookieDomain = cookieDomainFromConfig && cookieDomainFromConfig !== config.frontendUrl.replace(/^https?:\/\//, '') 
+  ? cookieDomainFromConfig 
+  : undefined;
 
 // Log cookie config in production for debugging
 if (isProduction) {
   console.log('[COOKIE_DEBUG] Production cookie config:', { 
-    cookieDomain, 
+    cookieDomain: cookieDomain || '(none - same domain)',
+    cookieDomainFromConfig,
+    frontendUrl: config.frontendUrl,
     isProduction, 
     sameSite: sameSiteValue 
   });
