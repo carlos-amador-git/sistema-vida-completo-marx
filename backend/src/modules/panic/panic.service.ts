@@ -170,7 +170,8 @@ class PanicService {
       }
     });
 
-    logger.info(`🚨 ALERTA DE PANICO activada para ${user.name} (${alertId})`);
+    logger.info(`🚨 ALERTA DE PANICO activada para ${user.name} (user: ${userId}, alert: ${alertId})`);
+    logger.info(`   Representantes encontrados para retorno: ${user.representatives.length}`);
     logger.info(`   Condiciones: ${patientConditions.join(', ') || 'Ninguna'}`);
     logger.info(`   Hospital recomendado: ${nearestHospital || 'N/A'}`);
 
@@ -178,13 +179,16 @@ class PanicService {
       alertId,
       status: panicAlert.status,
       nearbyHospitals,
-      representativesNotified: user.representatives.map(rep => ({
-        name: rep.name,
-        phone: rep.phone,
-        smsStatus: 'pending' as any,
-        whatsappStatus: 'pending' as any,
-        emailStatus: 'pending' as any,
-      })),
+      representativesNotified: user.representatives.map(rep => {
+        logger.info(`   Mapeando representante: ${rep.name} (${rep.id})`);
+        return {
+          name: rep.name,
+          phone: rep.phone,
+          smsStatus: 'pending' as any,
+          whatsappStatus: 'pending' as any,
+          emailStatus: 'pending' as any,
+        };
+      }),
       createdAt,
     };
   }

@@ -65,5 +65,9 @@ BEGIN
   END IF;
 END $$;
 
+-- Tabla: PanicAlert (Coordenadas opcionales)
+ALTER TABLE "PanicAlert" ALTER COLUMN "latitude" DROP NOT NULL;
+ALTER TABLE "PanicAlert" ALTER COLUMN "longitude" DROP NOT NULL;
+
 -- Enums
 ALTER TYPE "DocumentCategory" ADD VALUE IF NOT EXISTS 'CLINICAL_HISTORY';
