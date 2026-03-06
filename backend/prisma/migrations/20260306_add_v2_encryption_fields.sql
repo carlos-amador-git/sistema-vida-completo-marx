@@ -45,7 +45,8 @@ ALTER TABLE "Witness" ADD COLUMN IF NOT EXISTS "curpEnc" TEXT;
 -- Tabla: PanicAlert
 ALTER TABLE "PanicAlert" ADD COLUMN IF NOT EXISTS "locationEnc" TEXT;
 
--- Tabla: AdminUser (MFA)
+-- Tabla: AdminUser (MFA y Preferencias)
+ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "preferredLanguage" VARCHAR(5) DEFAULT 'es';
 ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "mfaSecret" TEXT;
 ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "mfaBackupCodes" TEXT[];
 ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "mfaEnabledAt" TIMESTAMP(3);
