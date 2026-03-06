@@ -261,8 +261,8 @@ export default function NotificationSettings() {
           {/* Representantes */}
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-2 bg-purple-100 rounded-lg" aria-hidden="true">
-                <Users className="w-5 h-5 text-purple-600" aria-hidden="true" />
+              <div className="p-2 bg-vida-100 rounded-lg" aria-hidden="true">
+                <Users className="w-5 h-5 text-vida-600" aria-hidden="true" />
               </div>
               <div>
                 <h3 className="font-medium text-gray-900">{t('settings.types.representatives.title')}</h3>
@@ -402,7 +402,7 @@ export default function NotificationSettings() {
         {preferences.doNotDisturbEnabled && (
           <div className="px-6 py-4">
             <div className="flex items-center gap-4">
-              <Moon className="w-5 h-5 text-indigo-500" aria-hidden="true" />
+              <Moon className="w-5 h-5 text-vida-500" aria-hidden="true" />
               <div className="flex items-center gap-3">
                 <div>
                   <label htmlFor="dnd-start" className="block text-xs text-gray-500 mb-1">{t('settings.dnd.from')}</label>

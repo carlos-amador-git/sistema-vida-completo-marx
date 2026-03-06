@@ -1,5 +1,7 @@
 // src/components/ui/EmptyState.tsx
 import type { ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { fadeInUp } from '../../lib/animations';
 
 interface EmptyStateAction {
   label: string;
@@ -9,6 +11,8 @@ interface EmptyStateAction {
 interface EmptyStateProps {
   /** Lucide-react icon element — rendered at 64 x 64 with muted color */
   icon?: ReactNode;
+  /** SVG illustration component (from ui/illustrations/) */
+  illustration?: ReactNode;
   /** Short headline shown below the icon */
   title: string;
   /** Optional supporting text */
@@ -19,38 +23,36 @@ interface EmptyStateProps {
   className?: string;
 }
 
-/**
- * Generic empty-state component.
- *
- * Usage:
- *   <EmptyState
- *     icon={<Shield />}
- *     title="No hay accesos registrados"
- *     description="Cuando alguien acceda a tu información de emergencia aparecerá aquí."
- *     action={{ label: 'Ver QR de emergencia', onClick: () => navigate('/emergency-qr') }}
- *   />
- */
 export function EmptyState({
   icon,
+  illustration,
   title,
   description,
   action,
   className = '',
 }: EmptyStateProps) {
   return (
-    <div
+    <motion.div
+      variants={fadeInUp}
+      initial="initial"
+      animate="animate"
       className={`flex flex-col items-center justify-center py-16 px-6 text-center ${className}`}
       role="status"
       aria-label={title}
     >
-      {icon && (
+      {illustration && (
+        <div className="mb-6 w-28 h-28">
+          {illustration}
+        </div>
+      )}
+
+      {!illustration && icon && (
         <div className="mb-4 flex items-center justify-center w-16 h-16 text-gray-300">
-          {/* Clone-like trick: wrap icon in a sized container; callers pass e.g. <Shield className="w-full h-full" /> */}
           <span className="[&>svg]:w-16 [&>svg]:h-16 [&>svg]:text-gray-300">{icon}</span>
         </div>
       )}
 
-      <h3 className="text-lg font-medium text-gray-900 mb-1">{title}</h3>
+      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">{title}</h3>
 
       {description && (
         <p className="text-sm text-gray-500 max-w-sm mb-6">{description}</p>
@@ -65,6 +67,6 @@ export function EmptyState({
           {action.label}
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }

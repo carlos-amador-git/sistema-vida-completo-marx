@@ -41,6 +41,7 @@ const Subscription = lazy(() => import('./components/pages/Subscription'));
 const SubscriptionPlans = lazy(() => import('./components/pages/SubscriptionPlans'));
 const SubscriptionSuccess = lazy(() => import('./components/pages/SubscriptionSuccess'));
 const MFASetup = lazy(() => import('./components/pages/MFASetup'));
+const OnboardingWizard = lazy(() => import('./components/onboarding/OnboardingWizard'));
 
 // Admin pages
 const AdminLogin = lazy(() => import('./components/admin/pages/AdminLogin'));
@@ -54,7 +55,7 @@ const AdminSubscriptions = lazy(() => import('./components/admin/pages/AdminSubs
 // ─── Loading spinner ───────────────────────────────────────────────────────────
 
 const LoadingSpinner = () => (
-  <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-vida-50 to-white" role="status" aria-label="Cargando">
+  <div className="min-h-dvh flex items-center justify-center bg-gradient-to-br from-vida-50 to-white dark:from-vida-950 dark:to-background" role="status" aria-label="Cargando">
     <div className="text-center">
       <div className="w-16 h-16 border-4 border-vida-200 border-t-vida-600 rounded-full animate-spin mx-auto mb-4" aria-hidden="true" />
       <p className="text-vida-600 font-medium" aria-hidden="true">Cargando...</p>
@@ -113,7 +114,7 @@ const RequirePermission = ({
 const NotFoundPage = () => {
   const { t } = useTranslation('common');
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50" id="main-content">
+    <main className="min-h-dvh flex items-center justify-center bg-background" id="main-content">
       <div className="text-center">
         <h1 className="text-6xl font-bold text-vida-600 mb-4">{t('notFound.title')}</h1>
         <p className="text-gray-600 mb-6">{t('notFound.message')}</p>
@@ -159,6 +160,16 @@ function App() {
 
         {/* Aviso de privacidad LFPDPPP 2025 (público) */}
         <Route path="/aviso-privacidad" element={<PrivacyNotice />} />
+
+        {/* Onboarding (protegido) */}
+        <Route
+          path="/onboarding"
+          element={
+            <ProtectedRoute>
+              <OnboardingWizard />
+            </ProtectedRoute>
+          }
+        />
 
         {/* Acceso de emergencia (público) */}
         <Route path="/emergency/:qrToken" element={<EmergencyView />} />

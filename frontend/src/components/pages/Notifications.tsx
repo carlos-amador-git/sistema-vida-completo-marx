@@ -67,8 +67,8 @@ export default function Notifications() {
     },
     REPRESENTATIVE: {
       icon: Users,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-vida-600',
+      bgColor: 'bg-vida-100',
       label: t('types.REPRESENTATIVE')
     },
     DOCUMENT: {

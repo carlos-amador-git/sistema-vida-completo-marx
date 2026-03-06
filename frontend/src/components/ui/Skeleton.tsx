@@ -4,13 +4,15 @@ interface SkeletonProps {
   className?: string;
 }
 
-/** Primitive pulsing skeleton block */
+/** Primitive skeleton block with shimmer gradient */
 export function Skeleton({ className }: SkeletonProps) {
   return (
     <div
-      className={`animate-pulse rounded-md bg-gray-200 ${className || ''}`}
+      className={`relative overflow-hidden rounded-md bg-gray-200 dark:bg-gray-700 ${className || ''}`}
       aria-hidden="true"
-    />
+    >
+      <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/40 to-transparent dark:via-white/10" />
+    </div>
   );
 }
 

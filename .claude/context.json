@@ -1,9 +1,9 @@
 {
   "project": "Sistema VIDA",
-  "phase": "Post-Remediación Completa — Listo para Review Final",
+  "phase": "Post-Auditoría UX/UI — Fixes pendientes P0-P3",
   "branch": "main",
-  "lastSession": "2026-03-04T14:30:00-06:00",
-  "sessionCount": 9,
+  "lastSession": "2026-03-05T12:00:00-06:00",
+  "sessionCount": 10,
   "status": {
     "backend": "FUNCIONAL - HARDENED",
     "frontend": "FUNCIONAL - HARDENED",
@@ -15,11 +15,11 @@
     "security": "REMEDIADO - Score 54→85 (Fase 1-4 completadas)",
     "performance": "OPTIMIZADO - Score 54→~82 (panic flow, N+1, hospital cache, vendor split)",
     "codeQuality": "MEJORADO - Score 65→~88 (0 TS errors backend+frontend)",
-    "uiux": "MEJORADO - Score 61→~83 (fonts, accesibilidad WCAG 2.1 AA, loading states)",
+    "uiux": "AUDITADO - Score 74/100 (B-). Sprints 1-4 implementados. Plan fixes P0-P3 creado",
     "testing": "IMPLEMENTADO - 429/429 tests passing (262 backend + 167 frontend)",
     "compliance": "EN PROGRESO - Aviso de Privacidad y ARCO pendientes legal"
   },
-  "activePlan": "Remediación completa — task_plan.md DONE",
+  "activePlan": "frontend/.context/PLAN-uxui-audit-fixes.md",
   "lastCommit": {
     "hash": "657b7d0",
     "message": "fix: resolve 14 TS errors and 49 test failures from post-remediation validation",
@@ -29,7 +29,7 @@
   "builds": {
     "frontend": "OK - vite build (321KB main, 100KB gzip, 4 vendor chunks)",
     "backend": "OK - tsc --noEmit (0 errors)",
-    "verifiedAt": "2026-03-04"
+    "verifiedAt": "2026-03-05"
   },
   "testResults": {
     "backend": "262/262 PASS (7 test files)",
@@ -54,7 +54,9 @@
     "Remediación de seguridad Fases 1-4 — Score 54→85 (6771eb4)",
     "Remediación Performance+Código+UI/UX+Testing — 12 tareas (bdd9ca9)",
     "Solventación post-remediación — 14 TS errors + 49 test failures → 0/0 (657b7d0)",
-    "Migración repo: carlos-amador-git → MarxCha/sistema-vida-completo-marx"
+    "Migración repo: carlos-amador-git → MarxCha/sistema-vida-completo-marx",
+    "Sprints UX/UI 1-4: AnimatedIcon, SkeletonLoaders, CustomToast, PanicButton, OnboardingWizard, EmptyStates, BottomSheet",
+    "Auditoría UX/UI 3-agentes: 74/100 (B-) — plan de fixes P0-P3 creado"
   ],
   "scores": {
     "before": {
@@ -69,9 +71,16 @@
       "security": 85,
       "performance": 82,
       "codeQuality": 88,
-      "uiux": 83,
+      "uiux": 74,
       "testing": 70,
-      "average": 82
+      "average": 80
+    },
+    "uiuxAuditDetail": {
+      "uiuxProMax": "84/100 (B+)",
+      "designAuditor": "62/100 (26 issues)",
+      "a11yBaseline": "Level A: 58%, Level AA: 45%",
+      "consolidated": "74/100 (B-)",
+      "targetPostFix": "~85/100"
     }
   },
   "knownIssues": [
@@ -92,14 +101,21 @@
       "title": "Aviso de Privacidad y Derechos ARCO — framework implementado, contenido legal pendiente",
       "status": "PENDIENTE_LEGAL",
       "fix": "Contratar redacción legal del Aviso de Privacidad conforme LFPDPPP"
+    },
+    {
+      "id": "UXUI-AUDIT",
+      "title": "25 fixes UX/UI identificados por auditoría 3-agentes",
+      "status": "PLAN_CREADO",
+      "plan": "frontend/.context/PLAN-uxui-audit-fixes.md",
+      "critical": ["QR azul→negro", "useReducedMotion", "5x confirm()→Dialog", "dark mode tokens"]
     }
   ],
   "nextSteps": [
+    "Implementar P0: QR negro + useReducedMotion + reemplazar 5x confirm()",
+    "Implementar P1: dark mode sweep + coral/salud CSS vars + remover confetti",
+    "P2: ARIA combobox, focus trap sidebar, landing slop cleanup",
     "Deploy a producción en Coolify (SQL migrations + env vars)",
     "Configurar WABA vars de producción y activar notificaciones",
-    "Contratar redacción legal del Aviso de Privacidad (LFPDPPP)",
-    "Fix BLOCKER-002: UPDATE representantes notifyOnEmergency=true",
-    "Considerar E2E tests con Playwright (playwright.config.ts ya existe)",
-    "Auditoría funcional completa (/func-audit) para scoring final"
+    "Contratar redacción legal del Aviso de Privacidad (LFPDPPP)"
   ]
 }

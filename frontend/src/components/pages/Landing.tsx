@@ -12,8 +12,10 @@ import {
   Phone,
   Sparkles,
   User,
-  Settings
+  Settings,
+  LucideIcon
 } from 'lucide-react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { authApi } from '../../services/api';
 import { adminLogin } from '../../services/adminApi';
 import toast, { Toaster } from 'react-hot-toast';
@@ -91,7 +93,7 @@ export default function Landing() {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/" className="flex items-center gap-2" aria-label="VIDA — inicio">
-              <Heart className="w-8 h-8 text-vida-600" aria-hidden="true" />
+              <AnimatedIcon icon={Heart} animation="pulse" trigger="hover" size={32} className="w-8 h-8 text-vida-600" aria-hidden="true" />
               <span className="text-xl font-bold text-vida-800">VIDA</span>
             </Link>
             <div className="flex items-center gap-4">
@@ -110,10 +112,10 @@ export default function Landing() {
       {/* Banner de Demo Flotante (solo visible si __DEMO_ENABLED__) */}
       {__DEMO_ENABLED__ && (
         <div className="fixed bottom-4 right-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl border border-violet-200 p-4 w-72">
+          <div className="bg-white rounded-2xl shadow-2xl border border-vida-200 p-4 w-72">
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-violet-600" />
-              <span className="font-bold text-violet-800">{t('demo.title')}</span>
+              <Sparkles className="w-5 h-5 text-vida-600" />
+              <span className="font-bold text-vida-800">{t('demo.title')}</span>
             </div>
             <div className="space-y-2">
               <button
@@ -157,7 +159,7 @@ export default function Landing() {
           <div className="grid lg:grid-cols-2 gap-12 items-center py-12">
             <div className="space-y-8">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-vida-100 rounded-full text-vida-700 text-sm font-medium">
-                <Shield className="w-4 h-4" aria-hidden="true" />
+                <AnimatedIcon icon={Shield} animation="draw" trigger="mount" size={16} className="w-4 h-4" aria-hidden="true" />
                 {t('hero.badge')}
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
@@ -172,12 +174,15 @@ export default function Landing() {
                   {t('hero.ctaPrimary')}
                   <ArrowRight className="w-5 h-5 ml-2" aria-hidden="true" />
                 </Link>
-                <Link to="#features" className="btn-outline text-lg px-8 py-3">
+                <button
+                  onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="btn-outline text-lg px-8 py-3"
+                >
                   {t('hero.ctaSecondary')}
-                </Link>
+                </button>
               </div>
               <div className="flex items-center gap-6 pt-4">
-                <div className="flex -space-x-2">
+                <div className="flex -space-x-2" aria-hidden="true">
                   {[...Array(4)].map((_, i) => (
                     <div key={i} className="w-10 h-10 rounded-full bg-vida-200 border-2 border-white flex items-center justify-center">
                       <span className="text-xs font-medium text-vida-700">{String.fromCharCode(65 + i)}</span>
@@ -190,11 +195,10 @@ export default function Landing() {
               </div>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-vida-400 to-vida-600 rounded-3xl transform rotate-3 opacity-20"></div>
               <div className="relative bg-white rounded-3xl shadow-xl p-8 space-y-6">
                 <div className="flex items-center gap-4 p-4 bg-salud-50 rounded-xl">
                   <div className="w-12 h-12 bg-salud-100 rounded-full flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-salud-600" aria-hidden="true" />
+                    <AnimatedIcon icon={Clock} animation="draw" trigger="inView" size={24} className="w-6 h-6 text-salud-600" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">{t('hero.accessTitle')}</p>
@@ -203,7 +207,7 @@ export default function Landing() {
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-vida-50 rounded-xl">
                   <div className="w-12 h-12 bg-vida-100 rounded-full flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-vida-600" aria-hidden="true" />
+                    <AnimatedIcon icon={FileText} animation="draw" trigger="inView" size={24} className="w-6 h-6 text-vida-600" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">{t('hero.legalTitle')}</p>
@@ -212,7 +216,7 @@ export default function Landing() {
                 </div>
                 <div className="flex items-center gap-4 p-4 bg-coral-50 rounded-xl">
                   <div className="w-12 h-12 bg-coral-100 rounded-full flex items-center justify-center">
-                    <Phone className="w-6 h-6 text-coral-600" aria-hidden="true" />
+                    <AnimatedIcon icon={Phone} animation="draw" trigger="inView" size={24} className="w-6 h-6 text-coral-600" aria-hidden="true" />
                   </div>
                   <div>
                     <p className="font-semibold text-gray-900">{t('hero.notificationTitle')}</p>
@@ -240,7 +244,7 @@ export default function Landing() {
             {features.map((feature, index) => (
               <div key={index} className="card-hover text-center">
                 <div className="w-14 h-14 bg-vida-100 rounded-xl flex items-center justify-center mx-auto mb-4" aria-hidden="true">
-                  <feature.icon className="w-7 h-7 text-vida-600" />
+                  <AnimatedIcon icon={feature.icon as LucideIcon} animation="draw" trigger="inView" size={28} className="w-7 h-7 text-vida-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
                 <p className="text-gray-600">{feature.description}</p>
@@ -277,7 +281,7 @@ export default function Landing() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-vida-600 to-vida-800">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-vida-800">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">
             {t('cta.title')}
@@ -297,7 +301,7 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-2">
-              <Heart className="w-8 h-8 text-vida-400" aria-hidden="true" />
+              <AnimatedIcon icon={Heart} animation="pulse" trigger="hover" size={32} className="w-8 h-8 text-vida-400" aria-hidden="true" />
               <span className="text-xl font-bold text-white">VIDA</span>
             </div>
             <div className="flex items-center gap-6 text-gray-400 text-sm">

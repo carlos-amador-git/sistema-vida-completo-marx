@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocale } from '../../hooks/useLocale';
 import { directivesApi } from '../../services/api';
 import type { AdvanceDirective, DirectiveDraft } from '../../types';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 type DirectiveStatus = 'DRAFT' | 'PENDING_VALIDATION' | 'ACTIVE' | 'REVOKED' | 'EXPIRED';
 
@@ -25,6 +26,8 @@ export default function Directives() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
+  const [revokeConfirm, setRevokeConfirm] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
 
   const [draftForm, setDraftForm] = useState<DirectiveDraft>({
     acceptsCPR: null,
@@ -99,26 +102,28 @@ export default function Directives() {
     }
   };
 
-  const handleRevoke = async (id: string) => {
-    if (!confirm(t('confirm.revoke'))) {
-      return;
-    }
+  const handleRevoke = (id: string) => {
+    setRevokeConfirm({ open: true, id });
+  };
 
+  const doRevoke = async () => {
+    if (!revokeConfirm.id) return;
     try {
-      await directivesApi.revoke(id);
+      await directivesApi.revoke(revokeConfirm.id);
       loadDirectives();
     } catch (err: any) {
       setError(err.response?.data?.error?.message || t('errors.revoking'));
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('confirm.delete'))) {
-      return;
-    }
+  const handleDelete = (id: string) => {
+    setDeleteConfirm({ open: true, id });
+  };
 
+  const doDelete = async () => {
+    if (!deleteConfirm.id) return;
     try {
-      await directivesApi.delete(id);
+      await directivesApi.delete(deleteConfirm.id);
       loadDirectives();
     } catch (err: any) {
       setError(err.response?.data?.error?.message || t('errors.deleting'));
@@ -490,6 +495,24 @@ export default function Directives() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={revokeConfirm.open}
+        onOpenChange={(open) => setRevokeConfirm(s => ({ ...s, open }))}
+        title={t('confirm.revoke_title', { defaultValue: 'Revocar directiva' })}
+        description={t('confirm.revoke', { defaultValue: '¿Revocar esta directiva? Esta acción cambiará su estado permanentemente.' })}
+        confirmLabel={t('confirm.revoke_confirm', { defaultValue: 'Revocar' })}
+        variant="destructive"
+        onConfirm={doRevoke}
+      />
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(s => ({ ...s, open }))}
+        title={t('confirm.delete_title', { defaultValue: 'Eliminar directiva' })}
+        description={t('confirm.delete', { defaultValue: '¿Eliminar esta directiva? Esta acción no se puede deshacer.' })}
+        confirmLabel={t('confirm.delete_confirm', { defaultValue: 'Eliminar' })}
+        variant="destructive"
+        onConfirm={doDelete}
+      />
     </section>
   );
 }

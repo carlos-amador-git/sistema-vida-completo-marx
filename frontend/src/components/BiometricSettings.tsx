@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useLocale } from '../hooks/useLocale';
 import { startRegistration } from '@simplewebauthn/browser';
 import { webauthnApi, WebAuthnCredential } from '../services/api';
+import { ConfirmDialog } from './ConfirmDialog';
 
 interface BiometricSettingsProps {
   onError?: (error: string) => void;
@@ -18,6 +19,7 @@ export default function BiometricSettings({ onError, onSuccess }: BiometricSetti
   const [registering, setRegistering] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isSupported, setIsSupported] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
 
   useEffect(() => {
     // Verificar soporte de WebAuthn
@@ -88,14 +90,15 @@ export default function BiometricSettings({ onError, onSuccess }: BiometricSetti
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('biometric.confirmDelete'))) {
-      return;
-    }
+  const handleDelete = (id: string) => {
+    setDeleteConfirm({ open: true, id });
+  };
 
+  const doDelete = async () => {
+    if (!deleteConfirm.id) return;
     try {
-      setDeletingId(id);
-      const response = await webauthnApi.deleteCredential(id);
+      setDeletingId(deleteConfirm.id);
+      const response = await webauthnApi.deleteCredential(deleteConfirm.id);
 
       if (response.success) {
         onSuccess?.(t('biometric.toast.deleted'));
@@ -283,6 +286,15 @@ export default function BiometricSettings({ onError, onSuccess }: BiometricSetti
           </div>
         </div>
       </div>
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(s => ({ ...s, open }))}
+        title={t('biometric.confirmDelete_title', { defaultValue: 'Eliminar credencial biométrica' })}
+        description={t('biometric.confirmDelete', { defaultValue: '¿Eliminar esta credencial? Tendrás que volver a registrar tu huella o Face ID.' })}
+        confirmLabel={t('biometric.delete_confirm', { defaultValue: 'Eliminar' })}
+        variant="destructive"
+        onConfirm={doDelete}
+      />
     </div>
   );
 }

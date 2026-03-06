@@ -89,7 +89,7 @@ export default function BottomNav() {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 pb-safe z-40 md:hidden" aria-label={t('bottomNav.nav_label')}>
+    <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border pb-safe z-40 md:hidden" aria-label={t('bottomNav.nav_label')}>
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;

@@ -2,6 +2,7 @@
 import { Outlet, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Heart, Shield, CheckCircle } from 'lucide-react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import LanguageSwitcher from '../LanguageSwitcher';
 
 export default function AuthLayout() {
@@ -15,12 +16,12 @@ export default function AuthLayout() {
   ];
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-dvh flex">
       {/* Panel izquierdo - Info */}
       <aside className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-vida-600 to-vida-800 p-12 flex-col justify-between" aria-label={t('layout.brand_panel_label')}>
         <div>
           <Link to="/" className="flex items-center gap-3">
-            <Heart className="w-10 h-10 text-white" />
+            <AnimatedIcon icon={Heart} animation="pulse" trigger="mount" size={40} className="w-10 h-10 text-white" />
             <span className="text-2xl font-bold text-white">VIDA</span>
           </Link>
         </div>
@@ -37,7 +38,7 @@ export default function AuthLayout() {
           <div className="space-y-4">
             {features.map((feature, index) => (
               <div key={index} className="flex items-center gap-3 text-white">
-                <CheckCircle className="w-5 h-5 text-vida-200" />
+                <AnimatedIcon icon={CheckCircle} animation="draw" trigger="mount" size={20} className="w-5 h-5 text-vida-200" />
                 <span>{feature}</span>
               </div>
             ))}
@@ -45,20 +46,20 @@ export default function AuthLayout() {
         </div>
 
         <div className="flex items-center gap-2 text-vida-200 text-sm">
-          <Shield className="w-4 h-4" aria-hidden="true" />
+          <AnimatedIcon icon={Shield} animation="draw" trigger="mount" size={16} className="w-4 h-4" aria-hidden="true" />
           <span>{t('layout.legalNotice')}</span>
         </div>
       </aside>
 
       {/* Panel derecho - Formulario */}
-      <main id="main-content" className="flex-1 flex flex-col p-8 bg-gray-50">
+      <main id="main-content" className="flex-1 flex flex-col p-8 bg-background">
         <div className="flex-1 flex items-center justify-center">
           <div className="w-full max-w-md">
             {/* Header: Logo móvil + LanguageSwitcher */}
             <div className="flex items-center justify-between mb-8">
               <div className="lg:hidden">
                 <Link to="/" className="flex items-center gap-2">
-                  <Heart className="w-10 h-10 text-vida-600" aria-hidden="true" />
+                  <AnimatedIcon icon={Heart} animation="pulse" trigger="mount" size={40} className="w-10 h-10 text-vida-600" aria-hidden="true" />
                   <span className="text-2xl font-bold text-vida-800">VIDA</span>
                 </Link>
               </div>

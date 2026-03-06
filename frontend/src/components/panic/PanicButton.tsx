@@ -1,10 +1,15 @@
 // src/components/panic/PanicButton.tsx
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Heart } from 'lucide-react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 interface PanicButtonProps {
   onPanicActivated?: (result: any) => void;
   onError?: (error: string) => void;
+  /** tapMode: single tap triggers confirmation dialog instead of hold-to-activate.
+   * Useful for users with tremor or motor impairments. */
+  tapMode?: boolean;
 }
 
 // Haptic feedback helper
@@ -14,7 +19,7 @@ const vibrate = (pattern: number | number[]) => {
   }
 };
 
-export default function PanicButton({ onPanicActivated, onError }: PanicButtonProps) {
+export default function PanicButton({ onPanicActivated, onError, tapMode = false }: PanicButtonProps) {
   const { t } = useTranslation('emergency');
 
   const [isConfirming, setIsConfirming] = useState(false);
@@ -274,8 +279,8 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
       )}
 
       <div className={`fixed z-50 transition-all duration-300 ${isExpanded
-          ? 'bottom-24 right-4 left-4'
-          : 'bottom-24 md:bottom-8 right-4 md:right-6'
+        ? 'bottom-24 right-4 left-4'
+        : 'bottom-24 md:bottom-8 right-4 md:right-6'
         }`}>
 
         {/* Expanded mode - Large button for emergencies */}
@@ -311,7 +316,6 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
 
               {/* Button */}
               <button
-                role="button"
                 aria-label={t('panic.button.sos_aria_label')}
                 aria-pressed={isHolding}
                 aria-describedby="panic-hold-instruction"
@@ -328,9 +332,13 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
                 style={{ touchAction: 'none' }}
               >
                 <div className="text-center text-white">
-                  <svg className="w-12 h-12 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                  </svg>
+                  <AnimatedIcon
+                    icon={Heart}
+                    animation="pulse"
+                    trigger="mount"
+                    size={48} // 12 * 4 (Tailwind w-12/h-12 is 48px)
+                    className="mx-auto mb-1"
+                  />
                   <span className="text-lg font-bold" aria-hidden="true">SOS</span>
                 </div>
               </button>
@@ -379,7 +387,6 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
 
             {/* Button */}
             <button
-              role="button"
               aria-label={t('panic.button.sos_compact_aria_label')}
               aria-pressed={isHolding}
               onTouchStart={startHold}
@@ -390,15 +397,23 @@ export default function PanicButton({ onPanicActivated, onError }: PanicButtonPr
               onMouseLeave={endHold}
               onKeyDown={handleKeyDown}
               onKeyUp={handleKeyUp}
-              onClick={() => !isHolding && setIsExpanded(true)}
+              onClick={() => {
+                if (tapMode) { setIsConfirming(true); }
+                else if (!isHolding) { setIsExpanded(true); }
+              }}
               className={`absolute inset-2 bg-red-600 rounded-full flex items-center justify-center shadow-xl transition-all touch-manipulation ${isHolding ? 'scale-95 bg-red-700' : 'active:scale-95 hover:shadow-2xl'
                 }`}
               style={{ touchAction: 'none', minWidth: '64px', minHeight: '64px' }}
             >
               <div className="text-center text-white">
-                <svg className="w-7 h-7 md:w-8 md:h-8 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
+                <AnimatedIcon
+                  icon={Heart}
+                  animation="pulse"
+                  trigger="mount"
+                  // Tailwind w-8 h-8 is 32px
+                  size={32}
+                  className="mx-auto"
+                />
                 <span className="text-[10px] md:text-xs font-bold" aria-hidden="true">SOS</span>
               </div>
             </button>

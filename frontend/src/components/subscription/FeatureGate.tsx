@@ -51,10 +51,10 @@ export function FeatureGate({
   }
 
   return (
-    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6 text-center">
-      <div className="inline-flex items-center justify-center w-12 h-12 bg-purple-100 rounded-full mb-4">
+    <div className="bg-gradient-to-r from-vida-50 to-vida-100 dark:from-vida-950 dark:to-vida-900 border border-vida-200 dark:border-vida-800 rounded-lg p-6 text-center">
+      <div className="inline-flex items-center justify-center w-12 h-12 bg-vida-100 dark:bg-vida-800 rounded-full mb-4">
         <svg
-          className="w-6 h-6 text-purple-600"
+          className="w-6 h-6 text-vida-600 dark:text-vida-300"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -67,15 +67,15 @@ export function FeatureGate({
           />
         </svg>
       </div>
-      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+      <h3 className="text-lg font-semibold text-foreground mb-2">
         {t(featureKeys[feature])}
       </h3>
-      <p className="text-gray-600 mb-4">
+      <p className="text-muted-foreground mb-4">
         {t('gate.premium_only')}
       </p>
       <Link
         to="/subscription/plans"
-        className="inline-flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+        className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-vida-700 transition-colors"
       >
         <svg
           className="w-5 h-5 mr-2"
@@ -198,7 +198,7 @@ interface PremiumBadgeProps {
 export function PremiumBadge({ className = '' }: PremiumBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-purple-600 to-indigo-600 text-white ${className}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-vida-600 to-vida-800 text-white ${className}`}
     >
       <svg
         className="w-3 h-3 mr-1"
@@ -259,7 +259,7 @@ export function LimitIndicator({
       {remaining <= 0 && showUpgradeLink && (
         <Link
           to="/subscription/plans"
-          className="text-xs text-purple-600 hover:text-purple-800 underline"
+          className="text-xs text-vida-600 hover:text-vida-800 dark:text-vida-400 dark:hover:text-vida-300 underline"
         >
           {t('gate.increase_limit')}
         </Link>

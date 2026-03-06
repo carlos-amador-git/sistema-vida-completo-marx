@@ -463,7 +463,7 @@ export default function EmergencyView() {
 
           {/* Condiciones */}
           <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="bg-purple-500 text-white px-4 py-3">
+            <div className="bg-vida-600 text-white px-4 py-3">
               <h3 className="font-bold flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -475,8 +475,8 @@ export default function EmergencyView() {
               {emergencyData.medicalInfo.conditions.length > 0 ? (
                 <ul className="space-y-2">
                   {emergencyData.medicalInfo.conditions.map((condition, i) => (
-                    <li key={i} className="flex items-center gap-2 text-purple-700">
-                      <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+                    <li key={i} className="flex items-center gap-2 text-vida-700">
+                      <span className="w-2 h-2 bg-vida-500 rounded-full"></span>
                       {condition}
                     </li>
                   ))}
@@ -666,13 +666,13 @@ export default function EmergencyView() {
               {emergencyData.documents.map((doc) => {
                 const categoryColors: Record<string, string> = {
                   EMERGENCY_PROFILE: 'bg-blue-100 text-blue-700',
-                  LAB_RESULTS: 'bg-purple-100 text-purple-700',
+                  LAB_RESULTS: 'bg-vida-100 text-vida-700',
                   IMAGING: 'bg-cyan-100 text-cyan-700',
                   PRESCRIPTIONS: 'bg-green-100 text-green-700',
                   DISCHARGE_SUMMARY: 'bg-orange-100 text-orange-700',
                   SURGICAL_REPORT: 'bg-red-100 text-red-700',
                   VACCINATION: 'bg-yellow-100 text-yellow-700',
-                  INSURANCE: 'bg-indigo-100 text-indigo-700',
+                  INSURANCE: 'bg-vida-100 text-vida-700',
                   IDENTIFICATION: 'bg-gray-100 text-gray-700',
                   OTHER: 'bg-gray-100 text-gray-700',
                 };
@@ -737,7 +737,7 @@ export default function EmergencyView() {
 
         {/* Contactos de emergencia */}
         <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="bg-indigo-600 text-white px-6 py-4">
+          <div className="bg-vida-700 text-white px-6 py-4">
             <h2 className="text-xl font-bold flex items-center gap-2">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -750,7 +750,7 @@ export default function EmergencyView() {
               emergencyData.representatives.map((rep, index) => (
                 <div key={index} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold">
+                    <div className="w-10 h-10 bg-vida-100 rounded-full flex items-center justify-center text-vida-600 font-bold">
                       {index + 1}
                     </div>
                     <div>

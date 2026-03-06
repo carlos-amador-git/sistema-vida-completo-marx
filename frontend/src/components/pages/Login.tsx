@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Fingerprint, Sparkles, User, Shield } from 'lucide-react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { useAuth } from '../../context/AuthContext';
 import { webauthnApi } from '../../services/api';
@@ -204,12 +205,12 @@ export default function Login() {
       {/* Sección de Demo - Acceso Rápido (solo visible si __DEMO_ENABLED__) */}
       {__DEMO_ENABLED__ && DEMO_USERS && (
         <>
-          <div className="mb-8 p-4 bg-gradient-to-r from-violet-50 to-purple-50 rounded-xl border border-violet-200">
+          <div className="mb-8 p-4 bg-vida-50 rounded-xl border border-vida-200">
             <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="w-5 h-5 text-violet-600" aria-hidden="true" />
-              <span className="font-semibold text-violet-800">{t('login.demo')}</span>
+              <AnimatedIcon icon={Sparkles} animation="draw" trigger="mount" size={20} className="w-5 h-5 text-vida-600" aria-hidden="true" />
+              <span className="font-semibold text-vida-800">{t('login.demo')}</span>
             </div>
-            <p className="text-sm text-violet-600 mb-4">
+            <p className="text-sm text-vida-600 mb-4">
               {t('login.demoDescription')}
             </p>
             <div className="space-y-2">
@@ -230,12 +231,12 @@ export default function Login() {
                 </button>
               ))}
             </div>
-            <div className="mt-3 pt-3 border-t border-violet-200">
+            <div className="mt-3 pt-3 border-t border-vida-200">
               <Link
                 to="/admin/login"
-                className="flex items-center justify-center gap-2 text-sm text-violet-700 hover:text-violet-900 font-medium"
+                className="flex items-center justify-center gap-2 text-sm text-vida-700 hover:text-vida-900 font-medium"
               >
-                <Shield className="w-4 h-4" aria-hidden="true" />
+                <AnimatedIcon icon={Shield} animation="draw" trigger="mount" size={16} className="w-4 h-4" aria-hidden="true" />
                 {t('login.adminAccess')}
               </Link>
             </div>
@@ -295,7 +296,7 @@ export default function Login() {
                 </>
               ) : (
                 <>
-                  <Fingerprint className="w-6 h-6" aria-hidden="true" />
+                  <AnimatedIcon icon={Fingerprint} animation="pulse" trigger="hover" size={24} className="w-6 h-6" aria-hidden="true" />
                   <span className="font-medium">{t('login.biometric')}</span>
                 </>
               )}
