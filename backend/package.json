@@ -13,6 +13,8 @@
     "db:seed": "ts-node prisma/seed.ts",
     "db:seed-admin": "ts-node prisma/seed-admin.ts",
     "db:seed-rbac": "ts-node src/common/seeds/rbac.seed.ts",
+    "db:seed-plans": "ts-node prisma/seed-plans.ts",
+    "db:seed-hospitals": "ts-node prisma/seed-hospitals.ts",
     "db:studio": "prisma studio",
     "test": "jest",
     "test:watch": "jest --watch",
