@@ -27,6 +27,7 @@ import LanguageSwitcher from '../LanguageSwitcher';
 import { ThemeToggle } from '../ui/theme-toggle';
 import { useTranslation } from 'react-i18next';
 import { AnimatedIcon } from '../ui/AnimatedIcon';
+import { useWebSocket } from '../../hooks/useWebSocket';
 
 interface PanicAlertResult {
   alertId: string;
