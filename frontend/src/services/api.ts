@@ -1,11 +1,11 @@
 // src/services/api.ts
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
-import type { 
-  ApiResponse, 
-  User, 
-  AuthTokens, 
-  PatientProfile, 
-  AdvanceDirective, 
+import type {
+  ApiResponse,
+  User,
+  AuthTokens,
+  PatientProfile,
+  AdvanceDirective,
   Representative,
   EmergencyData,
   EmergencyAccess,
@@ -45,8 +45,10 @@ api.interceptors.response.use(
 
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh falló, redirigir a login
-        window.location.href = '/login';
+        // Refresh falló, redirigir a login si no estamos ya ahí
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          window.location.href = '/login';
+        }
       }
     }
 
@@ -68,32 +70,32 @@ export const authApi = {
     const response = await api.post('/auth/register', data);
     return response.data;
   },
-  
+
   async login(data: LoginForm): Promise<ApiResponse<{ user: User; tokens: AuthTokens }>> {
     const response = await api.post('/auth/login', data);
     return response.data;
   },
-  
+
   async logout(): Promise<void> {
     // Refresh token is sent via httpOnly cookie automatically
     await api.post('/auth/logout', {});
   },
-  
+
   async getMe(): Promise<ApiResponse<{ user: User }>> {
     const response = await api.get('/auth/me');
     return response.data;
   },
-  
+
   async verifyEmail(token: string): Promise<ApiResponse<void>> {
     const response = await api.post('/auth/verify-email', { token });
     return response.data;
   },
-  
+
   async forgotPassword(email: string): Promise<ApiResponse<void>> {
     const response = await api.post('/auth/forgot-password', { email });
     return response.data;
   },
-  
+
   async resetPassword(token: string, password: string): Promise<ApiResponse<void>> {
     const response = await api.post('/auth/reset-password', { token, password });
     return response.data;
@@ -133,22 +135,22 @@ export const profileApi = {
     const response = await api.get('/profile');
     return response.data;
   },
-  
+
   async updateProfile(data: ProfileForm): Promise<ApiResponse<{ profile: PatientProfile }>> {
     const response = await api.put('/profile', data);
     return response.data;
   },
-  
+
   async updatePhoto(photoUrl: string): Promise<ApiResponse<{ profile: PatientProfile }>> {
     const response = await api.post('/profile/photo', { photoUrl });
     return response.data;
   },
-  
+
   async getQR(): Promise<ApiResponse<{ qrToken: string; qrDataUrl: string; generatedAt: string }>> {
     const response = await api.get('/profile/qr');
     return response.data;
   },
-  
+
   async regenerateQR(): Promise<ApiResponse<{ qrToken: string; qrDataUrl: string }>> {
     const response = await api.post('/profile/qr/regenerate');
     return response.data;
@@ -171,47 +173,47 @@ export const directivesApi = {
     const response = await api.get('/directives');
     return response.data;
   },
-  
+
   async getActive(): Promise<ApiResponse<{ hasActiveDirective: boolean; directive: AdvanceDirective | null }>> {
     const response = await api.get('/directives/active');
     return response.data;
   },
-  
+
   async get(id: string): Promise<ApiResponse<{ directive: AdvanceDirective }>> {
     const response = await api.get(`/directives/${id}`);
     return response.data;
   },
-  
+
   async createDraft(data: DirectiveDraft): Promise<ApiResponse<{ directive: AdvanceDirective }>> {
     const response = await api.post('/directives/draft', data);
     return response.data;
   },
-  
+
   async uploadDocument(documentUrl: string, originalFileName: string, originState?: string): Promise<ApiResponse<{ directive: AdvanceDirective }>> {
     const response = await api.post('/directives/upload', { documentUrl, originalFileName, originState });
     return response.data;
   },
-  
+
   async update(id: string, data: DirectiveDraft): Promise<ApiResponse<{ directive: AdvanceDirective }>> {
     const response = await api.put(`/directives/${id}`, data);
     return response.data;
   },
-  
+
   async validate(id: string, method: 'EMAIL' | 'SMS'): Promise<ApiResponse<{ directive: AdvanceDirective }>> {
     const response = await api.post(`/directives/${id}/validate`, { method });
     return response.data;
   },
-  
+
   async requestSeal(id: string): Promise<ApiResponse<{ directive: AdvanceDirective }>> {
     const response = await api.post(`/directives/${id}/seal`);
     return response.data;
   },
-  
+
   async revoke(id: string): Promise<ApiResponse<{ directive: AdvanceDirective }>> {
     const response = await api.post(`/directives/${id}/revoke`);
     return response.data;
   },
-  
+
   async delete(id: string): Promise<ApiResponse<void>> {
     const response = await api.delete(`/directives/${id}`);
     return response.data;
@@ -224,32 +226,32 @@ export const representativesApi = {
     const response = await api.get('/representatives');
     return response.data;
   },
-  
+
   async get(id: string): Promise<ApiResponse<{ representative: Representative }>> {
     const response = await api.get(`/representatives/${id}`);
     return response.data;
   },
-  
+
   async create(data: CreateRepresentativeInput): Promise<ApiResponse<{ representative: Representative }>> {
     const response = await api.post('/representatives', data);
     return response.data;
   },
-  
+
   async update(id: string, data: Partial<CreateRepresentativeInput>): Promise<ApiResponse<{ representative: Representative }>> {
     const response = await api.put(`/representatives/${id}`, data);
     return response.data;
   },
-  
+
   async delete(id: string): Promise<ApiResponse<void>> {
     const response = await api.delete(`/representatives/${id}`);
     return response.data;
   },
-  
+
   async reorder(orderedIds: string[]): Promise<ApiResponse<{ representatives: Representative[] }>> {
     const response = await api.post('/representatives/reorder', { orderedIds });
     return response.data;
   },
-  
+
   async setDonorSpokesperson(id: string): Promise<ApiResponse<{ representative: Representative }>> {
     const response = await api.post(`/representatives/${id}/donor-spokesperson`);
     return response.data;
