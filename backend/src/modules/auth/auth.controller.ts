@@ -273,14 +273,21 @@ router.post('/login', loginLimiter, loginValidation, handleValidation, async (re
  */
 router.post('/refresh', async (req: Request, res: Response) => {
   try {
+    // Debug: log cookies received
+    console.log('[REFRESH_DEBUG] Cookies received:', req.cookies);
+    console.log('[REFRESH_DEBUG] Headers:', req.headers.cookie);
+    
     const refreshToken = getRefreshToken(req);
 
     if (!refreshToken) {
+      console.log('[REFRESH_DEBUG] No refresh token found in cookies or body');
       return res.status(400).json({
         success: false,
         error: { code: 'MISSING_TOKEN', message: req.t!('api:auth.refreshTokenRequired') },
       });
     }
+
+    console.log('[REFRESH_DEBUG] Refresh token found, proceeding...');
 
     const tokens = await authService.refreshTokens(refreshToken);
 
