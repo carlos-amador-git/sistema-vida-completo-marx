@@ -1,4 +1,5 @@
 {
+  "sectionLabel": "Control panel",
   "welcome": "Hello, {{name}}!",
   "subtitle": "Welcome to your VIDA control panel",
   "alerts": {

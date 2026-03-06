@@ -1,4 +1,5 @@
 {
+  "sectionLabel": "Panel de control",
   "welcome": "¡Hola, {{name}}!",
   "subtitle": "Bienvenido a tu panel de control VIDA",
   "alerts": {
