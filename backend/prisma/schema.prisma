@@ -840,8 +840,8 @@ model PanicAlert {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Ubicacion
-  latitude     Float
-  longitude    Float
+  latitude     Float?
+  longitude    Float?
   accuracy     Float?
   locationName String?
 

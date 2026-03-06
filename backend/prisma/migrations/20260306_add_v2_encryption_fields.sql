@@ -1,8 +1,8 @@
--- Migración: Agregar campos de cifrado V2 y Blind Indexes
+-- Migración: Agregar campos de cifrado V2, MFA y otros faltantes
 -- Fecha: 2026-03-06
--- Razón: Sincronizar esquema de base de datos con prisma.schema para evitar errores 500 en login y otros módulos.
+-- Razón: Sincronización completa del esquema para corregir errores 500.
 
--- Tabla: User
+-- Tabla: User (Asegurando todos los campos del modelo Prisma)
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "nameEnc" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "phoneEnc" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "curpEnc" TEXT;
@@ -12,6 +12,12 @@ ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "emailBlindIndex" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "curpBlindIndex" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "encryptedDEK" TEXT;
 ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "dekKeyId" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "webauthnChallenge" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "webauthnChallengeExpires" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "totpSecret" TEXT;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mfaEnabled" BOOLEAN DEFAULT FALSE;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "mfaVerifiedAt" TIMESTAMP(3);
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "preferredLanguage" VARCHAR(5) DEFAULT 'es';
 
 -- Indices para Blind Indexes en User
 CREATE INDEX IF NOT EXISTS "User_emailBlindIndex_idx" ON "User"("emailBlindIndex");

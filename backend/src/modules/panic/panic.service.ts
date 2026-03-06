@@ -75,8 +75,9 @@ class PanicService {
     }
 
     // 3. Search hospitals — single call with 50km radius (avoids sequential 20km + 100km fallback)
-    const hospitalSearchPromise = patientConditions.length > 0
-      ? hospitalService.findNearbyHospitalsForConditions({
+    const hospitalSearchPromise = (latitude != null && longitude != null)
+      ? (patientConditions.length > 0
+        ? hospitalService.findNearbyHospitalsForConditions({
           latitude,
           longitude,
           patientConditions,
@@ -84,12 +85,13 @@ class PanicService {
           limit: 5,
           prioritizeByCondition: true,
         })
-      : hospitalService.findNearbyHospitals({
+        : hospitalService.findNearbyHospitals({
           latitude,
           longitude,
           radiusKm: 50,
           limit: 5,
-        });
+        }))
+      : Promise.resolve([] as HospitalWithDistance[]);
 
     // 4. Run hospital search + DB create in parallel (both are independent)
     const [nearbyHospitals, panicAlert] = await Promise.all([
@@ -97,13 +99,15 @@ class PanicService {
       prisma.panicAlert.create({
         data: {
           userId,
-          latitude,
-          longitude,
-          accuracy,
+          latitude: latitude ?? null,
+          longitude: longitude ?? null,
+          accuracy: accuracy ?? null,
           message,
           status: PanicStatus.ACTIVE,
           nearbyHospitals: [] as any, // Updated async below
-          locationEnc: encryptionV2.encryptJSON({ lat: latitude, lon: longitude, accuracy }),
+          locationEnc: (latitude != null && longitude != null)
+            ? encryptionV2.encryptJSON({ lat: latitude, lon: longitude, accuracy })
+            : null,
         },
       }),
     ]);
