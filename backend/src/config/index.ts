@@ -132,6 +132,9 @@ export const config = {
   // Frontend URL (para CORS y emails)
   frontendUrl: process.env.FRONTEND_URL || 'https://vida.mdconsultoria-ti.org',
 
+  // Cookie domain for production (useful for cross-subdomain auth)
+  cookieDomain: process.env.COOKIE_DOMAIN || '',
+
   // URLs permitidas para CORS (desarrollo)
   corsOrigins: [
     ...(process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : []),
