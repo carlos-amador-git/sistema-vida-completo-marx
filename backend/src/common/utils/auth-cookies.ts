@@ -18,9 +18,10 @@ const isProduction = config.env === 'production';
 const cookieDomainFromConfig = config.cookieDomain || '';
 const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'lax' : 'lax';
 
-// Only use cookie domain if it's explicitly set AND different from the frontend domain
-// If frontend and backend are on same domain, don't set domain (browser will use current domain)
-const cookieDomain = cookieDomainFromConfig && cookieDomainFromConfig !== config.frontendUrl.replace(/^https?:\/\//, '') 
+// In production, only use cookie domain if explicitly set AND it's different from the frontend domain
+// For same-domain setups (like vida.mdconsultoria-ti.org), don't set domain so browser uses current domain
+const frontendDomain = config.frontendUrl.replace(/^https?:\/\//, '');
+const cookieDomain = cookieDomainFromConfig && cookieDomainFromConfig !== frontendDomain
   ? cookieDomainFromConfig 
   : undefined;
 
@@ -29,7 +30,7 @@ if (isProduction) {
   console.log('[COOKIE_DEBUG] Production cookie config:', { 
     cookieDomain: cookieDomain || '(none - same domain)',
     cookieDomainFromConfig,
-    frontendUrl: config.frontendUrl,
+    frontendDomain,
     isProduction, 
     sameSite: sameSiteValue 
   });
