@@ -146,11 +146,7 @@ class PanicService {
           where: { id: alertId },
           data: { notificationsSent: notificationResults as any },
         });
-      } catch (err) {
-        logger.error(`Error enviando notificaciones para alerta ${alertId}:`, err);
-      }
 
-      try {
         // Emitir evento WebSocket a representantes
         const alertData = {
           type: 'PANIC_ALERT',
@@ -165,9 +161,12 @@ class PanicService {
         };
 
         getSocketServer().to(`representative-${userId}`).emit('panic-alert', alertData);
-        getSocketServer().to(`user-${userId}`).emit('panic-alert-sent', alertData);
-      } catch (err) {
-        logger.error(`Error emitiendo WebSocket para alerta ${alertId}:`, err);
+        getSocketServer().to(`user-${userId}`).emit('panic-alert-sent', {
+          ...alertData,
+          representativesNotified: notificationResults,
+        });
+      } catch (err: any) {
+        logger.error(`Error procesando notificaciones para alerta ${alertId}:`, err);
       }
     });
 
@@ -179,7 +178,13 @@ class PanicService {
       alertId,
       status: panicAlert.status,
       nearbyHospitals,
-      representativesNotified: [], // Notificaciones en progreso (fire-and-forget)
+      representativesNotified: user.representatives.map(rep => ({
+        name: rep.name,
+        phone: rep.phone,
+        smsStatus: 'pending' as any,
+        whatsappStatus: 'pending' as any,
+        emailStatus: 'pending' as any,
+      })),
       createdAt,
     };
   }

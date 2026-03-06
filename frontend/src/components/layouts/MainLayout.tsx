@@ -54,6 +54,23 @@ export default function MainLayout() {
   const { unreadCount } = useNotifications();
   const closeSidebarBtnRef = useRef<HTMLButtonElement>(null);
 
+  // Hook de WebSocket para actualizaciones en tiempo real
+  useWebSocket({
+    userId: user?.id,
+    onPanicAlertSent: (data) => {
+      console.log('Recibida actualizacion de alerta enviada:', data);
+      setPanicResult(prev => {
+        if (prev && prev.alertId === data.alertId) {
+          return {
+            ...prev,
+            representativesNotified: data.representativesNotified || prev.representativesNotified
+          };
+        }
+        return prev;
+      });
+    }
+  });
+
   // Focus close button when sidebar opens; restore focus to menu button on close
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -138,8 +155,8 @@ export default function MainLayout() {
                   onClick={() => setSidebarOpen(false)}
                   aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group ${isActive
-                      ? 'bg-vida-50 text-vida-700 font-medium dark:bg-vida-950 dark:text-vida-300'
-                      : 'text-muted-foreground hover:bg-muted'
+                    ? 'bg-vida-50 text-vida-700 font-medium dark:bg-vida-950 dark:text-vida-300'
+                    : 'text-muted-foreground hover:bg-muted'
                     }`}
                 >
                   <div className="relative" aria-hidden="true">
@@ -210,8 +227,8 @@ export default function MainLayout() {
                   to={item.href}
                   aria-current={isActive ? 'page' : undefined}
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group ${isActive
-                      ? 'bg-vida-50 text-vida-700 font-medium dark:bg-vida-950 dark:text-vida-300'
-                      : 'text-muted-foreground hover:bg-muted'
+                    ? 'bg-vida-50 text-vida-700 font-medium dark:bg-vida-950 dark:text-vida-300'
+                    : 'text-muted-foreground hover:bg-muted'
                     }`}
                 >
                   <div className="relative" aria-hidden="true">

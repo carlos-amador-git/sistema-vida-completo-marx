@@ -23,9 +23,9 @@ interface PanicAlertResult {
   representativesNotified: Array<{
     name: string;
     phone: string;
-    smsStatus: 'sent' | 'failed' | 'skipped';
-    whatsappStatus: 'sent' | 'failed' | 'skipped';
-    emailStatus: 'sent' | 'failed' | 'skipped';
+    smsStatus: 'sent' | 'failed' | 'skipped' | 'pending';
+    whatsappStatus: 'sent' | 'failed' | 'skipped' | 'pending';
+    emailStatus: 'sent' | 'failed' | 'skipped' | 'pending';
   }>;
   createdAt: string;
 }
@@ -180,7 +180,8 @@ export default function PanicAlertModal({
                 {result.representativesNotified.map((rep, i) => (
                   <div
                     key={i}
-                    className={`flex items-center justify-between p-3 rounded-lg ${rep.smsStatus === 'sent' ? 'bg-green-50' : 'bg-red-50'
+                    className={`flex items-center justify-between p-3 rounded-lg ${rep.smsStatus === 'sent' ? 'bg-green-50' :
+                      rep.smsStatus === 'pending' ? 'bg-blue-50 animate-pulse' : 'bg-red-50'
                       }`}
                   >
                     <div>
@@ -188,7 +189,12 @@ export default function PanicAlertModal({
                       <p className="text-sm text-gray-500">{rep.phone}</p>
                     </div>
                     <div className="flex flex-col items-end gap-0.5">
-                      {rep.smsStatus === 'sent' ? (
+                      {rep.smsStatus === 'pending' ? (
+                        <span className="text-blue-600 flex items-center gap-1 text-xs">
+                          <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce" />
+                          SMS
+                        </span>
+                      ) : rep.smsStatus === 'sent' ? (
                         <span className="text-green-600 flex items-center gap-1 text-xs">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -203,7 +209,13 @@ export default function PanicAlertModal({
                           SMS
                         </span>
                       )}
-                      {rep.whatsappStatus === 'sent' ? (
+
+                      {rep.whatsappStatus === 'pending' ? (
+                        <span className="text-blue-600 flex items-center gap-1 text-xs">
+                          <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce [animation-delay:0.2s]" />
+                          WhatsApp
+                        </span>
+                      ) : rep.whatsappStatus === 'sent' ? (
                         <span className="text-green-600 flex items-center gap-1 text-xs">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -218,10 +230,23 @@ export default function PanicAlertModal({
                           WhatsApp
                         </span>
                       )}
-                      {rep.emailStatus === 'sent' && (
+
+                      {rep.emailStatus === 'pending' ? (
+                        <span className="text-blue-600 flex items-center gap-1 text-xs">
+                          <div className="w-1.5 h-1.5 bg-blue-600 rounded-full animate-bounce [animation-delay:0.4s]" />
+                          Email
+                        </span>
+                      ) : rep.emailStatus === 'sent' ? (
                         <span className="text-green-600 flex items-center gap-1 text-xs">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Email
+                        </span>
+                      ) : rep.emailStatus === 'failed' && (
+                        <span className="text-red-600 flex items-center gap-1 text-xs">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                           Email
                         </span>
@@ -255,11 +280,10 @@ export default function PanicAlertModal({
                 {result.nearbyHospitals.slice(0, 3).map((hospital) => (
                   <div
                     key={hospital.id}
-                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedHospitalId === hospital.id
+                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${selectedHospitalId === hospital.id
                         ? 'bg-sky-100 border-2 border-sky-500'
                         : 'bg-sky-50 hover:bg-sky-100'
-                    }`}
+                      }`}
                     onClick={() => handleHospitalClick(hospital)}
                   >
                     <div>

@@ -34,6 +34,7 @@ interface UseWebSocketOptions {
   autoConnect?: boolean;
   onPanicAlert?: (alert: PanicAlert) => void;
   onQRAccessAlert?: (alert: QRAccessAlert) => void;
+  onPanicAlertSent?: (data: any) => void;
   onPanicCancelled?: (data: { alertId: string }) => void;
 }
 
@@ -42,7 +43,7 @@ let globalSocket: Socket | null = null;
 let connectionCount = 0;
 
 export function useWebSocket(options: UseWebSocketOptions = {}) {
-  const { userId, autoConnect = true, onPanicAlert, onQRAccessAlert, onPanicCancelled } = options;
+  const { userId, autoConnect = true, onPanicAlert, onQRAccessAlert, onPanicAlertSent, onPanicCancelled } = options;
 
   const [isConnected, setIsConnected] = useState(false);
   const [lastAlert, setLastAlert] = useState<AlertEvent | null>(null);
@@ -52,11 +53,13 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   // Use refs for callbacks to avoid stale closures on reconnect
   const onPanicAlertRef = useRef(onPanicAlert);
   const onQRAccessAlertRef = useRef(onQRAccessAlert);
+  const onPanicAlertSentRef = useRef(onPanicAlertSent);
   const onPanicCancelledRef = useRef(onPanicCancelled);
   const userIdRef = useRef(userId);
 
   onPanicAlertRef.current = onPanicAlert;
   onQRAccessAlertRef.current = onQRAccessAlert;
+  onPanicAlertSentRef.current = onPanicAlertSent;
   onPanicCancelledRef.current = onPanicCancelled;
   userIdRef.current = userId;
 
@@ -117,10 +120,11 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
       }
     });
 
-    socket.on('panic-alert-sent', (data: PanicAlert) => {
+    socket.on('panic-alert-sent', (data: any) => {
       console.log('Alerta de panico enviada:', data);
       if (mountedRef.current) {
         setLastAlert(data);
+        onPanicAlertSentRef.current?.(data);
       }
     });
 
