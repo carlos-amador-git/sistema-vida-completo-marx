@@ -248,13 +248,12 @@ export default function EmergencyView() {
                 value={accessorForm.accessorLicense}
                 onChange={(e) => setAccessorForm({ ...accessorForm, accessorLicense: e.target.value })}
                 placeholder={t('view.form.placeholders.license')}
-                className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent ${
-                  licenseError && accessorForm.accessorLicense
+                className={`w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-red-500 focus:border-transparent ${licenseError && accessorForm.accessorLicense
                     ? 'border-red-500 bg-red-50'
                     : accessorForm.accessorLicense && !licenseError
-                    ? 'border-green-500 bg-green-50'
-                    : 'border-gray-300'
-                }`}
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-300'
+                  }`}
               />
               {licenseError && (
                 <p id="license-error" className="text-red-500 text-xs mt-1" role="alert" aria-live="polite">{licenseError}</p>
@@ -292,11 +291,10 @@ export default function EmergencyView() {
             <button
               type="submit"
               disabled={licenseRequired && (!accessorForm.accessorLicense || !!licenseError)}
-              className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-                licenseRequired && (!accessorForm.accessorLicense || licenseError)
+              className={`w-full py-3 rounded-lg font-semibold transition-colors ${licenseRequired && (!accessorForm.accessorLicense || licenseError)
                   ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                   : 'bg-red-600 text-white hover:bg-red-700'
-              }`}
+                }`}
             >
               {licenseRequired && !accessorForm.accessorLicense
                 ? t('view.form.submit.enter_license')
@@ -419,7 +417,7 @@ export default function EmergencyView() {
                   <p className="text-sm text-gray-500">{t('view.patient.sex')}</p>
                   <p className="text-lg font-semibold">
                     {emergencyData.patient.sex === 'M' ? t('view.patient.sex_values.M') :
-                     emergencyData.patient.sex === 'F' ? t('view.patient.sex_values.F') : t('view.patient.sex_values.other')}
+                      emergencyData.patient.sex === 'F' ? t('view.patient.sex_values.F') : t('view.patient.sex_values.other')}
                   </p>
                 </div>
                 <div>
@@ -446,7 +444,7 @@ export default function EmergencyView() {
               </h3>
             </div>
             <div className="p-4">
-              {emergencyData.medicalInfo.allergies.length > 0 ? (
+              {emergencyData.medicalInfo.allergies?.length > 0 ? (
                 <ul className="space-y-2">
                   {emergencyData.medicalInfo.allergies.map((allergy, i) => (
                     <li key={i} className="flex items-center gap-2 text-orange-700 font-medium">
@@ -472,7 +470,7 @@ export default function EmergencyView() {
               </h3>
             </div>
             <div className="p-4">
-              {emergencyData.medicalInfo.conditions.length > 0 ? (
+              {emergencyData.medicalInfo.conditions?.length > 0 ? (
                 <ul className="space-y-2">
                   {emergencyData.medicalInfo.conditions.map((condition, i) => (
                     <li key={i} className="flex items-center gap-2 text-vida-700">
@@ -498,7 +496,7 @@ export default function EmergencyView() {
               </h3>
             </div>
             <div className="p-4">
-              {emergencyData.medicalInfo.medications.length > 0 ? (
+              {emergencyData.medicalInfo.medications?.length > 0 ? (
                 <ul className="space-y-2">
                   {emergencyData.medicalInfo.medications.map((med, i) => (
                     <li key={i} className="flex items-center gap-2 text-green-700">
@@ -555,37 +553,33 @@ export default function EmergencyView() {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className={`p-4 rounded-lg text-center ${
-                    emergencyData.directive.acceptsCPR
+                  <div className={`p-4 rounded-lg text-center ${emergencyData.directive.acceptsCPR
                       ? 'bg-green-100 border-2 border-green-500'
                       : emergencyData.directive.acceptsCPR === false
                         ? 'bg-red-100 border-2 border-red-500'
                         : 'bg-gray-100'
-                  }`}>
-                    <p className="text-sm font-medium mb-1">{t('view.directive.cpr')}</p>
-                    <p className={`text-2xl font-bold ${
-                      emergencyData.directive.acceptsCPR ? 'text-green-600' :
-                      emergencyData.directive.acceptsCPR === false ? 'text-red-600' : 'text-gray-400'
                     }`}>
+                    <p className="text-sm font-medium mb-1">{t('view.directive.cpr')}</p>
+                    <p className={`text-2xl font-bold ${emergencyData.directive.acceptsCPR ? 'text-green-600' :
+                        emergencyData.directive.acceptsCPR === false ? 'text-red-600' : 'text-gray-400'
+                      }`}>
                       {emergencyData.directive.acceptsCPR ? t('view.directive.yes') :
-                       emergencyData.directive.acceptsCPR === false ? t('view.directive.no') : '—'}
+                        emergencyData.directive.acceptsCPR === false ? t('view.directive.no') : '—'}
                     </p>
                   </div>
 
-                  <div className={`p-4 rounded-lg text-center ${
-                    emergencyData.directive.acceptsIntubation
+                  <div className={`p-4 rounded-lg text-center ${emergencyData.directive.acceptsIntubation
                       ? 'bg-green-100 border-2 border-green-500'
                       : emergencyData.directive.acceptsIntubation === false
                         ? 'bg-red-100 border-2 border-red-500'
                         : 'bg-gray-100'
-                  }`}>
-                    <p className="text-sm font-medium mb-1">{t('view.directive.intubation')}</p>
-                    <p className={`text-2xl font-bold ${
-                      emergencyData.directive.acceptsIntubation ? 'text-green-600' :
-                      emergencyData.directive.acceptsIntubation === false ? 'text-red-600' : 'text-gray-400'
                     }`}>
+                    <p className="text-sm font-medium mb-1">{t('view.directive.intubation')}</p>
+                    <p className={`text-2xl font-bold ${emergencyData.directive.acceptsIntubation ? 'text-green-600' :
+                        emergencyData.directive.acceptsIntubation === false ? 'text-red-600' : 'text-gray-400'
+                      }`}>
                       {emergencyData.directive.acceptsIntubation ? t('view.directive.yes') :
-                       emergencyData.directive.acceptsIntubation === false ? t('view.directive.no') : '—'}
+                        emergencyData.directive.acceptsIntubation === false ? t('view.directive.no') : '—'}
                     </p>
                   </div>
 
@@ -629,14 +623,12 @@ export default function EmergencyView() {
         </div>
 
         {/* Donación de órganos */}
-        <div className={`rounded-xl shadow-sm overflow-hidden ${
-          emergencyData.donation.isDonor ? 'bg-teal-50 border-2 border-teal-500' : 'bg-white'
-        }`}>
+        <div className={`rounded-xl shadow-sm overflow-hidden ${emergencyData.donation.isDonor ? 'bg-teal-50 border-2 border-teal-500' : 'bg-white'
+          }`}>
           <div className="px-6 py-4 flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                emergencyData.donation.isDonor ? 'bg-teal-500' : 'bg-gray-200'
-              }`}>
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${emergencyData.donation.isDonor ? 'bg-teal-500' : 'bg-gray-200'
+                }`}>
                 <svg className={`w-6 h-6 ${emergencyData.donation.isDonor ? 'text-white' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
@@ -682,9 +674,8 @@ export default function EmergencyView() {
                 return (
                   <div key={doc.id} className="p-4 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                        isPdf ? 'bg-red-100' : isImage ? 'bg-blue-100' : 'bg-gray-100'
-                      }`}>
+                      <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${isPdf ? 'bg-red-100' : isImage ? 'bg-blue-100' : 'bg-gray-100'
+                        }`}>
                         {isPdf ? (
                           <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -746,7 +737,7 @@ export default function EmergencyView() {
             </h2>
           </div>
           <div className="divide-y divide-gray-100">
-            {emergencyData.representatives.length > 0 ? (
+            {emergencyData.representatives?.length > 0 ? (
               emergencyData.representatives.map((rep, index) => (
                 <div key={index} className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">

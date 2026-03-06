@@ -69,9 +69,9 @@ export default function Dashboard() {
     if (!profile) return 0;
     let score = 0;
     if (profile.bloodType) score += 25;
-    if (profile.allergies.length > 0 || profile.conditions.length > 0) score += 25;
-    if (profile.medications.length > 0) score += 25;
-    if (representatives.length > 0) score += 25;
+    if (profile.allergies?.length > 0 || profile.conditions?.length > 0) score += 25;
+    if (profile.medications?.length > 0) score += 25;
+    if (representatives?.length > 0) score += 25;
     return score;
   })();
 
@@ -223,7 +223,7 @@ export default function Dashboard() {
                 <div className="py-2 border-b border-gray-100">
                   <span className="text-muted-foreground">{t('criticalInfo.allergies')}</span>
                   <div className="mt-1 flex flex-wrap gap-1">
-                    {profile.allergies.length > 0 ? (
+                    {profile.allergies?.length > 0 ? (
                       profile.allergies.map((allergy: string, i: number) => (
                         <span key={i} className="badge-danger">{allergy}</span>
                       ))
