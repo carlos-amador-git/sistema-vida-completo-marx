@@ -52,3 +52,18 @@ ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "mfaBackupCodes" TEXT[];
 ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "mfaEnabledAt" TIMESTAMP(3);
 ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "mfaPendingSecret" TEXT;
 ALTER TABLE "AdminUser" ADD COLUMN IF NOT EXISTS "mfaPendingExpires" TIMESTAMP(3);
+
+-- Tabla: AuditLog (Inmutabilidad)
+ALTER TABLE "AuditLog" ADD COLUMN IF NOT EXISTS "previousHash" TEXT;
+ALTER TABLE "AuditLog" ADD COLUMN IF NOT EXISTS "currentHash" TEXT;
+ALTER TABLE "AuditLog" ADD COLUMN IF NOT EXISTS "sequence" INTEGER;
+-- Intentar crear index único para sequence si no existe (Postgres 9.5+)
+DO $$ 
+BEGIN 
+  IF NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace WHERE c.relname = 'AuditLog_sequence_key' AND n.nspname = 'public') THEN
+    ALTER TABLE "AuditLog" ADD CONSTRAINT "AuditLog_sequence_key" UNIQUE ("sequence");
+  END IF;
+END $$;
+
+-- Enums
+ALTER TYPE "DocumentCategory" ADD VALUE IF NOT EXISTS 'CLINICAL_HISTORY';

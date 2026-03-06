@@ -268,6 +268,7 @@ model MedicalDocument {
 
 enum DocumentCategory {
   EMERGENCY_PROFILE // Perfil de emergencia (no constituye expediente clínico conforme a NOM-004-SSA3-2012)
+  CLINICAL_HISTORY // Historia clínica
   LAB_RESULTS // Resultados de laboratorio
   IMAGING // Rayos X, resonancias, tomografías
   PRESCRIPTIONS // Recetas médicas
