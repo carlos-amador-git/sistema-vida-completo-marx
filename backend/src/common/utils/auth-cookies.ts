@@ -16,12 +16,13 @@ const REFRESH_TOKEN_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 const isProduction = config.env === 'production';
 const cookieDomain = config.cookieDomain || undefined;
+const sameSiteValue: 'lax' | 'strict' | 'none' = isProduction ? 'lax' : 'lax';
 
 // Helper to build cookie options
 const getCookieOptions = (path: string = '/') => ({
   httpOnly: true,
   secure: isProduction,
-  sameSite: isProduction ? 'lax' : 'lax',
+  sameSite: sameSiteValue,
   domain: cookieDomain,
   path,
 });
