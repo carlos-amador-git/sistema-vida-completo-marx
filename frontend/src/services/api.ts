@@ -28,25 +28,61 @@ const api: AxiosInstance = axios.create({
   withCredentials: true, // Send httpOnly cookies with requests
 });
 
+// Flag and queue to handle concurrent refresh token requests
+let isRefreshing = false;
+let failedQueue: Array<{ resolve: (value?: any) => void; reject: (reason?: any) => void }> = [];
+
+const processQueue = (error: any) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve();
+    }
+  });
+  failedQueue = [];
+};
+
 // Interceptor para manejar errores y refresh token
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    // Si es 401 y no es un retry, intentar refresh via httpOnly cookie
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Si es 401 y no es un retry y no es la propia ruta de refresh
+    if (
+      error.response?.status === 401 && 
+      !originalRequest._retry && 
+      !originalRequest.url?.includes('/auth/refresh')
+    ) {
+      if (isRefreshing) {
+        // Queue the request if a refresh is already in progress
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => api(originalRequest))
+          .catch((err) => Promise.reject(err));
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         // Refresh token is sent automatically via httpOnly cookie (withCredentials)
         // New access token is set as httpOnly cookie by the server
         await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
-
+        
+        isRefreshing = false;
+        processQueue(null);
+        
         return api(originalRequest);
       } catch (refreshError) {
-        // Refresh falló, redirigir a login
+        isRefreshing = false;
+        processQueue(refreshError);
+        
+        // Refresh falló significativamente, redirigir a login
         window.location.href = '/login';
+        return Promise.reject(refreshError);
       }
     }
 
