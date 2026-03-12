@@ -80,8 +80,8 @@ api.interceptors.response.use(
         isRefreshing = false;
         processQueue(refreshError);
         
-        // Refresh falló significativamente, redirigir a login
-        window.location.href = '/login';
+        // No redirigir agresivamente para evitar bucles de recarga infinita
+        // Dejar que el AuthContext maneje la falta de autenticación
         return Promise.reject(refreshError);
       }
     }
