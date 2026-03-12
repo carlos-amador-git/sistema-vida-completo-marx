@@ -43,7 +43,7 @@ function getAuthErrorMessage(req: Request, code: string, fallback: string): stri
 // TODO: i18n - rate limiting fires before i18n middleware, message is static
 const loginLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 5,
+  max: 15,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

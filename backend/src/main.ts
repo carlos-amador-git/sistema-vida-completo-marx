@@ -209,7 +209,7 @@ app.use(globalLimiter);
 // Rate limiting estricto para autenticación
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: config.env === 'development' ? 100 : 50, // 50 intentos en producción
+  max: config.env === 'development' ? 100 : 300, // 300 intentos en producción
   store: new CacheRateLimitStore('rl:auth'),
   message: {
     success: false,
