@@ -112,11 +112,16 @@ router.get('/stats', async (req: Request, res: Response) => {
       success: true,
       data: { stats },
     });
-  } catch (error) {
+  } catch (error: any) {
     logger.error('Error obteniendo estadísticas:', error);
+    console.error('[DOCUMENTS_STATS_ERROR]', error);
     res.status(500).json({
       success: false,
-      error: { code: 'SERVER_ERROR', message: req.t('api:generic.serverError') },
+      error: { 
+        code: 'SERVER_ERROR', 
+        message: error.message || req.t('api:generic.serverError'),
+        details: error.message
+      },
     });
   }
 });
@@ -164,11 +169,16 @@ router.get(
         success: true,
         data: { document },
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error obteniendo documento:', error);
+      console.error('[DOCUMENT_GET_ERROR]', error);
       res.status(500).json({
         success: false,
-        error: { code: 'SERVER_ERROR', message: req.t('api:generic.serverError') },
+        error: { 
+          code: 'SERVER_ERROR', 
+          message: error.message || req.t('api:generic.serverError'),
+          details: error.message
+        },
       });
     }
   }
@@ -201,11 +211,16 @@ router.get(
         success: true,
         data: { downloadUrl },
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error obteniendo URL de descarga:', error);
+      console.error('[DOCUMENT_DOWNLOAD_ERROR]', error);
       res.status(500).json({
         success: false,
-        error: { code: 'SERVER_ERROR', message: req.t('api:generic.serverError') },
+        error: { 
+          code: 'SERVER_ERROR', 
+          message: error.message || req.t('api:generic.serverError'),
+          details: error.message
+        },
       });
     }
   }
@@ -324,11 +339,16 @@ router.put(
         message: req.t('api:documents.updated'),
         data: { document },
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error actualizando documento:', error);
+      console.error('[DOCUMENT_UPDATE_ERROR]', error);
       res.status(500).json({
         success: false,
-        error: { code: 'SERVER_ERROR', message: req.t('api:generic.serverError') },
+        error: { 
+          code: 'SERVER_ERROR', 
+          message: error.message || req.t('api:generic.serverError'),
+          details: error.message
+        },
       });
     }
   }
@@ -361,11 +381,16 @@ router.delete(
         success: true,
         message: req.t('api:documents.deleted'),
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error('Error eliminando documento:', error);
+      console.error('[DOCUMENT_DELETE_ERROR]', error);
       res.status(500).json({
         success: false,
-        error: { code: 'SERVER_ERROR', message: req.t('api:generic.serverError') },
+        error: { 
+          code: 'SERVER_ERROR', 
+          message: error.message || req.t('api:generic.serverError'),
+          details: error.message
+        },
       });
     }
   }
