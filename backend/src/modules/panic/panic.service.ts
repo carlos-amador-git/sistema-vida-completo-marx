@@ -110,72 +110,78 @@ class PanicService {
 
     const nearestHospital = nearbyHospitals[0]?.name || null;
 
-    // 5. Fire-and-forget: update hospitals on alert + notify + WebSocket
+    // 5. Update hospitals on alert + notify + WebSocket
     const alertId = panicAlert.id;
     const createdAt = panicAlert.createdAt;
 
-    Promise.resolve().then(async () => {
-      try {
-        // Update alert with hospital data (non-blocking)
-        prisma.panicAlert.update({
-          where: { id: alertId },
-          data: { nearbyHospitals: nearbyHospitals as any },
-        }).catch(err => logger.error('Error updating hospitals on alert', { alertId, err }));
+    let notificationResults: any[] = [];
+    try {
+      // Update alert with hospital data
+      await prisma.panicAlert.update({
+        where: { id: alertId },
+        data: { nearbyHospitals: nearbyHospitals as any },
+      });
 
-        // Notificar a representantes (SMS + Email + WhatsApp)
-        const notificationResults = await notificationService.notifyAllRepresentatives({
-          userId,
-          patientName: user.name,
-          type: 'PANIC',
-          locale: (user as any).preferredLanguage || 'es',
-          location: { lat: latitude, lng: longitude },
-          nearestHospital: nearestHospital || undefined,
-          nearbyHospitals: nearbyHospitals.map(h => ({
-            name: h.name,
-            distance: h.distance,
-            phone: h.emergencyPhone || h.phone || undefined,
-          })),
-        });
+      // Notificar a representantes (SMS + Email + WhatsApp)
+      notificationResults = await notificationService.notifyAllRepresentatives({
+        userId,
+        patientName: user.name,
+        type: 'PANIC',
+        locale: (user as any).preferredLanguage || 'es',
+        location: { lat: latitude, lng: longitude },
+        nearestHospital: nearestHospital || undefined,
+        nearbyHospitals: nearbyHospitals.map(h => ({
+          name: h.name,
+          distance: h.distance,
+          phone: h.emergencyPhone || h.phone || undefined,
+        })),
+      });
 
-        // Actualizar alerta con resultados de notificacion
-        await prisma.panicAlert.update({
-          where: { id: alertId },
-          data: { notificationsSent: notificationResults as any },
-        });
-      } catch (err) {
-        logger.error(`Error enviando notificaciones para alerta ${alertId}:`, err);
-      }
+      // Actualizar alerta con resultados de notificacion
+      await prisma.panicAlert.update({
+        where: { id: alertId },
+        data: { notificationsSent: notificationResults as any },
+      });
+    } catch (err) {
+      logger.error(`Error procesando notificaciones para alerta ${alertId}:`, err);
+    }
 
-      try {
-        // Emitir evento WebSocket a representantes
-        const alertData = {
-          type: 'PANIC_ALERT',
-          alertId,
-          patientName: user.name,
-          patientId: userId,
-          patientConditions,
-          location: { latitude, longitude, accuracy },
-          nearbyHospitals,
-          message,
-          timestamp: createdAt,
-        };
+    try {
+      // Emitir evento WebSocket a representantes
+      const alertData = {
+        type: 'PANIC_ALERT',
+        alertId,
+        patientName: user.name,
+        patientId: userId,
+        patientConditions,
+        location: { latitude, longitude, accuracy },
+        nearbyHospitals,
+        message,
+        timestamp: createdAt,
+      };
 
-        getSocketServer().to(`representative-${userId}`).emit('panic-alert', alertData);
-        getSocketServer().to(`user-${userId}`).emit('panic-alert-sent', alertData);
-      } catch (err) {
-        logger.error(`Error emitiendo WebSocket para alerta ${alertId}:`, err);
-      }
-    });
+      getSocketServer().to(`representative-${userId}`).emit('panic-alert', alertData);
+      getSocketServer().to(`user-${userId}`).emit('panic-alert-sent', alertData);
+    } catch (err) {
+      logger.error(`Error emitiendo WebSocket para alerta ${alertId}:`, err);
+    }
 
     logger.info(`🚨 ALERTA DE PANICO activada para ${user.name} (${alertId})`);
     logger.info(`   Condiciones: ${patientConditions.join(', ') || 'Ninguna'}`);
     logger.info(`   Hospital recomendado: ${nearestHospital || 'N/A'}`);
+    logger.info(`   Representantes notificados: ${notificationResults.length}`);
 
     return {
       alertId,
       status: panicAlert.status,
       nearbyHospitals,
-      representativesNotified: [], // Notificaciones en progreso (fire-and-forget)
+      representativesNotified: notificationResults.map(r => ({
+        name: r.name,
+        phone: r.phone,
+        smsStatus: r.smsStatus,
+        whatsappStatus: r.whatsappStatus,
+        emailStatus: r.emailStatus,
+      })),
       createdAt,
     };
   }

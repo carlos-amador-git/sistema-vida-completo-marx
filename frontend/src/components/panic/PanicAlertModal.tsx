@@ -118,7 +118,9 @@ export default function PanicAlertModal({
     }
   };
 
-  const successCount = result.representativesNotified.filter((r) => r.smsStatus === 'sent').length;
+  const successCount = result.representativesNotified.filter(
+    (r) => r.smsStatus === 'sent' || r.whatsappStatus === 'sent' || r.emailStatus === 'sent'
+  ).length;
 
   return (
     <div
