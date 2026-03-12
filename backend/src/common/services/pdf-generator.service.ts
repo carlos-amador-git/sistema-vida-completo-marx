@@ -73,18 +73,28 @@ class PDFGeneratorService {
 
   private async getBrowser(): Promise<puppeteer.Browser> {
     if (!this.browser) {
-      this.browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          // --no-sandbox is required when running as root inside a container
-          // (e.g. Docker without a dedicated non-root user). If the process
-          // ever runs as a non-root user, this flag should be removed.
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-        ],
-      });
+      try {
+        const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+        
+        logger.info('Iniciando navegador Puppeteer', { 
+          executablePath: executablePath || 'bundled',
+          env: process.env.NODE_ENV 
+        });
+
+        this.browser = await puppeteer.launch({
+          headless: true,
+          executablePath,
+          args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+          ],
+        });
+      } catch (error) {
+        logger.error('Error al iniciar Puppeteer', error);
+        throw error;
+      }
     }
     return this.browser;
   }

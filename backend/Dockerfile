@@ -29,8 +29,21 @@ RUN npm prune --production
 # Stage de producción más ligero
 FROM node:20-alpine AS runner
 
-# Instalar solo dependencias necesarias para runtime
-RUN apk add --no-cache libc6-compat openssl
+# Instalar solo dependencias necesarias para runtime y Chromium para Puppeteer
+# nss, freetype, harfbuzz, ca-certificates, ttf-freefont son necesarios para Puppeteer en Alpine
+RUN apk add --no-cache \
+    libc6-compat \
+    openssl \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
+
+# Configurar variables de entorno para Puppeteer
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Crear directorio de trabajo
 WORKDIR /app
