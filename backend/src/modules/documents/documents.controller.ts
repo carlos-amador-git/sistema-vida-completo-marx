@@ -86,14 +86,13 @@ router.get(
         },
       });
     } catch (error: any) {
-      logger.error('Error listando documentos:', error);
       console.error('[DOCUMENTS_LIST_ERROR]', error);
       res.status(500).json({
         success: false,
         error: {
           code: 'SERVER_ERROR',
-          message: error.message || req.t('api:generic.serverError'),
-          details: error.message // Siempre incluir mensaje en respuesta para debug
+          message: error?.message || 'Error listing documents',
+          details: error?.stack || error?.message || String(error)
         },
       });
     }
@@ -113,14 +112,13 @@ router.get('/stats', async (req: Request, res: Response) => {
       data: { stats },
     });
   } catch (error: any) {
-    logger.error('Error obteniendo estadísticas:', error);
     console.error('[DOCUMENTS_STATS_ERROR]', error);
     res.status(500).json({
       success: false,
       error: { 
         code: 'SERVER_ERROR', 
-        message: error.message || req.t('api:generic.serverError'),
-        details: error.message
+        message: error?.message || 'Error getting document stats',
+        details: error?.stack || error?.message || String(error)
       },
     });
   }
