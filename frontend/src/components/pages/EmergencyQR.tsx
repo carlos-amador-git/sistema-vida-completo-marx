@@ -5,6 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { profileApi } from '../../services/api';
 import { QRCodeSVG } from 'qrcode.react';
 import { useLocale } from '../../hooks/useLocale';
+import { QRReveal } from '../qr/QRReveal';
+import { QRSkeleton } from '../ui/skeletons/QRSkeleton';
+import { ShieldAlert } from 'lucide-react';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 export default function EmergencyQR() {
   const { t } = useTranslation('emergency');
@@ -18,6 +23,7 @@ export default function EmergencyQR() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [regenerating, setRegenerating] = useState(false);
+  const [regenConfirmOpen, setRegenConfirmOpen] = useState(false);
 
   const fetchQR = async () => {
     try {
@@ -37,11 +43,11 @@ export default function EmergencyQR() {
     fetchQR();
   }, []);
 
-  const handleRegenerate = async () => {
-    if (!confirm(t('qr.confirm_regenerate'))) {
-      return;
-    }
+  const handleRegenerate = () => {
+    setRegenConfirmOpen(true);
+  };
 
+  const doRegenerate = async () => {
     try {
       setRegenerating(true);
       const res = await profileApi.regenerateQR();
@@ -62,24 +68,17 @@ export default function EmergencyQR() {
   const emergencyUrl = qrData ? `${window.location.origin}/emergency/${qrData.qrToken}` : '';
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]" role="status" aria-label={t('qr.loading')}>
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-vida-200 border-t-vida-600 rounded-full animate-spin mx-auto mb-4" aria-hidden="true"></div>
-          <p className="text-gray-600" aria-hidden="true">{t('qr.loading')}</p>
-        </div>
-      </div>
-    );
+    return <QRSkeleton />;
   }
 
   if (error) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <div role="alert" className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <button
             onClick={fetchQR}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 min-h-[44px] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
             {t('qr.buttons.retry')}
           </button>
@@ -108,25 +107,33 @@ export default function EmergencyQR() {
         <div className="p-8 flex flex-col items-center">
           {qrData && (
             <>
-              {/* QR Code */}
-              <div
-                className="bg-white p-4 rounded-xl shadow-lg border-4 border-vida-100 mb-6"
-                role="img"
-                aria-label={t('qr.card.qrAlt', { defaultValue: 'Código QR de emergencia médica VIDA' })}
-              >
-                <QRCodeSVG
-                  value={emergencyUrl}
-                  size={250}
-                  level="H"
-                  includeMargin={true}
-                  fgColor="#0d6ecd"
-                />
-              </div>
+              {/* QR Code — animated reveal */}
+              <QRReveal glow>
+                <div
+                  className="bg-white p-4 rounded-xl shadow-lg border-4 border-vida-100 mb-6"
+                  role="img"
+                  aria-label={t('qr.card.qrAlt', { defaultValue: 'Código QR de emergencia médica VIDA' })}
+                >
+                  <QRCodeSVG
+                    value={emergencyUrl}
+                    size={250}
+                    level="H"
+                    includeMargin={true}
+                    fgColor="#000000"
+                  />
+                </div>
+              </QRReveal>
 
               {/* Token info */}
-              <p className="text-xs text-gray-400 font-mono mb-4">
+              <p className="text-sm text-gray-700 font-mono mb-2">
                 {t('qr.card.token_label')} {qrData.qrToken}
               </p>
+              <button
+                onClick={() => navigator.clipboard.writeText(emergencyUrl)}
+                className="text-sm text-vida-600 hover:text-vida-800 underline mb-4"
+              >
+                {t('qr.buttons.copy_link', { defaultValue: 'Copiar enlace' })}
+              </button>
 
               {/* Generated date */}
               <p className="text-sm text-gray-500 mb-6">
@@ -209,15 +216,23 @@ export default function EmergencyQR() {
       {/* Security note */}
       <aside className="bg-gray-50 border border-gray-200 rounded-xl p-6">
         <h3 className="font-semibold text-gray-800 mb-2 flex items-center gap-2">
-          <svg className="w-5 h-5" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
+          <AnimatedIcon icon={ShieldAlert} trigger="inView" animation="pulse" size={20} className="w-5 h-5 text-gray-600" />
           {t('qr.security.title')}
         </h3>
         <p className="text-gray-600 text-sm">
           {t('qr.security.text')}
         </p>
       </aside>
+
+      <ConfirmDialog
+        open={regenConfirmOpen}
+        onOpenChange={setRegenConfirmOpen}
+        title={t('qr.confirm_regenerate_title', { defaultValue: 'Regenerar código QR' })}
+        description={t('qr.confirm_regenerate', { defaultValue: 'El código QR anterior dejará de funcionar. ¿Continuar?' })}
+        confirmLabel={t('qr.buttons.regenerate', { defaultValue: 'Regenerar' })}
+        variant="destructive"
+        onConfirm={doRegenerate}
+      />
 
       {/* NFC Option */}
       <Link

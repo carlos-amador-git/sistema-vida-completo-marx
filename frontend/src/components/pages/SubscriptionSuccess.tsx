@@ -104,7 +104,7 @@ export default function SubscriptionSuccess() {
         <div className="space-y-3">
           <Link
             to="/dashboard"
-            className="block w-full px-6 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors"
+            className="block w-full px-6 py-3 bg-vida-600 text-white rounded-xl font-semibold hover:bg-vida-700 transition-colors"
           >
             {t('success.btn_dashboard')}
           </Link>

@@ -17,7 +17,7 @@ if (!ENCRYPTION_KEY) {
 }
 
 function encrypt(plaintext: string): string {
-  const key = Buffer.from(ENCRYPTION_KEY, 'hex');
+  const key = Buffer.from(ENCRYPTION_KEY!, 'hex');
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
 
@@ -139,6 +139,7 @@ async function main() {
 
   // Verificar si existe, si no, crearlo. Si existe, actualizar password.
   let demoUser = await prisma.user.findUnique({ where: { email: demoEmail } });
+  const demoUserExisted = !!demoUser;
 
   if (demoUser) {
     console.log('🔄 Usuario demo existente. Actualizando contraseña para asegurar acceso...');

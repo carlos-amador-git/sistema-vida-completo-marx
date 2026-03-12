@@ -10,6 +10,13 @@ import { PremiumProvider } from './hooks/usePremium';
 import ErrorBoundary from './components/ErrorBoundary';
 import './index.css';
 
+// Apply stored theme before render to prevent flash
+const storedTheme = localStorage.getItem('vida-theme') || 'system';
+const resolved = storedTheme === 'system'
+  ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+  : storedTheme;
+if (resolved === 'dark') document.documentElement.classList.add('dark');
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

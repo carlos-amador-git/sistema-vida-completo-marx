@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { representativesApi } from '../../services/api';
 import type { Representative, CreateRepresentativeInput } from '../../types';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 const RELATION_VALUES = [
   'Esposa',
@@ -28,6 +29,7 @@ export default function Representatives() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ open: boolean; id: string | null }>({ open: false, id: null });
 
   const emptyForm: CreateRepresentativeInput = {
     name: '',
@@ -99,11 +101,14 @@ export default function Representatives() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('confirm.delete'))) return;
+  const handleDelete = (id: string) => {
+    setDeleteConfirm({ open: true, id });
+  };
 
+  const doDelete = async () => {
+    if (!deleteConfirm.id) return;
     try {
-      await representativesApi.delete(id);
+      await representativesApi.delete(deleteConfirm.id);
       loadRepresentatives();
     } catch (err: any) {
       setError(err.response?.data?.error?.message || t('errors.deleting'));
@@ -194,7 +199,7 @@ export default function Representatives() {
               <div key={rep.id} className="bg-white rounded-xl shadow-sm p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-bold text-xl">
+                    <div className="w-12 h-12 bg-vida-100 rounded-full flex items-center justify-center text-vida-600 font-bold text-xl">
                       {index + 1}
                     </div>
                     <div>
@@ -435,6 +440,15 @@ export default function Representatives() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        onOpenChange={(open) => setDeleteConfirm(s => ({ ...s, open }))}
+        title={t('confirm.delete_title', { defaultValue: 'Eliminar representante' })}
+        description={t('confirm.delete', { defaultValue: '¿Eliminar este representante? Esta acción no se puede deshacer.' })}
+        confirmLabel={t('confirm.delete_confirm', { defaultValue: 'Eliminar' })}
+        variant="destructive"
+        onConfirm={doDelete}
+      />
     </section>
   );
 }

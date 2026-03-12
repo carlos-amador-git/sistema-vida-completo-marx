@@ -42,7 +42,7 @@ export function UpgradePrompt({
   if (compact) {
     return (
       <div
-        className={`bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg p-4 text-white ${className}`}
+        className={`bg-gradient-to-r from-vida-600 to-vida-800 rounded-lg p-4 text-white ${className}`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -55,12 +55,12 @@ export function UpgradePrompt({
             </svg>
             <div>
               <p className="font-semibold">{resolvedTitle}</p>
-              <p className="text-sm text-purple-200">{resolvedDescription}</p>
+              <p className="text-sm text-vida-200">{resolvedDescription}</p>
             </div>
           </div>
           <Link
             to="/subscription/plans"
-            className="px-4 py-2 bg-white text-purple-600 rounded-lg font-medium hover:bg-purple-50 transition-colors whitespace-nowrap"
+            className="px-4 py-2 bg-white text-vida-600 rounded-lg font-medium hover:bg-vida-50 transition-colors whitespace-nowrap"
           >
             {t('upgrade_prompt.btn_see_plans')}
           </Link>
@@ -72,7 +72,7 @@ export function UpgradePrompt({
   // Versión completa
   return (
     <div
-      className={`bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 rounded-2xl p-8 text-white shadow-xl ${className}`}
+      className={`bg-gradient-to-br from-vida-600 via-vida-700 to-vida-800 rounded-2xl p-8 text-white shadow-xl ${className}`}
     >
       <div className="flex items-start justify-between mb-6">
         <div>
@@ -87,11 +87,11 @@ export function UpgradePrompt({
             Premium
           </div>
           <h3 className="text-2xl font-bold mb-2">{resolvedTitle}</h3>
-          <p className="text-purple-200">{resolvedDescription}</p>
+          <p className="text-vida-200">{resolvedDescription}</p>
         </div>
         <div className="text-right">
           <p className="text-3xl font-bold">{t('upgrade_prompt.price')}</p>
-          <p className="text-purple-200 text-sm">{t('upgrade_prompt.currency')}</p>
+          <p className="text-vida-200 text-sm">{t('upgrade_prompt.currency')}</p>
         </div>
       </div>
 
@@ -117,7 +117,7 @@ export function UpgradePrompt({
       <div className="flex items-center gap-4">
         <Link
           to="/subscription/plans"
-          className="flex-1 px-6 py-3 bg-white text-purple-600 rounded-xl font-semibold text-center hover:bg-purple-50 transition-colors"
+          className="flex-1 px-6 py-3 bg-white text-vida-600 rounded-xl font-semibold text-center hover:bg-vida-50 transition-colors"
         >
           {t('upgrade_prompt.btn_trial')}
         </Link>
@@ -130,7 +130,7 @@ export function UpgradePrompt({
       </div>
 
       {isInTrial && status?.trialDaysLeft && (
-        <p className="mt-4 text-center text-purple-200 text-sm">
+        <p className="mt-4 text-center text-vida-200 text-sm">
           {t('upgrade_prompt.trial_days_left', { count: status.trialDaysLeft })}
         </p>
       )}
@@ -222,7 +222,7 @@ export function CancellingBanner() {
         </div>
         <Link
           to="/subscription"
-          className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+          className="px-4 py-1.5 bg-vida-600 hover:bg-vida-700 text-white text-sm font-medium rounded-lg transition-colors"
         >
           {t('cancelling_banner.reactivate')}
         </Link>

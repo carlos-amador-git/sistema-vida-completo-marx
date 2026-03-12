@@ -50,7 +50,7 @@ export default function SubscriptionPlans() {
   if (loadingPlans) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center" role="status" aria-label="Cargando planes">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" aria-hidden="true"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vida-600" aria-hidden="true"></div>
       </div>
     );
   }
@@ -59,7 +59,7 @@ export default function SubscriptionPlans() {
   const premiumPlan = plans.find((p) => p.slug === 'premium');
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-vida-50 to-white py-12 px-4">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
@@ -79,7 +79,7 @@ export default function SubscriptionPlans() {
               aria-pressed={billingCycle === 'MONTHLY'}
               className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
                 billingCycle === 'MONTHLY'
-                  ? 'bg-purple-600 text-white shadow-md'
+                  ? 'bg-vida-600 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -90,7 +90,7 @@ export default function SubscriptionPlans() {
               aria-pressed={billingCycle === 'ANNUAL'}
               className={`px-6 py-2.5 rounded-lg font-medium transition-all ${
                 billingCycle === 'ANNUAL'
-                  ? 'bg-purple-600 text-white shadow-md'
+                  ? 'bg-vida-600 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -184,7 +184,7 @@ export default function SubscriptionPlans() {
                 <button
                   onClick={() => handleUpgrade(basicoPlan.id)}
                   disabled={upgrading}
-                  className="w-full py-3 px-6 border-2 border-purple-600 text-purple-600 rounded-xl font-medium hover:bg-purple-50 transition-colors disabled:opacity-50"
+                  className="w-full py-3 px-6 border-2 border-vida-600 text-vida-600 rounded-xl font-medium hover:bg-vida-50 transition-colors disabled:opacity-50"
                 >
                   {upgrading && selectedPlan === basicoPlan.id ? (
                     <span className="flex items-center justify-center">
@@ -206,7 +206,7 @@ export default function SubscriptionPlans() {
 
           {/* Premium Plan */}
           {premiumPlan && (
-            <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-br from-vida-600 to-vida-800 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden">
               {/* Popular badge */}
               <div className="absolute top-4 right-4">
                 <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">
@@ -216,7 +216,7 @@ export default function SubscriptionPlans() {
 
               <div className="mb-6">
                 <h2 className="text-2xl font-bold">{premiumPlan.name}</h2>
-                <p className="text-purple-200 mt-1">{t('plans.premium.description')}</p>
+                <p className="text-vida-200 mt-1">{t('plans.premium.description')}</p>
               </div>
 
               <div className="mb-6">
@@ -224,17 +224,17 @@ export default function SubscriptionPlans() {
                   <span className="text-4xl font-bold">
                     ${getMonthlyEquivalent(premiumPlan)}
                   </span>
-                  <span className="text-purple-200 ml-2">{t('plans.mxn_per_month')}</span>
+                  <span className="text-vida-200 ml-2">{t('plans.mxn_per_month')}</span>
                 </div>
                 {billingCycle === 'ANNUAL' && (
-                  <p className="text-sm text-purple-200 mt-1">
+                  <p className="text-sm text-vida-200 mt-1">
                     {t('plans.billed_annually', { amount: getPrice(premiumPlan) })}
                   </p>
                 )}
               </div>
 
               <div className="space-y-4 mb-8">
-                <p className="text-sm font-medium text-purple-100">{t('plans.premium.includes_basic')}</p>
+                <p className="text-sm font-medium text-vida-100">{t('plans.premium.includes_basic')}</p>
                 <ul className="space-y-3">
                   {Object.entries(premiumPlan.features).map(([key, value]) => {
                     if (value) {
@@ -275,7 +275,7 @@ export default function SubscriptionPlans() {
                 <button
                   onClick={() => handleUpgrade(premiumPlan.id)}
                   disabled={upgrading}
-                  className="w-full py-3 px-6 bg-white text-purple-600 rounded-xl font-semibold hover:bg-purple-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-3 px-6 bg-white text-vida-600 rounded-xl font-semibold hover:bg-vida-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {upgrading && selectedPlan === premiumPlan.id ? (
                     <span className="flex items-center justify-center">
@@ -292,7 +292,7 @@ export default function SubscriptionPlans() {
               )}
 
               {subscription?.plan.slug === 'basico' && (
-                <p className="text-center text-purple-200 text-sm mt-3">
+                <p className="text-center text-vida-200 text-sm mt-3">
                   {t('plans.premium.upgrade_note')}
                 </p>
               )}
@@ -311,64 +311,64 @@ export default function SubscriptionPlans() {
                 <tr className="bg-gray-50">
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">{t('plans.comparison.col_feature')}</th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">{t('plans.comparison.col_basico')}</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-purple-600">{t('plans.comparison.col_premium')}</th>
+                  <th className="px-6 py-4 text-center text-sm font-semibold text-vida-600">{t('plans.comparison.col_premium')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_price')}</td>
                   <td className="px-6 py-4 text-center text-sm font-medium text-gray-900">$49 MXN</td>
-                  <td className="px-6 py-4 text-center text-sm font-medium text-purple-600">$149 MXN</td>
+                  <td className="px-6 py-4 text-center text-sm font-medium text-vida-600">$149 MXN</td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_profile')}</td>
                   <td className="px-6 py-4 text-center"><CheckIcon /></td>
-                  <td className="px-6 py-4 text-center"><CheckIcon className="text-purple-600" /></td>
+                  <td className="px-6 py-4 text-center"><CheckIcon className="text-vida-600" /></td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_qr')}</td>
                   <td className="px-6 py-4 text-center"><CheckIcon /></td>
-                  <td className="px-6 py-4 text-center"><CheckIcon className="text-purple-600" /></td>
+                  <td className="px-6 py-4 text-center"><CheckIcon className="text-vida-600" /></td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_representatives')}</td>
                   <td className="px-6 py-4 text-center text-sm text-gray-900">{t('plans.comparison.val_basico_reps')}</td>
-                  <td className="px-6 py-4 text-center text-sm text-purple-600">{t('plans.comparison.val_premium_reps')}</td>
+                  <td className="px-6 py-4 text-center text-sm text-vida-600">{t('plans.comparison.val_premium_reps')}</td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_qr_downloads')}</td>
                   <td className="px-6 py-4 text-center text-sm text-gray-900">{t('plans.comparison.val_basico_qr')}</td>
-                  <td className="px-6 py-4 text-center text-sm text-purple-600">{t('plans.comparison.val_premium_qr')}</td>
+                  <td className="px-6 py-4 text-center text-sm text-vida-600">{t('plans.comparison.val_premium_qr')}</td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_directives')}</td>
                   <td className="px-6 py-4 text-center"><XIcon /></td>
-                  <td className="px-6 py-4 text-center"><CheckIcon className="text-purple-600" /></td>
+                  <td className="px-6 py-4 text-center"><CheckIcon className="text-vida-600" /></td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_donor')}</td>
                   <td className="px-6 py-4 text-center"><XIcon /></td>
-                  <td className="px-6 py-4 text-center"><CheckIcon className="text-purple-600" /></td>
+                  <td className="px-6 py-4 text-center"><CheckIcon className="text-vida-600" /></td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_nom151')}</td>
                   <td className="px-6 py-4 text-center"><XIcon /></td>
-                  <td className="px-6 py-4 text-center"><CheckIcon className="text-purple-600" /></td>
+                  <td className="px-6 py-4 text-center"><CheckIcon className="text-vida-600" /></td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_sms')}</td>
                   <td className="px-6 py-4 text-center"><XIcon /></td>
-                  <td className="px-6 py-4 text-center"><CheckIcon className="text-purple-600" /></td>
+                  <td className="px-6 py-4 text-center"><CheckIcon className="text-vida-600" /></td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_export')}</td>
                   <td className="px-6 py-4 text-center"><XIcon /></td>
-                  <td className="px-6 py-4 text-center"><CheckIcon className="text-purple-600" /></td>
+                  <td className="px-6 py-4 text-center"><CheckIcon className="text-vida-600" /></td>
                 </tr>
                 <tr>
                   <td className="px-6 py-4 text-sm text-gray-600">{t('plans.comparison.row_support')}</td>
                   <td className="px-6 py-4 text-center"><XIcon /></td>
-                  <td className="px-6 py-4 text-center"><CheckIcon className="text-purple-600" /></td>
+                  <td className="px-6 py-4 text-center"><CheckIcon className="text-vida-600" /></td>
                 </tr>
               </tbody>
             </table>
@@ -379,7 +379,7 @@ export default function SubscriptionPlans() {
         <div className="mt-16 text-center">
           <p className="text-gray-500">
             {t('plans.faq.questions')}{' '}
-            <a href="mailto:soporte@sistemavida.mx" className="text-purple-600 hover:underline">
+            <a href="mailto:soporte@sistemavida.mx" className="text-vida-600 hover:underline">
               {t('plans.faq.contact_us')}
             </a>
           </p>

@@ -112,7 +112,7 @@ function StaticPrivacyPolicy() {
             </div>
           </div>
           <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg">
-            <CreditCard className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+            <CreditCard className="w-5 h-5 text-vida-600 mt-0.5 flex-shrink-0" />
             <div>
               <p className="font-medium text-gray-900">Stripe, Inc. - EE.UU.</p>
               <p className="text-sm text-gray-600">Procesamiento seguro de pagos con tarjeta (PCI DSS Level 1)</p>

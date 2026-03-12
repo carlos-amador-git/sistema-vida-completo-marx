@@ -1,5 +1,5 @@
 // src/components/layouts/MainLayout.tsx
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
@@ -24,7 +24,9 @@ import PanicAlertModal from '../panic/PanicAlertModal';
 import BottomNav from './BottomNav';
 import { panicApi } from '../../services/api';
 import LanguageSwitcher from '../LanguageSwitcher';
+import { ThemeToggle } from '../ui/theme-toggle';
 import { useTranslation } from 'react-i18next';
+import { AnimatedIcon } from '../ui/AnimatedIcon';
 
 interface PanicAlertResult {
   alertId: string;
@@ -50,6 +52,17 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { unreadCount } = useNotifications();
+  const closeSidebarBtnRef = useRef<HTMLButtonElement>(null);
+
+  // Focus close button when sidebar opens; restore focus to menu button on close
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (sidebarOpen) {
+      closeSidebarBtnRef.current?.focus();
+    } else {
+      menuBtnRef.current?.focus();
+    }
+  }, [sidebarOpen]);
 
   const navigation = [
     { name: t('nav.home'), href: '/dashboard', icon: Home },
@@ -87,7 +100,7 @@ export default function MainLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-dvh bg-background">
       {/* Skip to main content */}
       <a
         href="#main-content"
@@ -103,14 +116,14 @@ export default function MainLayout() {
         aria-modal="true"
         aria-label={t('nav.sidebar_label')}
       >
-        <div className="fixed inset-0 bg-gray-900/50" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 w-72 bg-white shadow-xl flex flex-col">
-          <div className="flex items-center justify-between h-16 px-6 border-b flex-shrink-0">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-y-0 left-0 w-72 bg-card shadow-xl flex flex-col">
+          <div className="flex items-center justify-between h-16 px-6 border-b border-border flex-shrink-0">
             <Link to="/dashboard" className="flex items-center gap-2">
               <Heart className="w-8 h-8 text-vida-600" />
               <span className="text-xl font-bold text-vida-800">VIDA</span>
             </Link>
-            <button onClick={() => setSidebarOpen(false)} className="p-2" aria-label={t('nav.close_menu')}>
+            <button ref={closeSidebarBtnRef} onClick={() => setSidebarOpen(false)} className="p-2" aria-label={t('nav.close_menu')}>
               <X className="w-6 h-6 text-gray-500" aria-hidden="true" />
             </button>
           </div>
@@ -124,14 +137,13 @@ export default function MainLayout() {
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-vida-50 text-vida-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group ${isActive
+                      ? 'bg-vida-50 text-vida-700 font-medium dark:bg-vida-950 dark:text-vida-300'
+                      : 'text-muted-foreground hover:bg-muted'
+                    }`}
                 >
                   <div className="relative" aria-hidden="true">
-                    <item.icon className="w-5 h-5" />
+                    <AnimatedIcon icon={item.icon} trigger="hover" animation="bounce" size={20} className="w-5 h-5 group-hover:text-vida-600 transition-colors" />
                     {isNotifications && unreadCount > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                         {unreadCount > 9 ? '9+' : unreadCount}
@@ -147,19 +159,20 @@ export default function MainLayout() {
             })}
           </nav>
           {/* Usuario móvil */}
-          <div className="flex-shrink-0 p-4 border-t">
+          <div className="flex-shrink-0 p-4 border-t border-border">
             <div className="flex items-center justify-between mb-2">
               <LanguageSwitcher compact />
+              <ThemeToggle compact />
             </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
               <div className="flex items-center justify-center w-10 h-10 rounded-full bg-vida-100">
                 <User className="w-5 h-5 text-vida-600" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {user?.name}
                 </p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
               <button
                 onClick={() => { handleLogout(); setSidebarOpen(false); }}
@@ -176,9 +189,9 @@ export default function MainLayout() {
 
       {/* Sidebar desktop */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex flex-col flex-1 bg-white border-r">
+        <div className="flex flex-col flex-1 bg-card border-r border-border">
           {/* Logo */}
-          <div className="flex items-center h-16 px-6 border-b">
+          <div className="flex items-center h-16 px-6 border-b border-border">
             <Link to="/dashboard" className="flex items-center gap-2">
               <Heart className="w-8 h-8 text-vida-600" />
               <span className="text-xl font-bold text-vida-800">VIDA</span>
@@ -189,23 +202,22 @@ export default function MainLayout() {
           <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto" aria-label={t('nav.desktop_nav_label')}>
             {navigation.map((item) => {
               const isActive = location.pathname === item.href ||
-                              (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+                (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
               const isNotifications = item.href === '/notifications';
               return (
                 <Link
                   key={item.href}
                   to={item.href}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-vida-50 text-vida-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-100'
-                  }`}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors group ${isActive
+                      ? 'bg-vida-50 text-vida-700 font-medium dark:bg-vida-950 dark:text-vida-300'
+                      : 'text-muted-foreground hover:bg-muted'
+                    }`}
                 >
                   <div className="relative" aria-hidden="true">
-                    <item.icon className="w-5 h-5" />
+                    <AnimatedIcon icon={item.icon} trigger="hover" animation="bounce" size={20} className="w-5 h-5 group-hover:text-vida-600 transition-colors" />
                     {isNotifications && unreadCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse motion-reduce:animate-none">
                         {unreadCount > 9 ? '9+' : unreadCount}
                       </span>
                     )}
@@ -220,19 +232,20 @@ export default function MainLayout() {
           </nav>
 
           {/* Usuario */}
-          <div className="flex-shrink-0 p-4 border-t">
+          <div className="flex-shrink-0 p-4 border-t border-border">
             <div className="flex items-center justify-between mb-2">
               <LanguageSwitcher compact />
+              <ThemeToggle compact />
             </div>
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-vida-100">
-                <User className="w-5 h-5 text-vida-600" />
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-vida-100 dark:bg-vida-900">
+                <User className="w-5 h-5 text-vida-600 dark:text-vida-300" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {user?.name}
                 </p>
-                <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
               </div>
               <button
                 onClick={handleLogout}
@@ -248,10 +261,11 @@ export default function MainLayout() {
       </div>
 
       {/* Contenido principal */}
-      <div className="lg:pl-72">
+      <div className="lg:pl-72" aria-hidden={sidebarOpen || undefined}>
         {/* Header móvil */}
-        <header className="sticky top-0 z-40 flex items-center h-16 px-4 bg-white border-b lg:hidden">
+        <header className="sticky top-0 z-40 flex items-center h-16 px-4 bg-card border-b border-border lg:hidden">
           <button
+            ref={menuBtnRef}
             onClick={() => setSidebarOpen(true)}
             className="p-2 -ml-2 text-gray-500"
             aria-label={t('nav.open_menu')}
@@ -275,7 +289,7 @@ export default function MainLayout() {
         </main>
 
         {/* Footer - hidden on mobile */}
-        <footer className="hidden md:block px-4 py-6 mt-8 border-t bg-white">
+        <footer className="hidden md:block px-4 py-6 mt-8 border-t border-border bg-card">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4" />

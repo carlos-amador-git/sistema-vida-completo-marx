@@ -84,7 +84,7 @@ export default function Subscription() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center" role="status" aria-label="Cargando">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600" aria-hidden="true"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vida-600" aria-hidden="true"></div>
       </div>
     );
   }
@@ -131,7 +131,7 @@ export default function Subscription() {
                 <div className="space-y-2">
                   <button
                     onClick={openBillingPortal}
-                    className="px-4 py-2 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors text-sm font-medium"
+                    className="px-4 py-2 text-vida-600 border border-vida-200 rounded-lg hover:bg-vida-50 transition-colors text-sm font-medium"
                   >
                     {t('buttons.manage_payment')}
                   </button>
@@ -146,7 +146,7 @@ export default function Subscription() {
                   {(subscription?.cancelAtPeriodEnd || status?.cancelAtPeriodEnd) && (
                     <button
                       onClick={handleReactivate}
-                      className="block w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+                      className="block w-full px-4 py-2 bg-vida-600 text-white rounded-lg hover:bg-vida-700 transition-colors text-sm font-medium"
                     >
                       {t('buttons.reactivate')}
                     </button>
@@ -155,7 +155,7 @@ export default function Subscription() {
               ) : (
                 <Link
                   to="/subscription/plans"
-                  className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                  className="px-6 py-3 bg-vida-600 text-white rounded-lg hover:bg-vida-700 transition-colors font-medium"
                 >
                   {t('buttons.upgrade_premium')}
                 </Link>
@@ -223,7 +223,7 @@ export default function Subscription() {
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">{t('payments.title')}</h3>
-              <Link to="/billing/fiscal-data" className="text-sm text-purple-600 hover:underline">
+              <Link to="/billing/fiscal-data" className="text-sm text-vida-600 hover:underline">
                 {t('payments.fiscal_data')}
               </Link>
             </div>
@@ -265,7 +265,7 @@ export default function Subscription() {
                             <button
                               onClick={() => handleGenerateInvoice(payment.id)}
                               disabled={generatingInvoice === payment.id}
-                              className="text-sm text-purple-600 hover:underline disabled:opacity-50"
+                              className="text-sm text-vida-600 hover:underline disabled:opacity-50"
                             >
                               {generatingInvoice === payment.id ? t('payments.generating') : t('payments.bill')}
                             </button>
@@ -306,7 +306,7 @@ export default function Subscription() {
                           href={invoice.pdfUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-purple-600 hover:underline"
+                          className="text-xs text-vida-600 hover:underline"
                         >
                           PDF
                         </a>
@@ -316,7 +316,7 @@ export default function Subscription() {
                           href={invoice.xmlUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-purple-600 hover:underline"
+                          className="text-xs text-vida-600 hover:underline"
                         >
                           XML
                         </a>

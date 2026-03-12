@@ -118,7 +118,7 @@ export default function EmergencyMap({
 
   const attentionLevelColors: Record<string, string> = {
     FIRST: 'bg-blue-100 text-blue-700',
-    SECOND: 'bg-purple-100 text-purple-700',
+    SECOND: 'bg-vida-100 text-vida-700',
     THIRD: 'bg-amber-100 text-amber-700',
   };
 
@@ -235,7 +235,7 @@ export default function EmergencyMap({
                     <span className="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">{t('map.capabilities.emergency')}</span>
                   )}
                   {hospital.hasICU && (
-                    <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">{t('map.capabilities.icu')}</span>
+                    <span className="text-xs bg-vida-100 text-vida-700 px-1.5 py-0.5 rounded">{t('map.capabilities.icu')}</span>
                   )}
                   {hospital.hasTrauma && (
                     <span className="text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">{t('map.capabilities.trauma')}</span>

@@ -169,8 +169,8 @@ export default function Profile() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-foreground">{t('title')}</h1>
+          <p className="text-muted-foreground mt-1">
             {t('subtitle')}
           </p>
         </div>
@@ -181,20 +181,20 @@ export default function Profile() {
         <div className="card">
           <div className="flex items-center gap-3 mb-4">
             <User className="w-5 h-5 text-vida-600" />
-            <h2 className="text-lg font-semibold text-gray-900">{t('sections.personalInfo')}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('sections.personalInfo')}</h2>
           </div>
           <div className="grid md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">{t('fields.name')}</label>
-              <p className="text-gray-900 font-medium">{user?.name}</p>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">{t('fields.name')}</label>
+              <p className="text-foreground font-medium">{user?.name}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">{t('fields.curp')}</label>
-              <p className="text-gray-900 font-mono">{user?.curp}</p>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">{t('fields.curp')}</label>
+              <p className="text-foreground font-mono">{user?.curp}</p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-500 mb-1">{t('fields.email')}</label>
-              <p className="text-gray-900">{user?.email}</p>
+              <label className="block text-sm font-medium text-muted-foreground mb-1">{t('fields.email')}</label>
+              <p className="text-foreground">{user?.email}</p>
             </div>
             <div>
               <label htmlFor="bloodType" className="block text-sm font-medium text-gray-500 mb-1">{t('fields.bloodType')}</label>
@@ -216,9 +216,9 @@ export default function Profile() {
         <div className="card">
           <div className="flex items-center gap-3 mb-4">
             <AlertTriangle className="w-5 h-5 text-coral-500" />
-            <h2 className="text-lg font-semibold text-gray-900">{t('sections.allergies')}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('sections.allergies')}</h2>
           </div>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             {t('descriptions.allergies')}
           </p>
 
@@ -243,32 +243,33 @@ export default function Profile() {
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <ul className="flex flex-wrap gap-2" aria-label={t('sections.allergies')}>
             {allergies.map((allergy, index) => (
-              <span key={index} className="inline-flex items-center gap-1 px-3 py-1.5 bg-coral-100 text-coral-800 rounded-full text-sm">
+              <li key={index} className="inline-flex items-center gap-1 px-3 py-1.5 bg-coral-100 text-coral-800 rounded-full text-sm">
                 {allergy}
                 <button
                   type="button"
                   onClick={() => removeItem('allergies', index)}
-                  className="hover:bg-coral-200 rounded-full p-0.5"
+                  className="hover:bg-coral-200 rounded-full p-1.5"
+                  aria-label={`${t('buttons.remove', { defaultValue: 'Eliminar' })} ${allergy}`}
                 >
                   <X className="w-4 h-4" />
                 </button>
-              </span>
+              </li>
             ))}
             {allergies.length === 0 && (
-              <p className="text-gray-400 text-sm italic">{t('emptyStates.allergies')}</p>
+              <li className="text-gray-400 text-sm italic">{t('emptyStates.allergies')}</li>
             )}
-          </div>
+          </ul>
         </div>
 
         {/* Condiciones médicas */}
         <div className="card">
           <div className="flex items-center gap-3 mb-4">
             <Heart className="w-5 h-5 text-vida-600" />
-            <h2 className="text-lg font-semibold text-gray-900">{t('sections.conditions')}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('sections.conditions')}</h2>
           </div>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             {t('descriptions.conditions')}
           </p>
 
@@ -293,32 +294,33 @@ export default function Profile() {
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <ul className="flex flex-wrap gap-2" aria-label={t('sections.conditions')}>
             {conditions.map((condition, index) => (
-              <span key={index} className="inline-flex items-center gap-1 px-3 py-1.5 bg-vida-100 text-vida-800 rounded-full text-sm">
+              <li key={index} className="inline-flex items-center gap-1 px-3 py-1.5 bg-vida-100 text-vida-800 rounded-full text-sm">
                 {condition}
                 <button
                   type="button"
                   onClick={() => removeItem('conditions', index)}
-                  className="hover:bg-vida-200 rounded-full p-0.5"
+                  className="hover:bg-vida-200 rounded-full p-1.5"
+                  aria-label={`${t('buttons.remove', { defaultValue: 'Eliminar' })} ${condition}`}
                 >
                   <X className="w-4 h-4" />
                 </button>
-              </span>
+              </li>
             ))}
             {conditions.length === 0 && (
-              <p className="text-gray-400 text-sm italic">{t('emptyStates.conditions')}</p>
+              <li className="text-gray-400 text-sm italic">{t('emptyStates.conditions')}</li>
             )}
-          </div>
+          </ul>
         </div>
 
         {/* Medicamentos */}
         <div className="card">
           <div className="flex items-center gap-3 mb-4">
             <Pill className="w-5 h-5 text-salud-600" />
-            <h2 className="text-lg font-semibold text-gray-900">{t('sections.medications')}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('sections.medications')}</h2>
           </div>
-          <p className="text-sm text-gray-600 mb-4">
+          <p className="text-sm text-muted-foreground mb-4">
             {t('descriptions.medications')}
           </p>
 
@@ -343,23 +345,24 @@ export default function Profile() {
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <ul className="flex flex-wrap gap-2" aria-label={t('sections.medications')}>
             {medications.map((medication, index) => (
-              <span key={index} className="inline-flex items-center gap-1 px-3 py-1.5 bg-salud-100 text-salud-800 rounded-full text-sm">
+              <li key={index} className="inline-flex items-center gap-1 px-3 py-1.5 bg-salud-100 text-salud-800 rounded-full text-sm">
                 {medication}
                 <button
                   type="button"
                   onClick={() => removeItem('medications', index)}
-                  className="hover:bg-salud-200 rounded-full p-0.5"
+                  className="hover:bg-salud-200 rounded-full p-1.5"
+                  aria-label={`${t('buttons.remove', { defaultValue: 'Eliminar' })} ${medication}`}
                 >
                   <X className="w-4 h-4" />
                 </button>
-              </span>
+              </li>
             ))}
             {medications.length === 0 && (
-              <p className="text-gray-400 text-sm italic">{t('emptyStates.medications')}</p>
+              <li className="text-gray-400 text-sm italic">{t('emptyStates.medications')}</li>
             )}
-          </div>
+          </ul>
         </div>
 
         {/* Seguro médico */}
@@ -367,7 +370,7 @@ export default function Profile() {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <Shield className="w-5 h-5 text-gray-600" />
-              <h2 className="text-lg font-semibold text-gray-900">{t('sections.insurance')}</h2>
+              <h2 className="text-lg font-semibold text-foreground">{t('sections.insurance')}</h2>
             </div>
             {selectedInsurance && (
               <button
@@ -384,10 +387,16 @@ export default function Profile() {
           <div className="grid md:grid-cols-3 gap-4">
             {/* Selector de Aseguradora */}
             <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.insuranceProvider')}</label>
+              <label id="insurance-label" className="block text-sm font-medium text-gray-700 mb-1">{t('fields.insuranceProvider')}</label>
               <div className="relative">
                 <input
                   type="text"
+                  role="combobox"
+                  aria-labelledby="insurance-label"
+                  aria-expanded={showInsuranceDropdown}
+                  aria-haspopup="listbox"
+                  aria-controls="insurance-listbox"
+                  aria-autocomplete="list"
                   value={showInsuranceDropdown ? insuranceSearch : (selectedInsurance || '')}
                   onChange={(e) => {
                     setInsuranceSearch(e.target.value);
@@ -400,17 +409,24 @@ export default function Profile() {
                 <button
                   type="button"
                   onClick={() => setShowInsuranceDropdown(!showInsuranceDropdown)}
+                  aria-label={showInsuranceDropdown ? t('placeholders.insuranceClose', { defaultValue: 'Cerrar opciones' }) : t('placeholders.insuranceOpen', { defaultValue: 'Abrir opciones' })}
+                  aria-expanded={showInsuranceDropdown}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600"
                 >
-                  <ChevronDown className={`w-5 h-5 transition-transform ${showInsuranceDropdown ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-5 h-5 transition-transform ${showInsuranceDropdown ? 'rotate-180' : ''}`} aria-hidden="true" />
                 </button>
               </div>
 
               {/* Dropdown de aseguradoras */}
               {showInsuranceDropdown && (
-                <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto">
+                <div
+                  id="insurance-listbox"
+                  role="listbox"
+                  aria-labelledby="insurance-label"
+                  className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-auto"
+                >
                   {filteredInsurances.length === 0 ? (
-                    <div className="p-3 text-sm text-gray-500 text-center">
+                    <div className="p-3 text-sm text-gray-500 text-center" role="option" aria-selected={false}>
                       {t('emptyStates.insuranceSearch')}
                     </div>
                   ) : (
@@ -418,6 +434,8 @@ export default function Profile() {
                       <button
                         key={ins.id}
                         type="button"
+                        role="option"
+                        aria-selected={selectedInsurance === ins.shortName}
                         onClick={() => selectInsurance(ins)}
                         className={`w-full px-3 py-2 text-left hover:bg-vida-50 flex items-center justify-between ${
                           selectedInsurance === ins.shortName ? 'bg-vida-50' : ''
@@ -428,7 +446,7 @@ export default function Profile() {
                           <div className="text-xs text-gray-500">{t(`insuranceTypes.${ins.type}`, { defaultValue: ins.type })}</div>
                         </div>
                         {selectedInsurance === ins.shortName && (
-                          <Check className="w-4 h-4 text-vida-600" />
+                          <Check className="w-4 h-4 text-vida-600" aria-hidden="true" />
                         )}
                       </button>
                     ))
@@ -567,7 +585,7 @@ export default function Profile() {
         <div className="card">
           <div className="flex items-center gap-3 mb-4">
             <Heart className="w-5 h-5 text-coral-500" />
-            <h2 className="text-lg font-semibold text-gray-900">{t('sections.organDonation')}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{t('sections.organDonation')}</h2>
           </div>
           <div className="flex items-center gap-4">
             <label htmlFor="isDonor" className="relative inline-flex items-center cursor-pointer">

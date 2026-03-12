@@ -1,9 +1,9 @@
 # STATUS - Sistema VIDA
 
-**Actualizado:** 2026-03-03 (Sesión 7)
-**Fase:** MVP Fase 1 - Listo para Deploy
+**Actualizado:** 2026-03-05 (Sesión 10)
+**Fase:** Post-Auditoría UX/UI — Fixes P0-P3 pendientes
 **Branch:** main
-**Plan Activo:** Ninguno — pendiente deploy a producción
+**Plan Activo:** `frontend/.context/PLAN-uxui-audit-fixes.md`
 
 ## Estado General
 
@@ -15,48 +15,59 @@
 | Autenticación | FUNCIONAL | JWT con refresh tokens |
 | Encriptación | FUNCIONAL | AES-256-GCM |
 | Notificaciones | MIGRADO | Provider Pattern: WABA + Twilio fallback |
-| i18n | COMPLETO | ES/EN, residuales corregidos |
+| i18n | COMPLETO | ES/EN |
+| UX/UI | AUDITADO | 74/100 (B-) — plan fixes creado |
+| Tests | PASS | 429/429 (262 backend + 167 frontend) |
 
-## Sesión 6 — i18n Residuales + WABA Templates
+## Sesión 10 — Auditoría UX/UI Completa
 
-### i18n Residuales (commit 1ccd924, 23 archivos, +264/-192)
-1. ~85 tildes corregidas en locales ES (admin, notifications, common, extras, subscription)
-2. 9x "Sistema VIDA" → "VIDA System" en locales EN
-3. useSubscription.ts (6 errors) y useNFC.ts (13 strings) migrados a i18next.t()
-4. documents.controller.ts (18 strings) y hospital.controller.ts (10 strings) migrados a req.t()
-5. Global error handlers en main.ts migrados a req.t()
-6. AdminAuthContext.tsx (6 JSX strings) migrado a useTranslation('admin')
-7. ADMIN_ROLE_LABELS eliminado, reemplazado con t('roles.*')
-8. Nuevas secciones locale: roles, access, nfc.errors, hospital, subscription.errors
-9. Build verificado: tsc 0 errores (frontend + backend), vite build OK
+### Sprints UX/UI 1-4 (implementados en sesión previa)
+- 26 archivos nuevos + 8 modificados
+- AnimatedIcon wrapper (Framer Motion sobre Lucide)
+- SkeletonLoaders personalizados, CustomToast con spring physics
+- PanicButton UX (hold-to-activate, haptic milestones)
+- OnboardingWizard 5 pasos con progress bar
+- EmptyStates con SVGs ilustrados
+- BottomSheet para móvil con Vaul
 
-### WABA Templates
-1. `acceso_qr_vida_v1` — **APPROVED** (UTILITY, es_MX) — probado OK con CEO
-2. `emergencia_vida_v1` es_MX — **APPROVED** (UTILITY, id: 954722793796826)
-3. `emergencia_vida_v1` en_US — **APPROVED** (UTILITY, id: 1432208321692178)
-4. Template MARKETING actual probado: funciona con sesión activa, fallback texto plano sin sesión
+### Fixes técnicos
+- Duplicate className en Pills.tsx / Shield.tsx SVGs
+- stepTransition ease type (`as const`)
+- 5x unused onNext params en onboarding steps
+- X icon → Check en OnboardingWizard completado
 
-### Diagnóstico WABA
-- Template MARKETING requiere sesión 24h → causa fallback texto plano para algunos usuarios
-- Templates UTILITY aprobados eliminan esta restricción
-- No existe webhook para mensajes entrantes WhatsApp
-- Footer "no responda" incluido en nuevo template
+### Review PROPUESTA_ICONOS_VIDA.md (Gemini)
+- Rechazadas 4 propuestas: no Lottie (+50KB), no purgar Lucide, no Radix/Heroicons, no glassmorphism
+- Aprobada: AnimatedIcon wrapper (implementado por Gemini, reviewed por Claude)
+- Decisión: quedarse con Lucide (shadcn default, 33 archivos lo usan)
 
-## Sesión 7 — Deploy Prep (2026-03-03)
+### Auditoría 3 Agentes Paralelos
 
-### Completado
-1. Templates WABA corregidos en `.env` y `.env.example`: `emergencia_vida_v1`, `acceso_qr_vida_v1`
-2. `WABA_API_VERSION` actualizado de v18.0 a v22.0
-3. Migración SQL `add_whatsapp_channel.sql` ejecutada en BD local — enum `WHATSAPP` confirmado
-4. Build verificado: tsc 0 errores (backend + frontend)
+| Auditor | Score | Hallazgos |
+|---------|-------|-----------|
+| UI UX Pro Max | 84/100 (B+) | 10 categorías evaluadas |
+| Design Auditor | 62/100 | 3 CRITICAL, 7 HIGH, 11 MED, 5 LOW |
+| A11y + Baseline | A:58%, AA:45% | 30 findings + 5 slop |
+| **Consolidado** | **74/100 (B-)** | **Meta: ~85 post-fix** |
 
-### Pendiente para Deploy (Producción / Coolify)
+### Top Hallazgos Críticos
+1. QR azul debe ser negro (scanner reliability → riesgo de vida)
+2. Framer Motion ignora prefers-reduced-motion
+3. 5x window.confirm() → shadcn Dialog
+4. Dark mode roto (raw gray values en Dashboard, sidebar, Profile)
+5. Confetti inapropiado en onboarding médico
+6. coral/salud palettes hex, no CSS variables
 
-1. Configurar variables WABA reales en Coolify:
-   - `WABA_PHONE_NUMBER_ID`, `WABA_ACCESS_TOKEN`, `WABA_BUSINESS_ACCOUNT_ID`
-   - `WABA_TEMPLATE_EMERGENCY=emergencia_vida_v1`
-   - `WABA_TEMPLATE_ACCESS=acceso_qr_vida_v1`
-   - `WHATSAPP_PROVIDER=waba`
-2. Configurar email: `RESEND_API_KEY`, `EMAIL_FROM_RESEND`
-3. Ejecutar migración SQL en BD de producción: `add_whatsapp_channel.sql`
-4. Fix BLOCKER-002 en producción: `UPDATE "Representative" SET "notifyOnEmergency" = true, "notifyOnAccess" = true;`
+### Lo Excelente (reconocido por los 3)
+- PanicButton UX multi-stage con haptics
+- QR error correction Level H (30%)
+- CSS variables HSL architecture
+- Skip-to-content link correcto
+- AnimatedIcon wrapper sin deps externas
+
+## Próximos Pasos
+1. **P0:** QR negro + useReducedMotion + reemplazar 5x confirm() (~3 hrs)
+2. **P1:** Dark mode sweep + coral/salud CSS vars + remover confetti (~5 hrs)
+3. **P2:** ARIA combobox, focus trap sidebar, landing cleanup (~3 hrs)
+4. **P3:** Touch targets, headings, error states (~2 hrs)
+5. Deploy a producción (Coolify + WABA vars)

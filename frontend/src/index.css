@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ─── VIDA Color System — HSL Custom Properties ─────────────────────────── */
+/* ─── VIDA Design System — CSS Custom Properties ─────────────────────────── */
 :root {
-  /* Paleta principal azul médica (60-30-10: base neutral) */
+  /* Paleta principal azul médica */
   --vida-50:  210 100% 97%;
   --vida-100: 210 96% 93%;
   --vida-200: 210 93% 85%;
@@ -17,14 +17,123 @@
   --vida-900: 210 80% 18%;
   --vida-950: 210 75% 10%;
 
-  /* Acento — verde esmeralda médico (10% accent) */
+  /* Acento — verde esmeralda médico */
   --accent:       160 84% 39%;
   --accent-light: 160 70% 50%;
+  --accent-foreground: 0 0% 100%;
 
   /* Semánticos */
   --danger:  0   84% 60%;
   --warning: 38  92% 50%;
   --success: 142 71% 45%;
+
+  /* Paleta coral — alertas, tendencias negativas */
+  --coral-50:  356 100% 97%;
+  --coral-100: 356 100% 95%;
+  --coral-200: 353 99%  90%;
+  --coral-300: 351 97%  82%;
+  --coral-400: 351 95%  71%;
+  --coral-500: 347 87%  60%;
+  --coral-600: 341 87%  49%;
+  --coral-700: 341 83%  40%;
+  --coral-800: 341 78%  34%;
+  --coral-900: 341 74%  30%;
+
+  /* Paleta salud — estado saludable, tendencias positivas */
+  --salud-50:  152 81%  96%;
+  --salud-100: 151 81%  91%;
+  --salud-200: 152 76%  80%;
+  --salud-300: 156 72%  67%;
+  --salud-400: 158 64%  52%;
+  --salud-500: 160 84%  39%;
+  --salud-600: 161 85%  31%;
+  --salud-700: 161 94%  24%;
+  --salud-800: 162 96%  20%;
+  --salud-900: 163 88%  17%;
+
+  /* shadcn/ui semantic tokens — Light mode */
+  --background: 210 20% 98%;
+  --foreground: 210 40% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 210 40% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 40% 10%;
+  --primary: 210 87% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 210 20% 96%;
+  --secondary-foreground: 210 40% 20%;
+  --muted: 210 20% 96%;
+  --muted-foreground: 210 10% 45%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 15% 90%;
+  --input: 210 15% 85%;
+  --ring: 210 87% 40%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --vida-50:  210 30% 12%;
+  --vida-100: 210 30% 16%;
+  --vida-200: 210 35% 22%;
+  --vida-300: 210 40% 32%;
+  --vida-400: 210 60% 45%;
+  --vida-500: 210 75% 52%;
+  --vida-600: 210 85% 58%;
+  --vida-700: 210 88% 65%;
+  --vida-800: 210 90% 75%;
+  --vida-900: 210 92% 85%;
+  --vida-950: 210 95% 93%;
+
+  --accent:       160 60% 45%;
+  --accent-light: 160 50% 55%;
+  --accent-foreground: 0 0% 100%;
+
+  --danger:  0 70% 55%;
+  --warning: 38 80% 55%;
+  --success: 142 55% 50%;
+
+  /* Coral dark — más suave para no quemar en fondos oscuros */
+  --coral-50:  347 30% 12%;
+  --coral-100: 347 30% 16%;
+  --coral-200: 347 35% 22%;
+  --coral-300: 347 50% 38%;
+  --coral-400: 347 75% 55%;
+  --coral-500: 347 80% 62%;
+  --coral-600: 347 76% 52%;
+  --coral-700: 347 72% 65%;
+  --coral-800: 347 68% 75%;
+  --coral-900: 347 60% 85%;
+
+  /* Salud dark — más brillante para contraste en oscuro */
+  --salud-50:  160 30% 10%;
+  --salud-100: 160 30% 14%;
+  --salud-200: 160 35% 20%;
+  --salud-300: 160 45% 32%;
+  --salud-400: 160 60% 48%;
+  --salud-500: 160 72% 42%;
+  --salud-600: 160 78% 38%;
+  --salud-700: 160 70% 55%;
+  --salud-800: 160 65% 68%;
+  --salud-900: 160 55% 82%;
+
+  --background: 210 30% 8%;
+  --foreground: 210 20% 92%;
+  --card: 210 25% 11%;
+  --card-foreground: 210 20% 92%;
+  --popover: 210 25% 11%;
+  --popover-foreground: 210 20% 92%;
+  --primary: 210 85% 58%;
+  --primary-foreground: 210 30% 8%;
+  --secondary: 210 25% 16%;
+  --secondary-foreground: 210 20% 85%;
+  --muted: 210 25% 16%;
+  --muted-foreground: 210 15% 55%;
+  --destructive: 0 70% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 210 20% 18%;
+  --input: 210 20% 22%;
+  --ring: 210 85% 58%;
 }
 
 @layer base {
@@ -33,13 +142,24 @@
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 antialiased;
+    @apply bg-background text-foreground antialiased;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1, h2, h3 {
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
     font-weight: 700;
     line-height: 1.25;
+    text-wrap: balance;
+  }
+
+  h4, h5, h6 {
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  p {
+    text-wrap: pretty;
   }
 
   code, kbd, samp, pre {
@@ -48,7 +168,7 @@
 
   /* WCAG 2.1 AA — Focus visible for keyboard navigation */
   :focus-visible {
-    outline: 2px solid hsl(var(--vida-600));
+    outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
 
@@ -56,24 +176,29 @@
   :focus:not(:focus-visible) {
     outline: none;
   }
+
+  /* Tabular nums for counters and data */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 @layer components {
-  /* Botones */
+  /* ─── Legacy component classes (kept for backward compat during migration) ─── */
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .btn-primary {
-    @apply btn bg-vida-600 text-white hover:bg-vida-700 focus:ring-vida-500;
+    @apply btn bg-primary text-primary-foreground hover:bg-vida-700 focus:ring-ring;
   }
 
   .btn-secondary {
-    @apply btn bg-gray-100 text-gray-700 hover:bg-gray-200 focus:ring-gray-500;
+    @apply btn bg-secondary text-secondary-foreground hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-ring;
   }
 
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply btn bg-destructive text-destructive-foreground hover:bg-red-700 focus:ring-red-500;
   }
 
   .btn-success {
@@ -81,21 +206,21 @@
   }
 
   .btn-outline {
-    @apply btn border-2 border-vida-600 text-vida-600 hover:bg-vida-50 focus:ring-vida-500;
+    @apply btn border-2 border-primary text-primary hover:bg-vida-50 dark:hover:bg-vida-50 focus:ring-ring;
   }
 
   /* Inputs */
   .input {
-    @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-vida-500 focus:border-transparent transition-all duration-200;
+    @apply w-full px-4 py-2.5 border border-input rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all duration-200;
   }
 
   .input-error {
-    @apply input border-red-500 focus:ring-red-500;
+    @apply input border-destructive focus:ring-destructive;
   }
 
   /* Cards */
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-100 p-6;
+    @apply bg-card text-card-foreground rounded-xl shadow-sm border border-border p-6;
   }
 
   .card-hover {
@@ -108,19 +233,19 @@
   }
 
   .badge-success {
-    @apply badge bg-salud-100 text-salud-800;
+    @apply badge bg-salud-100 text-salud-800 dark:bg-salud-900 dark:text-salud-200;
   }
 
   .badge-warning {
-    @apply badge bg-yellow-100 text-yellow-800;
+    @apply badge bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
   }
 
   .badge-danger {
-    @apply badge bg-red-100 text-red-800;
+    @apply badge bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200;
   }
 
   .badge-info {
-    @apply badge bg-vida-100 text-vida-800;
+    @apply badge bg-vida-100 text-vida-800 dark:bg-vida-900 dark:text-vida-200;
   }
 
   /* Alertas */
@@ -129,19 +254,19 @@
   }
 
   .alert-info {
-    @apply alert bg-vida-50 text-vida-800 border border-vida-200;
+    @apply alert bg-vida-50 text-vida-800 border border-vida-200 dark:bg-vida-950 dark:text-vida-200 dark:border-vida-800;
   }
 
   .alert-success {
-    @apply alert bg-salud-50 text-salud-800 border border-salud-200;
+    @apply alert bg-salud-50 text-salud-800 border border-salud-200 dark:bg-salud-900 dark:text-salud-200 dark:border-salud-700;
   }
 
   .alert-warning {
-    @apply alert bg-yellow-50 text-yellow-800 border border-yellow-200;
+    @apply alert bg-yellow-50 text-yellow-800 border border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-700;
   }
 
   .alert-danger {
-    @apply alert bg-red-50 text-red-800 border border-red-200;
+    @apply alert bg-red-50 text-red-800 border border-red-200 dark:bg-red-900 dark:text-red-200 dark:border-red-700;
   }
 }
 
@@ -152,7 +277,7 @@
   }
 
   .gradient-vida-light {
-    @apply bg-gradient-to-br from-vida-50 to-white;
+    @apply bg-gradient-to-br from-vida-50 to-white dark:from-vida-950 dark:to-background;
   }
 
   /* Texto con gradiente */
@@ -162,7 +287,7 @@
 
   /* Animaciones de carga */
   .skeleton {
-    @apply animate-pulse bg-gray-200 rounded;
+    @apply animate-pulse bg-muted rounded;
   }
 
   /* Sombras personalizadas */
@@ -178,32 +303,11 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-gray-100 rounded-full;
+  @apply bg-muted rounded-full;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-gray-300 rounded-full hover:bg-gray-400;
-}
-
-/* Animaciones de página */
-.page-enter {
-  opacity: 0;
-  transform: translateY(10px);
-}
-
-.page-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 300ms, transform 300ms;
-}
-
-.page-exit {
-  opacity: 1;
-}
-
-.page-exit-active {
-  opacity: 0;
-  transition: opacity 300ms;
+  @apply bg-gray-300 dark:bg-gray-600 rounded-full hover:bg-gray-400 dark:hover:bg-gray-500;
 }
 
 /* Safe area padding for notched devices */
@@ -228,12 +332,8 @@
 }
 
 @keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slide-up {
@@ -248,12 +348,8 @@
 }
 
 @keyframes slide-in-bottom {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }
 
 .animate-scale-in {
@@ -294,19 +390,25 @@ button, .btn {
 
 /* Pull to refresh indicator */
 .pull-indicator {
-  @apply flex items-center justify-center py-4 text-gray-500;
+  @apply flex items-center justify-center py-4 text-muted-foreground;
 }
 
 /* Swipe hint animation */
 @keyframes swipe-hint {
-  0%, 100% {
-    transform: translateX(0);
-  }
-  50% {
-    transform: translateX(-10px);
-  }
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-10px); }
 }
 
 .animate-swipe-hint {
   animation: swipe-hint 1.5s ease-in-out infinite;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

@@ -117,9 +117,9 @@ const AdminSystemHealth: React.FC = () => {
         description={t('system.cleanup_confirm')}
         confirmLabel={t('system.cleanup_confirm_action', { defaultValue: 'Run Cleanup' })}
         cancelLabel={t('common.cancel', { defaultValue: 'Cancel' })}
-        variant="danger"
+        variant="destructive"
         onConfirm={handleConfirmedCleanup}
-        onCancel={() => setShowCleanupConfirm(false)}
+        onOpenChange={(open) => { if (!open) setShowCleanupConfirm(false); }}
       />
 
       {/* Header */}
