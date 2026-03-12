@@ -106,7 +106,7 @@ app.use(helmet({
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
-      frameAncestors: ["'none'"],
+      frameAncestors: ["'self'", config.frontendUrl, "http://localhost:5173", "http://localhost:5174"],
       upgradeInsecureRequests: [],
     },
   },
