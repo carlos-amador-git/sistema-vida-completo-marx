@@ -56,22 +56,29 @@ services:
     depends_on:
       - postgres
 
-  # Backend API (para producción)
-  # backend:
-  #   build: ./backend
-  #   container_name: vida-backend
-  #   restart: unless-stopped
-  #   environment:
-  #     NODE_ENV: production
-  #     DATABASE_URL: postgresql://vida:vida_secret_2024@postgres:5432/vida_db
-  #     REDIS_URL: redis://redis:6379
-  #   ports:
-  #     - "3001:3001"
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_healthy
+  # Backend API (Producción/Coolify)
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vida-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      USE_LOCAL_STORAGE: "true"
+      BACKEND_URL: ${BACKEND_URL}
+      FRONTEND_URL: ${FRONTEND_URL}
+    ports:
+      - "3001:3001"
+    volumes:
+      - vida_uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:
@@ -79,6 +86,8 @@ volumes:
   redis_data:
     driver: local
   pgadmin_data:
+    driver: local
+  vida_uploads:
     driver: local
 
 networks:

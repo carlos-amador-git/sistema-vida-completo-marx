@@ -93,12 +93,13 @@ export const config = {
     templateAccess: process.env.WABA_TEMPLATE_ACCESS || '',
   },
 
-  // AWS S3
+  // AWS S3 / Local Storage
   aws: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
     bucket: process.env.AWS_S3_BUCKET || 'vida-documents',
     region: process.env.AWS_REGION || 'us-east-1',
+    useLocalStorage: process.env.USE_LOCAL_STORAGE === 'true',
   },
 
   // Stripe - Pagos
@@ -131,6 +132,9 @@ export const config = {
 
   // Frontend URL (para CORS y emails)
   frontendUrl: process.env.FRONTEND_URL || 'https://vida.mdconsultoria-ti.org',
+  
+  // Backend URL (para descargas seguras y callbacks)
+  backendUrl: process.env.BACKEND_URL || process.env.API_URL || 'https://api.vida.mdconsultoria-ti.org', 
 
   // URLs permitidas para CORS (desarrollo)
   corsOrigins: [

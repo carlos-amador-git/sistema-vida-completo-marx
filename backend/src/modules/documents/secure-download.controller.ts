@@ -67,7 +67,13 @@ export async function getSecureLocalUrl(
   options?: { userId?: string; emergencyAccessId?: string }
 ): Promise<string> {
   const token = await generateTemporaryDownloadToken(s3Key, expiresInSeconds, options);
-  const baseUrl = config.frontendUrl.replace('5173', '3000');
+  
+  // En desarrollo local (localhost), puerto 3000 es el backend
+  let baseUrl = config.backendUrl;
+  if (config.env === 'development' && baseUrl.includes('localhost')) {
+     baseUrl = baseUrl.replace('5173', '3000');
+  }
+
   return `${baseUrl}/api/v1/secure-download/${token}`;
 }
 

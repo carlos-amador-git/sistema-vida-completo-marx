@@ -36,11 +36,11 @@ class S3Service {
       !config.aws.accessKeyId.includes('your-') &&
       config.aws.accessKeyId.startsWith('AKIA');
 
-    // En desarrollo sin credenciales reales, usar almacenamiento local
-    if (config.env === 'development' && !hasRealCredentials) {
+    // Forzar almacenamiento local si está configurado o si no hay credenciales reales en desarrollo
+    if (config.aws.useLocalStorage || (config.env === 'development' && !hasRealCredentials)) {
       this.useLocalStorage = true;
       this.ensureLocalStorageDir();
-      logger.info('S3 Service inicializado en MODO LOCAL (uploads/)');
+      logger.info(`S3 Service inicializado en MODO LOCAL (/app/uploads) - Motivo: ${config.aws.useLocalStorage ? 'Configuración' : 'Desarrollo sin credenciales'}`);
     } else if (hasRealCredentials) {
       this.s3 = new S3Client({
         credentials: {
