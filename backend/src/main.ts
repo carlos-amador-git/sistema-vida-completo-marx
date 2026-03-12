@@ -115,6 +115,7 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'same-site' },
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+  xFrameOptions: false, // Desactivar para que frameAncestors de CSP funcione correctamente
 }));
 
 // CORS - permitir múltiples orígenes
