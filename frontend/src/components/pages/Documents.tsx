@@ -38,6 +38,7 @@ interface DocumentStats {
 
 const CATEGORY_COLORS: Record<string, string> = {
   EMERGENCY_PROFILE: 'bg-blue-100 text-blue-700',
+  CLINICAL_HISTORY: 'bg-indigo-100 text-indigo-700',
   LAB_RESULTS: 'bg-vida-100 text-vida-700',
   IMAGING: 'bg-vida-100 text-vida-700',
   PRESCRIPTIONS: 'bg-green-100 text-green-700',
@@ -51,6 +52,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   EMERGENCY_PROFILE: <FileText className="w-5 h-5" />,
+  CLINICAL_HISTORY: <FileText className="w-5 h-5" />,
   LAB_RESULTS: <FileText className="w-5 h-5" />,
   IMAGING: <Image className="w-5 h-5" />,
   PRESCRIPTIONS: <FileText className="w-5 h-5" />,

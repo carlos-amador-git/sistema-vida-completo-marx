@@ -37,6 +37,7 @@ interface DocumentResponse {
 // Categorias con sus etiquetas en español
 export const CATEGORY_LABELS: Record<DocumentCategory, string> = {
   EMERGENCY_PROFILE: 'Perfil de Emergencia',
+  CLINICAL_HISTORY: 'Historia Clínica / Resumen',
   LAB_RESULTS: 'Resultados de Laboratorio',
   IMAGING: 'Estudios de Imagen',
   PRESCRIPTIONS: 'Recetas Médicas',

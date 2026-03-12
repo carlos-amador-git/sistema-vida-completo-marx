@@ -4,6 +4,7 @@
   "uploadButton": "Subir Documento",
   "categories": {
     "EMERGENCY_PROFILE": "Perfil de Emergencia",
+    "CLINICAL_HISTORY": "Historia Clínica / Resumen",
     "LAB_RESULTS": "Resultados de Laboratorio",
     "IMAGING": "Estudios de Imagen",
     "PRESCRIPTIONS": "Recetas Médicas",
