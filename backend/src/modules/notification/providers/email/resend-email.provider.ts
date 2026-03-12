@@ -57,26 +57,52 @@ export class ResendEmailProvider implements IEmailProvider {
       return { success: false, error: 'Resend no disponible', provider: this.getName() };
     }
 
-    try {
-      logger.info('Enviando email via Resend', { to });
+    const maxRetries = 3;
+    let attempt = 0;
 
-      const result = await this.client!.emails.send({
-        from: config.email.from,
-        to: [to],
-        subject,
-        html,
-      });
+    const executeSend = async (): Promise<SendResult> => {
+      try {
+        attempt++;
+        logger.info('Enviando email via Resend', { to, attempt });
 
-      if (result.error) {
-        throw new Error(result.error.message);
+        const result = await this.client!.emails.send({
+          from: config.email.from,
+          to: [to],
+          subject,
+          html,
+        });
+
+        if (result.error) {
+          // If it's a rate limit error (429), throw it to trigger a retry
+          if (
+            result.error.name === 'rate_limit_exceeded' || 
+            result.error.message.includes('Too many requests')
+          ) {
+            throw result.error;
+          }
+          throw new Error(result.error.message);
+        }
+
+        logger.info('Email Resend enviado', { id: result.data?.id });
+        return { success: true, messageId: result.data?.id, provider: this.getName() };
+      } catch (error: any) {
+        const isRateLimit = 
+          error.name === 'rate_limit_exceeded' || 
+          (error.message && error.message.includes('Too many requests'));
+
+        if (isRateLimit && attempt < maxRetries) {
+          const delay = 800 * attempt; // delay between retries
+          logger.warn(`Rate limit en Resend alcanzado. Reintentando en ${delay}ms...`, { to, attempt });
+          await new Promise(resolve => setTimeout(resolve, delay));
+          return executeSend();
+        }
+
+        logger.error('Error Email Resend', error);
+        return { success: false, error: error.message, provider: this.getName() };
       }
+    };
 
-      logger.info('Email Resend enviado', { id: result.data?.id });
-      return { success: true, messageId: result.data?.id, provider: this.getName() };
-    } catch (error: any) {
-      logger.error('Error Email Resend', error);
-      return { success: false, error: error.message, provider: this.getName() };
-    }
+    return executeSend();
   }
 
   private escHtml(s: string): string {
